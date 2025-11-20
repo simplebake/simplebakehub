@@ -57,6 +57,13 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        wheat: {
+          DEFAULT: "hsl(var(--wheat))",
+          light: "hsl(var(--wheat-light))",
+          dark: "hsl(var(--wheat-dark))",
+        },
+        cream: "hsl(var(--cream))",
+        "warm-brown": "hsl(var(--warm-brown))",
       },
       borderRadius: {
         lg: "var(--radius)",
