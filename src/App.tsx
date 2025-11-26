@@ -11,6 +11,8 @@ import Premixes from "./pages/Premixes";
 import GuidedBake from "./pages/GuidedBake";
 import Tutorials from "./pages/Tutorials";
 import ShareBake from "./pages/ShareBake";
+import Shop from "./pages/Shop";
+import ProductDetail from "./pages/ProductDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/product/:handle" element={<ProductDetail />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/premixes" element={<Premixes />} />
               <Route path="/premixes/:id/bake" element={<GuidedBake />} />
