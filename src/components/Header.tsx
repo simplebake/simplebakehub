@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { ChefHat, LogOut } from "lucide-react";
+import { CartDrawer } from "./CartDrawer";
 
 export const Header = () => {
   const { user } = useAuth();
@@ -48,21 +49,38 @@ export const Header = () => {
                   Tutorials
                 </NavLink>
                 <NavLink
+                  to="/shop"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  activeClassName="text-foreground"
+                >
+                  Shop
+                </NavLink>
+                <NavLink
                   to="/share"
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   activeClassName="text-foreground"
                 >
                   Share Your Bake
                 </NavLink>
+                <CartDrawer />
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Logout
                 </Button>
               </>
             ) : (
-              <NavLink to="/auth">
-                <Button>Sign In</Button>
-              </NavLink>
+              <>
+                <NavLink
+                  to="/shop"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  activeClassName="text-foreground"
+                >
+                  Shop
+                </NavLink>
+                <NavLink to="/auth">
+                  <Button>Sign In</Button>
+                </NavLink>
+              </>
             )}
           </nav>
         </div>
