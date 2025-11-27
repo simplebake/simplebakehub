@@ -6,6 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const MAX_MESSAGE_LENGTH = 4000;
+const MAX_CONVERSATION_HISTORY = 50;
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -13,7 +16,39 @@ serve(async (req) => {
   }
 
   try {
-    const { conversationId, message } = await req.json();
+    const body = await req.json();
+    
+    // Validate request body
+    if (!body || typeof body !== 'object') {
+      throw new Error('Invalid request body');
+    }
+
+    const { conversationId, message } = body;
+
+    // Validate message
+    if (!message || typeof message !== 'string') {
+      throw new Error('Message is required and must be a string');
+    }
+
+    if (message.trim().length === 0) {
+      throw new Error('Message cannot be empty');
+    }
+
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      throw new Error(`Message must not exceed ${MAX_MESSAGE_LENGTH} characters`);
+    }
+
+    // Validate conversationId if provided
+    if (conversationId !== undefined && conversationId !== null) {
+      if (typeof conversationId !== 'string') {
+        throw new Error('Conversation ID must be a string');
+      }
+      // Basic UUID validation
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(conversationId)) {
+        throw new Error('Invalid conversation ID format');
+      }
+    }
     
     // Get auth token
     const authHeader = req.headers.get('Authorization');
@@ -70,12 +105,13 @@ serve(async (req) => {
       content: message
     });
 
-    // Get conversation history
+    // Get conversation history with limit
     const { data: history, error: historyError } = await supabase
       .from('messages')
       .select('role, content')
       .eq('conversation_id', currentConversationId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(MAX_CONVERSATION_HISTORY);
 
     if (historyError) throw historyError;
 

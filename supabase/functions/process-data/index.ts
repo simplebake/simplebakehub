@@ -5,6 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const VALID_OPERATIONS = ['uppercase', 'lowercase', 'reverse', 'count'];
+const MAX_STRING_LENGTH = 10000;
+const MAX_ARRAY_LENGTH = 1000;
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -12,7 +16,45 @@ serve(async (req) => {
   }
 
   try {
-    const { data, operation } = await req.json();
+    const body = await req.json();
+    
+    // Validate request body
+    if (!body || typeof body !== 'object') {
+      throw new Error('Invalid request body');
+    }
+
+    const { data, operation } = body;
+
+    // Validate operation
+    if (!operation || typeof operation !== 'string') {
+      throw new Error('Operation is required and must be a string');
+    }
+
+    if (!VALID_OPERATIONS.includes(operation)) {
+      throw new Error(`Invalid operation. Must be one of: ${VALID_OPERATIONS.join(', ')}`);
+    }
+
+    // Validate data based on operation
+    if (operation === 'uppercase' || operation === 'lowercase' || operation === 'reverse') {
+      if (typeof data !== 'string') {
+        throw new Error('Data must be a string for this operation');
+      }
+      if (data.length > MAX_STRING_LENGTH) {
+        throw new Error(`String length must not exceed ${MAX_STRING_LENGTH} characters`);
+      }
+    }
+
+    if (operation === 'count') {
+      if (typeof data !== 'string' && !Array.isArray(data)) {
+        throw new Error('Data must be a string or array for count operation');
+      }
+      if (typeof data === 'string' && data.length > MAX_STRING_LENGTH) {
+        throw new Error(`String length must not exceed ${MAX_STRING_LENGTH} characters`);
+      }
+      if (Array.isArray(data) && data.length > MAX_ARRAY_LENGTH) {
+        throw new Error(`Array length must not exceed ${MAX_ARRAY_LENGTH} items`);
+      }
+    }
 
     console.log('Processing data:', { data, operation });
 
