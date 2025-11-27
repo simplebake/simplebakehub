@@ -32,6 +32,13 @@ const Admin = () => {
     try {
       setLoading(true);
 
+      // Fetch all profiles with their roles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, created_at');
+
+      if (profilesError) throw profilesError;
+
       // Fetch all user roles
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
@@ -44,17 +51,13 @@ const Admin = () => {
         rolesData?.map(r => [r.user_id, r.role as 'admin' | 'user']) || []
       );
 
-      // Fetch auth users (admin only operation)
-      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
-
-      if (authError) throw authError;
-
-      const usersWithRoles: UserWithRole[] = authUsers.map(u => ({
-        id: u.id,
-        email: u.email || 'No email',
-        created_at: u.created_at,
-        role: rolesMap.get(u.id) || 'user'
-      }));
+      // Combine profiles with their roles
+      const usersWithRoles: UserWithRole[] = profilesData?.map(profile => ({
+        id: profile.id,
+        email: profile.email || 'No email',
+        created_at: profile.created_at,
+        role: rolesMap.get(profile.id) || 'user'
+      })) || [];
 
       setUsers(usersWithRoles);
     } catch (error: any) {
