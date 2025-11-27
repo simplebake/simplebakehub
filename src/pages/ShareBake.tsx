@@ -37,10 +37,14 @@ interface BakeShare {
 }
 
 const shareSchema = z.object({
-  premix_id: z.string().min(1, "Please select a premix"),
-  description: z.string().max(500, "Description must be less than 500 characters").optional(),
-  rating: z.number().min(1).max(5),
+  premix_id: z.string().uuid("Invalid premix ID"),
+  description: z.string().trim().max(500, "Description must be less than 500 characters").optional(),
+  rating: z.number().min(1, "Rating must be at least 1").max(5, "Rating must be at most 5"),
 });
+
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_IMAGE_DIMENSION = 4096; // Max width/height
 
 const ShareBake = () => {
   const { user, loading } = useAuth();
@@ -96,16 +100,48 @@ const ShareBake = () => {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size must be less than 5MB");
+    if (!file) return;
+
+    // Validate file type
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      toast.error("Only JPEG, PNG, and WebP images are allowed");
+      e.target.value = '';
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File size must be less than 5MB");
+      e.target.value = '';
+      return;
+    }
+
+    // Validate image dimensions
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      
+      if (img.width > MAX_IMAGE_DIMENSION || img.height > MAX_IMAGE_DIMENSION) {
+        toast.error(`Image dimensions must not exceed ${MAX_IMAGE_DIMENSION}x${MAX_IMAGE_DIMENSION} pixels`);
+        e.target.value = '';
         return;
       }
+      
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
-    }
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      toast.error("Invalid image file");
+      e.target.value = '';
+    };
+
+    img.src = objectUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -125,13 +161,18 @@ const ShareBake = () => {
 
       shareSchema.parse({ premix_id, description, rating });
 
-      // Upload image
-      const fileExt = selectedFile.name.split(".").pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      // Upload image with sanitized filename
+      const fileExt = selectedFile.name.split(".").pop()?.toLowerCase();
+      const sanitizedExt = ALLOWED_FILE_TYPES.includes(`image/${fileExt}`) ? fileExt : 'jpg';
+      const fileName = `${user.id}/${Date.now()}.${sanitizedExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from("bake-photos")
-        .upload(fileName, selectedFile);
+        .upload(fileName, selectedFile, {
+          contentType: selectedFile.type,
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
