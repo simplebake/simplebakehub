@@ -3,11 +3,13 @@ import { Button } from "./ui/button";
 import { useAuth } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { ChefHat, LogOut } from "lucide-react";
+import { ChefHat, LogOut, Shield } from "lucide-react";
 import { CartDrawer } from "./CartDrawer";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export const Header = () => {
   const { user } = useAuth();
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -62,6 +64,16 @@ export const Header = () => {
                 >
                   Share Your Bake
                 </NavLink>
+                {isAdmin && (
+                  <NavLink
+                    to="/admin"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    activeClassName="text-foreground"
+                  >
+                    <Shield className="h-4 w-4 inline mr-1" />
+                    Admin
+                  </NavLink>
+                )}
                 <CartDrawer />
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-2" />
