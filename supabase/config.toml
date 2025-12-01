@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.personalized-recommendations]
 verify_jwt = false
+
+[functions.predict-issues]
+verify_jwt = false
