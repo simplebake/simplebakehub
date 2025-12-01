@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { SmartTipCard } from "@/components/SmartTipCard";
 import { RelatedPremixes } from "@/components/RelatedPremixes";
+import { TroubleshootingAlert } from "@/components/TroubleshootingAlert";
 
 interface PremixStep {
   id: string;
@@ -143,6 +144,17 @@ const GuidedBake = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Predictive Troubleshooting System */}
+            <div className="mb-6">
+              <TroubleshootingAlert
+                premixName={premix.name}
+                stepTitle={steps[currentStep].title}
+                stepContent={steps[currentStep].content}
+                stepNumber={currentStep + 1}
+                totalSteps={steps.length}
+              />
+            </div>
 
             {/* Smart Tip for current step */}
             <div className="mb-6">
