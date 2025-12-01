@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ChefHat, Book, Users, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
 import { SmartTipCard } from "@/components/SmartTipCard";
-import { RelatedPremixes } from "@/components/RelatedPremixes";
+import { PersonalizedRecommendations } from "@/components/PersonalizedRecommendations";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -127,10 +127,12 @@ const Index = () => {
           <SmartTipCard context="home" />
         </div>
 
-        {/* Featured Premixes */}
-        <div className="mt-20">
-          <RelatedPremixes limit={3} />
-        </div>
+        {/* Personalized Recommendations */}
+        {user && (
+          <div className="mt-20">
+            <PersonalizedRecommendations limit={3} />
+          </div>
+        )}
       </div>
     </div>
   );
