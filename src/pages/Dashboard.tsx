@@ -4,7 +4,8 @@ import { useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Book, ChefHat, Share2, User } from "lucide-react";
+import { Book, ChefHat, Share2 } from "lucide-react";
+import { PersonalizedRecommendations } from "@/components/PersonalizedRecommendations";
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -87,6 +88,11 @@ const Dashboard = () => {
               </Button>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Personalized Recommendations */}
+        <div className="mt-12">
+          <PersonalizedRecommendations limit={3} />
         </div>
       </main>
     </div>
