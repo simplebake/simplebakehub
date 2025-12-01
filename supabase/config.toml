@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.predict-issues]
 verify_jwt = false
+
+[functions.adaptive-recommendations]
+verify_jwt = false
