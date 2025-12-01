@@ -143,6 +143,77 @@ export type Database = {
           },
         ]
       }
+      baking_sessions: {
+        Row: {
+          altitude_meters: number | null
+          baking_temp_adjustment_celsius: number | null
+          completed_at: string | null
+          created_at: string
+          humidity_percent: number | null
+          id: string
+          issues: string[] | null
+          mixing_method: string | null
+          oil_adjustment_ml: number | null
+          outcome_notes: string | null
+          oven_type: string | null
+          premix_id: string
+          proofing_time_adjustment_minutes: number | null
+          season: string | null
+          success_rating: number | null
+          temperature_celsius: number | null
+          user_id: string
+          water_adjustment_ml: number | null
+        }
+        Insert: {
+          altitude_meters?: number | null
+          baking_temp_adjustment_celsius?: number | null
+          completed_at?: string | null
+          created_at?: string
+          humidity_percent?: number | null
+          id?: string
+          issues?: string[] | null
+          mixing_method?: string | null
+          oil_adjustment_ml?: number | null
+          outcome_notes?: string | null
+          oven_type?: string | null
+          premix_id: string
+          proofing_time_adjustment_minutes?: number | null
+          season?: string | null
+          success_rating?: number | null
+          temperature_celsius?: number | null
+          user_id: string
+          water_adjustment_ml?: number | null
+        }
+        Update: {
+          altitude_meters?: number | null
+          baking_temp_adjustment_celsius?: number | null
+          completed_at?: string | null
+          created_at?: string
+          humidity_percent?: number | null
+          id?: string
+          issues?: string[] | null
+          mixing_method?: string | null
+          oil_adjustment_ml?: number | null
+          outcome_notes?: string | null
+          oven_type?: string | null
+          premix_id?: string
+          proofing_time_adjustment_minutes?: number | null
+          season?: string | null
+          success_rating?: number | null
+          temperature_celsius?: number | null
+          user_id?: string
+          water_adjustment_ml?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "baking_sessions_premix_id_fkey"
+            columns: ["premix_id"]
+            isOneToOne: false
+            referencedRelation: "premixes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string | null

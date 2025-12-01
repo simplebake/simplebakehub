@@ -11,6 +11,8 @@ import { Progress } from "@/components/ui/progress";
 import { SmartTipCard } from "@/components/SmartTipCard";
 import { RelatedPremixes } from "@/components/RelatedPremixes";
 import { TroubleshootingAlert } from "@/components/TroubleshootingAlert";
+import { AdaptiveRecommendations } from "@/components/AdaptiveRecommendations";
+import { BakeOutcomeDialog } from "@/components/BakeOutcomeDialog";
 
 interface PremixStep {
   id: string;
@@ -33,6 +35,7 @@ const GuidedBake = () => {
   const [steps, setSteps] = useState<PremixStep[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
+  const [showOutcomeDialog, setShowOutcomeDialog] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -126,6 +129,13 @@ const GuidedBake = () => {
           )}
         </div>
 
+        {/* Adaptive Intelligence - Show at start */}
+        {steps.length > 0 && currentStep === 0 && (
+          <div className="mb-6">
+            <AdaptiveRecommendations premixId={id!} premixName={premix.name} />
+          </div>
+        )}
+
         {steps.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
@@ -176,9 +186,14 @@ const GuidedBake = () => {
               </Button>
               
               {currentStep === steps.length - 1 ? (
-                <Button onClick={() => navigate("/share")}>
-                  Share Your Bake! →
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowOutcomeDialog(true)}>
+                    Record Outcome
+                  </Button>
+                  <Button onClick={() => navigate("/share")}>
+                    Share Your Bake! →
+                  </Button>
+                </div>
               ) : (
                 <Button onClick={handleNext}>
                   Next Step
@@ -195,6 +210,13 @@ const GuidedBake = () => {
             )}
           </>
         )}
+
+        {/* Bake Outcome Dialog */}
+        <BakeOutcomeDialog
+          open={showOutcomeDialog}
+          onOpenChange={setShowOutcomeDialog}
+          premixId={id!}
+        />
       </main>
     </div>
   );
