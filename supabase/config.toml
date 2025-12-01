@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.chat]
 verify_jwt = true
+
+[functions.generate-smart-tip]
+verify_jwt = false
