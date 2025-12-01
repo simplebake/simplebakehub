@@ -7,13 +7,39 @@ import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { Loader2, ShoppingCart, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { SmartTipCard } from "@/components/SmartTipCard";
+import { RelatedPremixes } from "@/components/RelatedPremixes";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProductDetail = () => {
   const { handle } = useParams<{ handle: string }>();
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const [relatedPremixId, setRelatedPremixId] = useState<string | null>(null);
   const addItem = useCartStore(state => state.addItem);
+
+  // Try to match product to a premix for smart tips
+  useEffect(() => {
+    const matchPremix = async () => {
+      if (!product) return;
+      
+      try {
+        const { data } = await supabase
+          .from("premixes")
+          .select("id, difficulty")
+          .ilike("name", `%${product.node.title}%`)
+          .limit(1)
+          .single();
+        
+        if (data) setRelatedPremixId(data.id);
+      } catch (error) {
+        console.error("Error matching premix:", error);
+      }
+    };
+    
+    matchPremix();
+  }, [product]);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -149,8 +175,24 @@ const ProductDetail = () => {
                 <ShoppingCart className="w-5 h-5 mr-2" />
                 {selectedVariant?.availableForSale ? 'Add to Cart' : 'Out of Stock'}
               </Button>
+
+              {/* Smart Tip */}
+              <div className="mt-6">
+                <SmartTipCard 
+                  context="product_page" 
+                  premixName={node.title}
+                  difficulty="beginner"
+                />
+              </div>
             </div>
           </div>
+
+          {/* Related Premixes */}
+          {relatedPremixId && (
+            <div className="mt-12">
+              <RelatedPremixes currentPremixId={relatedPremixId} limit={3} />
+            </div>
+          )}
         </div>
       </main>
     </div>

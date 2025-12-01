@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChefHat, Book, Users, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
+import { SmartTipCard } from "@/components/SmartTipCard";
+import { RelatedPremixes } from "@/components/RelatedPremixes";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -118,6 +120,16 @@ const Index = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Smart Tip Section */}
+        <div className="mt-20 max-w-2xl mx-auto">
+          <SmartTipCard context="home" />
+        </div>
+
+        {/* Featured Premixes */}
+        <div className="mt-20">
+          <RelatedPremixes limit={3} />
         </div>
       </div>
     </div>

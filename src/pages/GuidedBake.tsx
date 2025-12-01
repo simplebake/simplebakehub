@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { SmartTipCard } from "@/components/SmartTipCard";
+import { RelatedPremixes } from "@/components/RelatedPremixes";
 
 interface PremixStep {
   id: string;
@@ -142,6 +144,15 @@ const GuidedBake = () => {
               </CardContent>
             </Card>
 
+            {/* Smart Tip for current step */}
+            <div className="mb-6">
+              <SmartTipCard 
+                context="guided_bake" 
+                premixName={premix.name}
+                stepTitle={steps[currentStep].title}
+              />
+            </div>
+
             <div className="flex justify-between">
               <Button
                 variant="outline"
@@ -163,6 +174,13 @@ const GuidedBake = () => {
                 </Button>
               )}
             </div>
+
+            {/* Show related premixes on last step */}
+            {currentStep === steps.length - 1 && (
+              <div className="mt-12">
+                <RelatedPremixes currentPremixId={id} limit={3} />
+              </div>
+            )}
           </>
         )}
       </main>
