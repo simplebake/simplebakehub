@@ -8,6 +8,7 @@ import { AdminRoute } from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Premixes from "./pages/Premixes";
 import GuidedBake from "./pages/GuidedBake";
@@ -35,6 +36,7 @@ const App = () => {
               <Route path="/shop" element={<Shop />} />
               <Route path="/product/:handle" element={<ProductDetail />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="/premixes" element={<Premixes />} />
               <Route path="/premixes/:id/bake" element={<GuidedBake />} />
