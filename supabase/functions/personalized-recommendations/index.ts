@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    // Extract authenticated user ID from JWT token
+    // Extract JWT token from Authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization header" }), {
@@ -22,13 +22,17 @@ serve(async (req) => {
       });
     }
 
+    // Extract the token (remove 'Bearer ' prefix)
+    const token = authHeader.replace('Bearer ', '');
+
+    // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // Get user by passing the JWT token explicitly
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     
     if (userError || !user) {
       console.error("Auth error:", userError);
