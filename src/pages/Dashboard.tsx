@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Book, ChefHat, Share2 } from "lucide-react";
 import { PersonalizedRecommendations } from "@/components/PersonalizedRecommendations";
+import { CommunityInsights } from "@/components/CommunityInsights";
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -91,8 +92,10 @@ const Dashboard = () => {
         </div>
 
         {/* Personalized Recommendations */}
-        <div className="mt-12">
+        <div className="mt-12 space-y-8">
           <PersonalizedRecommendations limit={3} />
+          
+          <CommunityInsights context="Dashboard overview - general baking insights" />
         </div>
       </main>
     </div>
