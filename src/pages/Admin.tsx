@@ -12,6 +12,7 @@ import { Header } from '@/components/Header';
 import { AuditLogsViewer } from '@/components/AuditLogsViewer';
 import { SecurityDashboard } from '@/components/SecurityDashboard';
 import { BlockedIPsManager } from '@/components/BlockedIPsManager';
+import { SecurityAnalytics } from '@/components/SecurityAnalytics';
 
 interface UserWithRole {
   id: string;
@@ -182,6 +183,7 @@ const Admin = () => {
         </div>
 
         <div className="space-y-8 mb-8">
+          <SecurityAnalytics />
           <SecurityDashboard />
           <BlockedIPsManager />
         </div>
