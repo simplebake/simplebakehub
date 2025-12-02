@@ -104,7 +104,7 @@ serve(async (req) => {
     };
 
     // Use AI to generate natural language insights
-    const systemPrompt = `You are a baking community insights analyst. Generate 3-5 concise, actionable insights based on aggregated baking data. 
+    const systemPrompt = `You are a baking community insights analyst. Generate 3-5 concise, actionable insights based on aggregated baking data. Always use British English spelling (e.g., flavour, colour, optimise).
     Each insight should:
     - Start with a percentage or statistic
     - Be specific about conditions and adjustments

@@ -16,7 +16,7 @@ serve(async (req) => {
     
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    let systemPrompt = "You are an expert gluten-free baking assistant. Provide concise, practical tips that help bakers succeed.";
+    let systemPrompt = "You are an expert gluten-free baking assistant. Provide concise, practical tips that help bakers succeed. Always use British English spelling (e.g., flavour, colour, specialise).";
     let userPrompt = "";
 
     // Generate context-specific prompts
