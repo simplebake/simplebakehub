@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield, User, Crown } from 'lucide-react';
 import { Header } from '@/components/Header';
+import { AuditLogsViewer } from '@/components/AuditLogsViewer';
 
 interface UserWithRole {
   id: string;
@@ -88,6 +89,20 @@ const Admin = () => {
         .insert({ user_id: userId, role: newRole });
 
       if (error) throw error;
+
+      // Log admin action
+      const clientIP = 'webapp';
+      await supabase.from('audit_logs').insert({
+        event_type: 'admin_action',
+        user_id: user?.id,
+        ip_address: clientIP,
+        endpoint: 'update_user_role',
+        details: {
+          target_user_id: userId,
+          new_role: newRole,
+          action: 'role_update'
+        }
+      });
 
       toast({
         title: 'Success',
@@ -224,6 +239,10 @@ const Admin = () => {
             </Table>
           </CardContent>
         </Card>
+
+        <div className="mt-8">
+          <AuditLogsViewer />
+        </div>
       </div>
     </div>
   );
