@@ -56,12 +56,10 @@ const Auth = () => {
 
       if (error) throw error;
       
-      // Log signup event
+      // Log signup event (user_id only for privacy)
       const { data: { user: newUser } } = await supabase.auth.getUser();
       if (newUser) {
         await logAuthEvent('signup', newUser.id, { 
-          email,
-          name,
           method: 'email_password' 
         });
       }
