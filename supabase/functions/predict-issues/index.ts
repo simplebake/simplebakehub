@@ -1,9 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const requestSchema = z.object({
+  premixName: z.string().min(1).max(200),
+  stepTitle: z.string().min(1).max(500),
+  stepContent: z.string().min(1).max(2000),
+  observations: z.array(z.string().max(200)).max(10).optional(),
+  stepNumber: z.number().int().positive().max(50),
+  totalSteps: z.number().int().positive().max(50),
+});
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -11,7 +21,25 @@ serve(async (req) => {
   }
 
   try {
-    const { premixName, stepTitle, stepContent, observations, stepNumber, totalSteps } = await req.json();
+    const body = await req.json();
+    
+    // Validate input
+    const validation = requestSchema.safeParse(body);
+    if (!validation.success) {
+      console.error("Validation error:", validation.error.issues);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input", 
+          details: validation.error.issues 
+        }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
+    const { premixName, stepTitle, stepContent, observations, stepNumber, totalSteps } = validation.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
