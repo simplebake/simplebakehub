@@ -500,6 +500,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          badge_description: string
+          badge_icon: string
+          badge_name: string
+          badge_type: Database["public"]["Enums"]["badge_type"]
+          created_at: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_description: string
+          badge_icon: string
+          badge_name: string
+          badge_type: Database["public"]["Enums"]["badge_type"]
+          created_at?: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_description?: string
+          badge_icon?: string
+          badge_name?: string
+          badge_type?: Database["public"]["Enums"]["badge_type"]
+          created_at?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           created_at: string | null
@@ -572,6 +605,17 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      badge_type:
+        | "first_bake"
+        | "basics_master"
+        | "technique_explorer"
+        | "troubleshooting_pro"
+        | "rising_star"
+        | "gluten_free_champion"
+        | "learning_pioneer"
+        | "consistency_king"
+        | "advanced_baker"
+        | "community_contributor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -700,6 +744,18 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      badge_type: [
+        "first_bake",
+        "basics_master",
+        "technique_explorer",
+        "troubleshooting_pro",
+        "rising_star",
+        "gluten_free_champion",
+        "learning_pioneer",
+        "consistency_king",
+        "advanced_baker",
+        "community_contributor",
+      ],
     },
   },
 } as const

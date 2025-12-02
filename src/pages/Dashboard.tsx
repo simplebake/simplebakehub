@@ -10,6 +10,7 @@ import { PersonalizedRecommendations } from "@/components/PersonalizedRecommenda
 import { CommunityInsights } from "@/components/CommunityInsights";
 import { RecipeDifficultyAnalyzer } from "@/components/RecipeDifficultyAnalyzer";
 import { PersonalizedLearningPaths } from "@/components/PersonalizedLearningPaths";
+import { AchievementBadges } from "@/components/AchievementBadges";
 
 interface Tutorial {
   id: string;
@@ -103,8 +104,13 @@ const Dashboard = () => {
           </Card>
         </div>
 
+        {/* Achievement Badges */}
+        <div className="mt-12">
+          <AchievementBadges />
+        </div>
+
         {/* AI-Powered Features */}
-        <div className="mt-12 grid lg:grid-cols-2 gap-8">
+        <div className="mt-8 grid lg:grid-cols-2 gap-8">
           <PersonalizedLearningPaths 
             onSelectTutorial={(tutorial) => setSelectedTutorial(tutorial)}
           />
