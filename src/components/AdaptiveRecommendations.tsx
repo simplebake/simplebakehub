@@ -50,7 +50,6 @@ export const AdaptiveRecommendations = ({ premixId, premixName }: AdaptiveRecomm
 
       const { data, error } = await supabase.functions.invoke("adaptive-recommendations", {
         body: {
-          userId: user.id,
           premixId,
           currentEnvironment: currentEnv,
         },

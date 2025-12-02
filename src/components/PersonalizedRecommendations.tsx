@@ -43,7 +43,7 @@ export const PersonalizedRecommendations = ({ limit = 3 }: PersonalizedRecommend
       setLoading(true);
       
       const { data, error } = await supabase.functions.invoke('personalized-recommendations', {
-        body: { userId: user.id }
+        body: {}
       });
 
       if (error) {

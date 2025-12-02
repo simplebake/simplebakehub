@@ -10,13 +10,13 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.personalized-recommendations]
-verify_jwt = false
+verify_jwt = true
 
 [functions.predict-issues]
 verify_jwt = false
 
 [functions.adaptive-recommendations]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-community-insights]
 verify_jwt = false
