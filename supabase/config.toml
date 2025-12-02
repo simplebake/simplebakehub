@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.log-auth-event]
 verify_jwt = false
+
+[functions.personalized-learning-paths]
+verify_jwt = true
