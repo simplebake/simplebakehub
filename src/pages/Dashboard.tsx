@@ -1,17 +1,28 @@
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Book, ChefHat, Share2 } from "lucide-react";
 import { PersonalizedRecommendations } from "@/components/PersonalizedRecommendations";
 import { CommunityInsights } from "@/components/CommunityInsights";
 import { RecipeDifficultyAnalyzer } from "@/components/RecipeDifficultyAnalyzer";
+import { PersonalizedLearningPaths } from "@/components/PersonalizedLearningPaths";
+
+interface Tutorial {
+  id: string;
+  title: string;
+  category: string;
+  tags: string[];
+  content: string;
+}
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -92,14 +103,33 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Personalized Recommendations */}
-        <div className="mt-12 space-y-8">
+        {/* AI-Powered Features */}
+        <div className="mt-12 grid lg:grid-cols-2 gap-8">
+          <PersonalizedLearningPaths 
+            onSelectTutorial={(tutorial) => setSelectedTutorial(tutorial)}
+          />
           <PersonalizedRecommendations limit={3} />
-          
+        </div>
+
+        <div className="mt-8 space-y-8">
           <CommunityInsights context="Dashboard overview - general baking insights" />
           
           <RecipeDifficultyAnalyzer />
         </div>
+
+        {/* Tutorial Dialog */}
+        <Dialog open={!!selectedTutorial} onOpenChange={() => setSelectedTutorial(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedTutorial?.title}</DialogTitle>
+            </DialogHeader>
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              {selectedTutorial?.content.split('\n').map((paragraph, idx) => (
+                <p key={idx}>{paragraph}</p>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
