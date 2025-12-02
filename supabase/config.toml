@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.adaptive-recommendations]
 verify_jwt = false
+
+[functions.generate-community-insights]
+verify_jwt = false
