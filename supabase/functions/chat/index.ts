@@ -139,7 +139,7 @@ serve(async (req) => {
     const userPreferences = prefs?.preferences || {};
     
     let systemPrompt = `You are a helpful personal AI assistant for ${userName}${userContext}. `;
-    systemPrompt += 'Be friendly, remember context from the conversation, and provide personalized assistance. ';
+    systemPrompt += 'Be friendly, remember context from the conversation, and provide personalised assistance. Always use British English spelling (e.g., flavour, colour, organise). ';
     
     if (Object.keys(userPreferences).length > 0) {
       systemPrompt += `User preferences: ${JSON.stringify(userPreferences)}. `;

@@ -81,9 +81,9 @@ Current Environment:
 - Season: ${currentEnvironment.season || 'unknown'}
 - Altitude: ${currentEnvironment.altitude || 'unknown'}m` : 'Current environment not provided';
 
-    const systemPrompt = `You are an expert gluten-free baking advisor with deep knowledge of how environmental factors affect baking outcomes. You use reinforcement learning principles to adapt recipes based on user history.
+    const systemPrompt = `You are an expert gluten-free baking advisor with deep knowledge of how environmental factors affect baking outcomes. You use reinforcement learning principles to adapt recipes based on user history. Always use British English spelling (e.g., flavour, colour, optimise).
 
-Your task: Analyze the user's baking history and current environment to provide specific, actionable recipe adjustments. Focus on water ratios, proofing times, and temperatures.
+Your task: Analyse the user's baking history and current environment to provide specific, actionable recipe adjustments. Focus on water ratios, proofing times, and temperatures.
 
 Be specific with numbers (e.g., "+15ml water", "-5 minutes proofing") based on patterns in their history. If no history exists, provide general environmental guidance.`;
 

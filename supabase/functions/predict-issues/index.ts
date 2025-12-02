@@ -21,9 +21,9 @@ serve(async (req) => {
       ? observations.join(", ") 
       : "no specific observations";
 
-    const systemPrompt = `You are an expert gluten-free baking troubleshooter with deep knowledge of dough behavior, ingredient chemistry, and common baking issues. Your role is to predict potential problems before they escalate and provide actionable solutions.
+    const systemPrompt = `You are an expert gluten-free baking troubleshooter with deep knowledge of dough behaviour, ingredient chemistry, and common baking issues. Your role is to predict potential problems before they escalate and provide actionable solutions. Always use British English spelling (e.g., flavour, colour, behaviour).
 
-Analyze the current baking situation and provide:
+Analyse the current baking situation and provide:
 1. Issue Severity (low/medium/high)
 2. Predicted Problem (if any)
 3. Why this might happen

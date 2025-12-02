@@ -116,7 +116,7 @@ Format your response as a JSON array with objects containing: premixName, reason
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'You are a helpful baking assistant that provides personalized recommendations.' },
+          { role: 'system', content: 'You are a helpful baking assistant that provides personalised recommendations. Always use British English spelling (e.g., flavour, colour, specialise).' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,
