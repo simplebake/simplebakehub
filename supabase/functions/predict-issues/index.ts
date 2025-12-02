@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
@@ -20,7 +21,44 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
+                   req.headers.get('x-real-ip') || 
+                   'unknown';
+  const endpoint = 'predict-issues';
+
   try {
+    // Rate limiting: 60 requests per hour per IP
+    const windowStart = new Date();
+    windowStart.setMinutes(0, 0, 0);
+    
+    const { data: rateLimitData, error: rateLimitError } = await supabase
+      .from('rate_limits')
+      .select('request_count')
+      .eq('ip_address', clientIP)
+      .eq('endpoint', endpoint)
+      .gte('window_start', windowStart.toISOString())
+      .single();
+
+    if (rateLimitData && rateLimitData.request_count >= 60) {
+      console.log(`Rate limit exceeded for IP: ${clientIP}`);
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Maximum 60 requests per hour." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Audit log
+    await supabase.from('audit_logs').insert({
+      event_type: 'edge_function_invocation',
+      ip_address: clientIP,
+      endpoint: endpoint,
+      details: { rate_limited: false }
+    });
+
     const body = await req.json();
     
     // Validate input
@@ -110,6 +148,16 @@ Analyze this and predict any potential issues. If the observations indicate prob
     } else if (lowerPrediction.includes("warning") || lowerPrediction.includes("watch") || lowerPrediction.includes("concern")) {
       severity = "medium";
     }
+
+    // Update rate limit counter
+    await supabase.from('rate_limits').upsert({
+      ip_address: clientIP,
+      endpoint: endpoint,
+      window_start: windowStart.toISOString(),
+      request_count: (rateLimitData?.request_count || 0) + 1
+    }, {
+      onConflict: 'ip_address,endpoint,window_start'
+    });
 
     return new Response(JSON.stringify({ prediction, severity }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

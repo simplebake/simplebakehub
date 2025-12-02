@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +11,44 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
+                   req.headers.get('x-real-ip') || 
+                   'unknown';
+  const endpoint = 'analyze-recipe-difficulty';
+
   try {
+    // Rate limiting: 60 requests per hour per IP
+    const windowStart = new Date();
+    windowStart.setMinutes(0, 0, 0);
+    
+    const { data: rateLimitData } = await supabase
+      .from('rate_limits')
+      .select('request_count')
+      .eq('ip_address', clientIP)
+      .eq('endpoint', endpoint)
+      .gte('window_start', windowStart.toISOString())
+      .single();
+
+    if (rateLimitData && rateLimitData.request_count >= 60) {
+      console.log(`Rate limit exceeded for IP: ${clientIP}`);
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Maximum 60 requests per hour." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Audit log
+    await supabase.from('audit_logs').insert({
+      event_type: 'edge_function_invocation',
+      ip_address: clientIP,
+      endpoint: endpoint,
+      details: { rate_limited: false }
+    });
+
     const { recipeText } = await req.json();
     
     if (!recipeText || typeof recipeText !== 'string' || recipeText.trim().length === 0) {
@@ -116,6 +154,16 @@ Provide your analysis in this exact JSON format:
         tips: "Review the recipe format and try again"
       };
     }
+
+    // Update rate limit counter
+    await supabase.from('rate_limits').upsert({
+      ip_address: clientIP,
+      endpoint: endpoint,
+      window_start: windowStart.toISOString(),
+      request_count: (rateLimitData?.request_count || 0) + 1
+    }, {
+      onConflict: 'ip_address,endpoint,window_start'
+    });
 
     return new Response(
       JSON.stringify({ analysis }),

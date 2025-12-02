@@ -18,6 +18,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  
+  const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
+                   req.headers.get('x-real-ip') || 
+                   'unknown';
+  const endpoint = 'generate-community-insights';
+
   try {
     const body = await req.json();
     
@@ -39,11 +47,37 @@ serve(async (req) => {
     
     const { premixId, context } = validation.data;
     
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Rate limiting: 60 requests per hour per IP
+    const windowStart = new Date();
+    windowStart.setMinutes(0, 0, 0);
+    
+    const { data: rateLimitData } = await supabase
+      .from('rate_limits')
+      .select('request_count')
+      .eq('ip_address', clientIP)
+      .eq('endpoint', endpoint)
+      .gte('window_start', windowStart.toISOString())
+      .single();
+
+    if (rateLimitData && rateLimitData.request_count >= 60) {
+      console.log(`Rate limit exceeded for IP: ${clientIP}`);
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Maximum 60 requests per hour." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Audit log
+    await supabase.from('audit_logs').insert({
+      event_type: 'edge_function_invocation',
+      ip_address: clientIP,
+      endpoint: endpoint,
+      details: { premix_id: premixId, rate_limited: false }
+    });
+    
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
 
     // Query baking sessions data
     let query = supabase
@@ -209,6 +243,16 @@ serve(async (req) => {
         });
       }
     }
+
+    // Update rate limit counter
+    await supabase.from('rate_limits').upsert({
+      ip_address: clientIP,
+      endpoint: endpoint,
+      window_start: windowStart.toISOString(),
+      request_count: (rateLimitData?.request_count || 0) + 1
+    }, {
+      onConflict: 'ip_address,endpoint,window_start'
+    });
 
     return new Response(
       JSON.stringify({ 
