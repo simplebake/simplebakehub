@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield, User, Crown } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { AuditLogsViewer } from '@/components/AuditLogsViewer';
+import { SecurityDashboard } from '@/components/SecurityDashboard';
 
 interface UserWithRole {
   id: string;
@@ -177,6 +178,10 @@ const Admin = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="mb-8">
+          <SecurityDashboard />
         </div>
 
         <Card>
