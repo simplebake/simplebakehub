@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.generate-community-insights]
 verify_jwt = false
+
+[functions.analyze-recipe-difficulty]
+verify_jwt = false

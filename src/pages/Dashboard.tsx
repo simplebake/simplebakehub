@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Book, ChefHat, Share2 } from "lucide-react";
 import { PersonalizedRecommendations } from "@/components/PersonalizedRecommendations";
 import { CommunityInsights } from "@/components/CommunityInsights";
+import { RecipeDifficultyAnalyzer } from "@/components/RecipeDifficultyAnalyzer";
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -96,6 +97,8 @@ const Dashboard = () => {
           <PersonalizedRecommendations limit={3} />
           
           <CommunityInsights context="Dashboard overview - general baking insights" />
+          
+          <RecipeDifficultyAnalyzer />
         </div>
       </main>
     </div>
