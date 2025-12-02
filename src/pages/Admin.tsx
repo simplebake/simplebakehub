@@ -90,12 +90,11 @@ const Admin = () => {
 
       if (error) throw error;
 
-      // Log admin action
-      const clientIP = 'webapp';
+      // Log admin action using the utility
       await supabase.from('audit_logs').insert({
         event_type: 'admin_action',
         user_id: user?.id,
-        ip_address: clientIP,
+        ip_address: 'webapp',
         endpoint: 'update_user_role',
         details: {
           target_user_id: userId,

@@ -59,22 +59,24 @@ export const AuditLogsViewer = () => {
   };
 
   const getEventIcon = (eventType: string) => {
+    if (eventType.startsWith('authentication')) {
+      return <AlertTriangle className="h-4 w-4" />;
+    }
     switch (eventType) {
       case 'edge_function_invocation':
         return <Activity className="h-4 w-4" />;
-      case 'authentication':
-        return <AlertTriangle className="h-4 w-4" />;
       default:
         return <Info className="h-4 w-4" />;
     }
   };
 
   const getEventBadgeVariant = (eventType: string) => {
+    if (eventType.startsWith('authentication')) {
+      return 'secondary';
+    }
     switch (eventType) {
       case 'edge_function_invocation':
         return 'default';
-      case 'authentication':
-        return 'secondary';
       default:
         return 'outline';
     }
@@ -111,7 +113,9 @@ export const AuditLogsViewer = () => {
             <SelectContent>
               <SelectItem value="all">All Events</SelectItem>
               <SelectItem value="edge_function_invocation">Edge Functions</SelectItem>
-              <SelectItem value="authentication">Authentication</SelectItem>
+              <SelectItem value="authentication_signup">Signup Events</SelectItem>
+              <SelectItem value="authentication_signin">Signin Events</SelectItem>
+              <SelectItem value="authentication_signout">Signout Events</SelectItem>
               <SelectItem value="admin_action">Admin Actions</SelectItem>
               <SelectItem value="data_export">Data Exports</SelectItem>
             </SelectContent>

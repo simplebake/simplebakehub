@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.analyze-recipe-difficulty]
 verify_jwt = false
+
+[functions.log-auth-event]
+verify_jwt = false
