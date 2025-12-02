@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/supabase";
+import { logAuthEvent } from "@/lib/auditLogger";
 import { useEffect } from "react";
 import { z } from "zod";
 
@@ -54,6 +55,16 @@ const Auth = () => {
       });
 
       if (error) throw error;
+      
+      // Log signup event
+      const { data: { user: newUser } } = await supabase.auth.getUser();
+      if (newUser) {
+        await logAuthEvent('signup', newUser.id, { 
+          email,
+          name,
+          method: 'email_password' 
+        });
+      }
       
       toast.success("Account created successfully! Please check your email.");
       navigate("/dashboard");

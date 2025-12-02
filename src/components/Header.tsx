@@ -2,6 +2,7 @@ import { NavLink } from "./NavLink";
 import { Button } from "./ui/button";
 import { useAuth } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
+import { logAuthEvent } from "@/lib/auditLogger";
 import { useNavigate } from "react-router-dom";
 import { ChefHat, LogOut, Shield, User } from "lucide-react";
 import { CartDrawer } from "./CartDrawer";
@@ -13,7 +14,14 @@ export const Header = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    const userId = user?.id;
     await supabase.auth.signOut();
+    
+    // Log signout event
+    if (userId) {
+      await logAuthEvent('signout', userId);
+    }
+    
     navigate("/");
   };
 

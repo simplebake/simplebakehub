@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { logAuthEvent } from './auditLogger';
 
 interface AuthContextType {
   user: User | null;
@@ -34,6 +35,26 @@ export const useAuthState = () => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Log authentication events (deferred to avoid blocking)
+        setTimeout(() => {
+          const userId = session?.user?.id;
+          
+          switch (event) {
+            case 'SIGNED_IN':
+              logAuthEvent('signin', userId, { method: 'password' });
+              break;
+            case 'SIGNED_OUT':
+              logAuthEvent('signout', userId);
+              break;
+            case 'USER_UPDATED':
+              // Don't log routine updates
+              break;
+            case 'PASSWORD_RECOVERY':
+              logAuthEvent('password_reset', userId);
+              break;
+          }
+        }, 0);
       }
     );
 
