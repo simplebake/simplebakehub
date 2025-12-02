@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { checkIPBlocked, checkAndAutoBlock } from '../_shared/ipBlocking.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,6 +32,19 @@ serve(async (req) => {
   const endpoint = 'predict-issues';
 
   try {
+    // Check if IP is blocked
+    const blockCheck = await checkIPBlocked(supabase, clientIP);
+    if (blockCheck.isBlocked) {
+      console.log(`Blocked IP attempt: ${clientIP}`);
+      return new Response(
+        JSON.stringify({ 
+          error: "Access denied. Your IP address has been blocked.",
+          reason: blockCheck.reason
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Rate limiting: 60 requests per hour per IP
     const windowStart = new Date();
     windowStart.setMinutes(0, 0, 0);
@@ -45,6 +59,7 @@ serve(async (req) => {
 
     if (rateLimitData && rateLimitData.request_count >= 60) {
       console.log(`Rate limit exceeded for IP: ${clientIP}`);
+      await checkAndAutoBlock(supabase, clientIP, endpoint);
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Maximum 60 requests per hour." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }

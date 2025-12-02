@@ -244,6 +244,45 @@ export type Database = {
           },
         ]
       }
+      blocked_ips: {
+        Row: {
+          auto_blocked: boolean
+          blocked_at: string
+          blocked_by: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          ip_address: string
+          is_active: boolean
+          reason: string
+          violation_count: number
+        }
+        Insert: {
+          auto_blocked?: boolean
+          blocked_at?: string
+          blocked_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          ip_address: string
+          is_active?: boolean
+          reason: string
+          violation_count?: number
+        }
+        Update: {
+          auto_blocked?: boolean
+          blocked_at?: string
+          blocked_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          ip_address?: string
+          is_active?: boolean
+          reason?: string
+          violation_count?: number
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           created_at: string | null
@@ -508,9 +547,19 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      rate_limit_violations: {
+        Row: {
+          endpoint: string | null
+          ip_address: string | null
+          last_violation: string | null
+          max_requests: number | null
+          violation_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      cleanup_expired_blocks: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
       has_role: {

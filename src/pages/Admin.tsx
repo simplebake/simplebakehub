@@ -11,6 +11,7 @@ import { Loader2, Shield, User, Crown } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { AuditLogsViewer } from '@/components/AuditLogsViewer';
 import { SecurityDashboard } from '@/components/SecurityDashboard';
+import { BlockedIPsManager } from '@/components/BlockedIPsManager';
 
 interface UserWithRole {
   id: string;
@@ -180,8 +181,9 @@ const Admin = () => {
           </Card>
         </div>
 
-        <div className="mb-8">
+        <div className="space-y-8 mb-8">
           <SecurityDashboard />
+          <BlockedIPsManager />
         </div>
 
         <Card>
