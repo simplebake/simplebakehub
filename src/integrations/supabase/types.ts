@@ -595,6 +595,26 @@ export type Database = {
       cleanup_expired_blocks: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      get_rate_limit_violations: {
+        Args: never
+        Returns: {
+          endpoint: string
+          ip_address: string
+          last_violation: string
+          max_requests: number
+          violation_count: number
+        }[]
+      }
+      get_rate_limit_violations_admin: {
+        Args: never
+        Returns: {
+          endpoint: string
+          ip_address: string
+          last_violation: string
+          max_requests: number
+          violation_count: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
