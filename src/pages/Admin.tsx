@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,6 +12,7 @@ import { AuditLogsViewer } from '@/components/AuditLogsViewer';
 import { SecurityDashboard } from '@/components/SecurityDashboard';
 import { BlockedIPsManager } from '@/components/BlockedIPsManager';
 import { SecurityAnalytics } from '@/components/SecurityAnalytics';
+import { maskEmail } from '@/lib/emailMasking';
 
 interface UserWithRole {
   id: string;
@@ -209,7 +209,7 @@ const Admin = () => {
               <TableBody>
                 {users.map((u) => (
                   <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.email}</TableCell>
+                    <TableCell className="font-medium">{maskEmail(u.email)}</TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">
                       {u.id.substring(0, 8)}...
                     </TableCell>
