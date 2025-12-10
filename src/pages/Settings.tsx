@@ -1,6 +1,6 @@
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText, MessageSquare, BookOpen } from "lucide-react";
+import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText, MessageSquare, BookOpen, GraduationCap } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -12,7 +12,7 @@ import { RoleAccessGuide } from "@/components/RoleAccessGuide";
 
 const Settings = () => {
   const { user, loading } = useAuth();
-  const { isAdmin, isModerator, isStaff } = useUserRole();
+  const { isAdmin, isModerator, isSupport, isStaff } = useUserRole();
   const navigate = useNavigate();
   const [showUserRoles, setShowUserRoles] = useState(false);
   const [showAuditLogs, setShowAuditLogs] = useState(false);
@@ -131,8 +131,8 @@ const Settings = () => {
     },
   ];
 
-  // Cards visible to both admin and moderator
-  const staffCards: Array<{
+  // Cards visible to admin and moderator
+  const moderatorCards: Array<{
     title: string;
     description: string;
     icon: typeof Shield;
@@ -149,16 +149,73 @@ const Settings = () => {
     },
   ];
 
+  // Cards visible to support role
+  const supportCards: Array<{
+    title: string;
+    description: string;
+    icon: typeof Shield;
+    href?: string | null;
+    onClick?: () => void;
+    isExpanded?: boolean;
+  }> = [
+    {
+      title: "Tutorials Management",
+      description: "Create and manage tutorial content",
+      icon: GraduationCap,
+      href: "/tutorials",
+    },
+  ];
+
   // Combine cards based on role
   const getAdminCards = () => {
     if (isAdmin) {
-      return [...adminOnlyCards.slice(0, 3), ...staffCards, adminOnlyCards[3], adminOnlyCards[4]];
+      return [...adminOnlyCards.slice(0, 3), ...moderatorCards, adminOnlyCards[3], adminOnlyCards[4], ...supportCards];
     }
-    // Moderators only see customer messages
-    return staffCards;
+    if (isModerator) {
+      return moderatorCards;
+    }
+    if (isSupport) {
+      return supportCards;
+    }
+    return [];
   };
 
   const adminCards = getAdminCards();
+
+  const getSectionTitle = () => {
+    if (isAdmin) return 'Administration';
+    if (isModerator) return 'Moderation';
+    if (isSupport) return 'Content Management';
+    return '';
+  };
+
+  const getCardBorderColor = () => {
+    if (isAdmin) return 'border-destructive/20';
+    if (isModerator) return 'border-blue-500/20';
+    if (isSupport) return 'border-green-500/20';
+    return '';
+  };
+
+  const getCardHoverColor = () => {
+    if (isAdmin) return 'hover:bg-destructive/5';
+    if (isModerator) return 'hover:bg-blue-500/5';
+    if (isSupport) return 'hover:bg-green-500/5';
+    return '';
+  };
+
+  const getIconBgColor = () => {
+    if (isAdmin) return 'bg-destructive/10';
+    if (isModerator) return 'bg-blue-500/10';
+    if (isSupport) return 'bg-green-500/10';
+    return '';
+  };
+
+  const getIconColor = () => {
+    if (isAdmin) return 'text-destructive';
+    if (isModerator) return 'text-blue-500';
+    if (isSupport) return 'text-green-500';
+    return '';
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -206,17 +263,17 @@ const Settings = () => {
           </div>
         </section>
 
-        {/* Administration (Staff - Admin & Moderator) */}
-        {isStaff && (
+        {/* Administration (Staff - Admin, Moderator, Support) */}
+        {isStaff && adminCards.length > 0 && (
           <section className="mb-10">
             <h2 className="text-lg font-semibold text-foreground mb-4">
-              {isAdmin ? 'Administration' : 'Moderation'}
+              {getSectionTitle()}
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {adminCards.map((card) => (
                 <Card 
                   key={card.title} 
-                  className={`group transition-all ${isAdmin ? 'border-destructive/20' : 'border-blue-500/20'} ${(card.href || card.onClick) ? 'cursor-pointer hover:bg-destructive/5 hover:shadow-md' : 'opacity-75'}`}
+                  className={`group transition-all ${getCardBorderColor()} ${(card.href || card.onClick) ? `cursor-pointer ${getCardHoverColor()} hover:shadow-md` : 'opacity-75'}`}
                   onClick={() => {
                     if (card.onClick) card.onClick();
                     else if (card.href) navigate(card.href);
@@ -224,8 +281,8 @@ const Settings = () => {
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
-                      <div className={`p-2 rounded-lg ${isAdmin ? 'bg-destructive/10' : 'bg-blue-500/10'}`}>
-                        <card.icon className={`h-5 w-5 ${isAdmin ? 'text-destructive' : 'text-blue-500'}`} />
+                      <div className={`p-2 rounded-lg ${getIconBgColor()}`}>
+                        <card.icon className={`h-5 w-5 ${getIconColor()}`} />
                       </div>
                       {(card.href || card.onClick) && (
                         <ChevronRight className={`h-4 w-4 text-muted-foreground group-hover:text-foreground transition-all ${card.isExpanded ? 'rotate-90' : ''}`} />
@@ -259,8 +316,8 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Customer Messages Panel (Staff) */}
-            {showCustomerMessages && (
+            {/* Customer Messages Panel (Admin & Moderator) */}
+            {(isAdmin || isModerator) && showCustomerMessages && (
               <div className="mt-6">
                 <CustomerMessagesManager />
               </div>

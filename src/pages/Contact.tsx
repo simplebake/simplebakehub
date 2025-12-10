@@ -55,15 +55,28 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from("customer_messages").insert({
+      // Insert the message
+      const { data: insertedMessage, error } = await supabase.from("customer_messages").insert({
         user_id: user?.id,
         subject: result.data.subject,
         category: result.data.category,
         message: result.data.message,
         email: user?.email,
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // Notify moderators via edge function (fire and forget)
+      supabase.functions.invoke('notify-moderators', {
+        body: {
+          messageId: insertedMessage.id,
+          subject: result.data.subject,
+          category: result.data.category,
+          message: result.data.message,
+        }
+      }).catch((notifyError) => {
+        console.error('Failed to notify moderators:', notifyError);
+      });
 
       toast({
         title: "Message sent!",

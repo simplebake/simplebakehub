@@ -32,3 +32,6 @@ verify_jwt = true
 
 [functions.check-achievements]
 verify_jwt = true
+
+[functions.notify-moderators]
+verify_jwt = false
