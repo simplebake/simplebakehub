@@ -44,48 +44,50 @@ export const Header = () => {
   };
 
   return (
-    <header className="border-b border-border bg-card">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <NavLink to="/" className="flex items-center gap-2 text-xl font-bold text-primary">
-            <ChefHat className="h-6 w-6" />
-            Simple Bake Lab
+    <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <div className="container mx-auto px-4 max-w-7xl">
+        <div className="flex h-16 items-center justify-between">
+          <NavLink to="/" className="flex items-center gap-2 text-xl font-semibold text-foreground hover:text-primary transition-colors">
+            <ChefHat className="h-6 w-6 text-primary" />
+            <span className="hidden sm:inline">Simple Bake Lab</span>
           </NavLink>
 
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-1 sm:gap-2">
             {user ? (
               <>
                 {navItems.map((item) => (
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    activeClassName="text-foreground"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
+                    activeClassName="text-foreground bg-muted"
                     aria-label={item.ariaLabel}
                   >
                     <item.icon className="h-4 w-4" />
-                    {item.label}
+                    <span className="hidden md:inline">{item.label}</span>
                   </NavLink>
                 ))}
-                <CartDrawer />
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
+                <div className="ml-2 flex items-center gap-2">
+                  <CartDrawer />
+                  <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
+                    <LogOut className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-2">Logout</span>
+                  </Button>
+                </div>
               </>
             ) : (
-              <>
+              <div className="flex items-center gap-2">
                 <NavLink
                   to="/shop"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   activeClassName="text-foreground"
                 >
                   Shop
                 </NavLink>
                 <NavLink to="/auth">
-                  <Button>Sign In</Button>
+                  <Button size="sm">Sign In</Button>
                 </NavLink>
-              </>
+              </div>
             )}
           </nav>
         </div>

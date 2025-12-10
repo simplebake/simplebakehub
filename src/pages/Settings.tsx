@@ -1,8 +1,9 @@
 import { Header } from "@/components/Header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Cog, User, Bell, Shield, Palette, Database, Key } from "lucide-react";
+import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 
@@ -19,7 +20,7 @@ const Settings = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
@@ -27,44 +28,68 @@ const Settings = () => {
 
   if (!user) return null;
 
-  const settingsItems = [
+  const settingsCards = [
     {
-      title: "Profile",
-      description: "Manage your personal information and preferences",
-      icon: User,
+      title: "App Settings",
+      description: "Branding, app name, logo, and general configuration",
+      icon: Palette,
+      href: null,
+      category: "general",
+    },
+    {
+      title: "Integrations",
+      description: "Connect with Shopify and other third-party services",
+      icon: Link2,
+      href: null,
+      category: "general",
+    },
+    {
+      title: "User Preferences",
+      description: "Default date range, target margin, timezone settings",
+      icon: Calendar,
       href: "/profile",
+      category: "general",
     },
     {
       title: "Notifications",
-      description: "Configure email and push notification settings",
+      description: "Configure alert rules and notification preferences",
       icon: Bell,
       href: null,
+      category: "general",
     },
     {
-      title: "Appearance",
-      description: "Customise the look and feel of your experience",
-      icon: Palette,
-      href: null,
+      title: "Security & Access",
+      description: "Manage team roles, permissions, and security settings",
+      icon: Lock,
+      href: isAdmin ? "/admin" : null,
+      category: "security",
     },
     {
-      title: "Privacy & Security",
-      description: "Manage your data and security settings",
-      icon: Key,
-      href: null,
+      title: "Profile",
+      description: "Manage your personal information and account details",
+      icon: User,
+      href: "/profile",
+      category: "general",
     },
   ];
 
-  const adminItems = [
+  const adminCards = [
     {
       title: "Admin Dashboard",
-      description: "Access security monitoring and user management",
+      description: "Security monitoring, audit logs, and system health",
       icon: Shield,
       href: "/admin",
     },
     {
-      title: "Database",
-      description: "View and manage application data",
-      icon: Database,
+      title: "User Management",
+      description: "Manage user accounts and access permissions",
+      icon: Users,
+      href: "/admin",
+    },
+    {
+      title: "Performance Targets",
+      description: "Set and monitor business KPIs and goals",
+      icon: Target,
       href: null,
     },
   ];
@@ -72,77 +97,84 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your account settings and preferences
+          <h1 className="text-3xl font-semibold text-foreground">Settings</h1>
+          <p className="text-muted-foreground mt-1">
+            Configure your account, preferences, and application settings
           </p>
         </div>
 
-        <div className="space-y-8">
+        {/* General Settings */}
+        <section className="mb-10">
+          <h2 className="text-lg font-semibold text-foreground mb-4">General Settings</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {settingsCards.map((card) => (
+              <Card 
+                key={card.title} 
+                className={`group transition-all ${card.href ? 'cursor-pointer hover:bg-muted/50 hover:shadow-md' : 'opacity-75'}`}
+                onClick={() => card.href && navigate(card.href)}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <card.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    {card.href && (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <CardTitle className="text-base mb-1">{card.title}</CardTitle>
+                  <CardDescription className="text-sm">
+                    {card.description}
+                  </CardDescription>
+                  {!card.href && (
+                    <p className="text-xs text-muted-foreground mt-2">Coming soon</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* Administration (Admin Only) */}
+        {isAdmin && (
           <section>
-            <h2 className="text-xl font-semibold text-foreground mb-4">Account Settings</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {settingsItems.map((item) => (
+            <h2 className="text-lg font-semibold text-foreground mb-4">Administration</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {adminCards.map((card) => (
                 <Card 
-                  key={item.title} 
-                  className={`hover:shadow-lg transition-shadow ${item.href ? 'cursor-pointer' : 'opacity-75'}`}
-                  onClick={() => item.href && navigate(item.href)}
+                  key={card.title} 
+                  className={`group transition-all border-destructive/20 ${card.href ? 'cursor-pointer hover:bg-destructive/5 hover:shadow-md' : 'opacity-75'}`}
+                  onClick={() => card.href && navigate(card.href)}
                 >
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <item.icon className="h-5 w-5 text-primary" />
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="p-2 rounded-lg bg-destructive/10">
+                        <card.icon className="h-5 w-5 text-destructive" />
                       </div>
-                      <div>
-                        <CardTitle className="text-lg">{item.title}</CardTitle>
-                        {!item.href && (
-                          <span className="text-xs text-muted-foreground">Coming soon</span>
-                        )}
-                      </div>
+                      {card.href && (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      )}
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <CardDescription>{item.description}</CardDescription>
+                  <CardContent className="pt-0">
+                    <CardTitle className="text-base mb-1">{card.title}</CardTitle>
+                    <CardDescription className="text-sm">
+                      {card.description}
+                    </CardDescription>
+                    {!card.href && (
+                      <p className="text-xs text-muted-foreground mt-2">Coming soon</p>
+                    )}
                   </CardContent>
                 </Card>
               ))}
             </div>
           </section>
-
-          {isAdmin && (
-            <section>
-              <h2 className="text-xl font-semibold text-foreground mb-4">Administration</h2>
-              <div className="grid gap-4 md:grid-cols-2">
-                {adminItems.map((item) => (
-                  <Card 
-                    key={item.title} 
-                    className={`hover:shadow-lg transition-shadow ${item.href ? 'cursor-pointer' : 'opacity-75'}`}
-                    onClick={() => item.href && navigate(item.href)}
-                  >
-                    <CardHeader>
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-destructive/10">
-                          <item.icon className="h-5 w-5 text-destructive" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg">{item.title}</CardTitle>
-                          {!item.href && (
-                            <span className="text-xs text-muted-foreground">Coming soon</span>
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription>{item.description}</CardDescription>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
+        )}
       </main>
     </div>
   );
