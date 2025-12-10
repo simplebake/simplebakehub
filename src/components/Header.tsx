@@ -4,20 +4,38 @@ import { useAuth } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/auditLogger";
 import { useNavigate } from "react-router-dom";
-import { ChefHat, LogOut, Shield, User } from "lucide-react";
+import { ChefHat, LogOut, Home, Megaphone, Cog } from "lucide-react";
 import { CartDrawer } from "./CartDrawer";
-import { useUserRole } from "@/hooks/useUserRole";
+
+const navItems = [
+  {
+    label: "Home",
+    path: "/",
+    icon: Home,
+    ariaLabel: "Home overview",
+  },
+  {
+    label: "Marketing & Customers",
+    path: "/marketing",
+    icon: Megaphone,
+    ariaLabel: "Marketing and customer tools",
+  },
+  {
+    label: "Settings",
+    path: "/settings",
+    icon: Cog,
+    ariaLabel: "Settings and admin",
+  },
+];
 
 export const Header = () => {
   const { user } = useAuth();
-  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     const userId = user?.id;
     await supabase.auth.signOut();
     
-    // Log signout event
     if (userId) {
       await logAuthEvent('signout', userId);
     }
@@ -37,55 +55,19 @@ export const Header = () => {
           <nav className="flex items-center gap-6">
             {user ? (
               <>
-                <NavLink
-                  to="/dashboard"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  activeClassName="text-foreground"
-                >
-                  Dashboard
-                </NavLink>
-                <NavLink
-                  to="/premixes"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  activeClassName="text-foreground"
-                >
-                  Guided Bakes
-                </NavLink>
-                <NavLink
-                  to="/tutorials"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  activeClassName="text-foreground"
-                >
-                  Tutorials
-                </NavLink>
-                <NavLink
-                  to="/shop"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  activeClassName="text-foreground"
-                >
-                  Shop
-                </NavLink>
-                <NavLink
-                  to="/share"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  activeClassName="text-foreground"
-                >
-                  Share Your Bake
-                </NavLink>
-                {isAdmin && (
+                {navItems.map((item) => (
                   <NavLink
-                    to="/admin"
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    key={item.path}
+                    to={item.path}
+                    className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     activeClassName="text-foreground"
+                    aria-label={item.ariaLabel}
                   >
-                    <Shield className="h-4 w-4 inline mr-1" />
-                    Admin
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
                   </NavLink>
-                )}
+                ))}
                 <CartDrawer />
-                <Button variant="ghost" size="sm" onClick={() => navigate("/profile")}>
-                  <User className="h-4 w-4" />
-                </Button>
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Logout
