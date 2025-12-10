@@ -8,6 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, User, Crown, Users } from 'lucide-react';
 import { maskEmail } from '@/lib/emailMasking';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface UserWithRole {
   id: string;
@@ -22,6 +32,12 @@ export const UserRoleManager = () => {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [pendingRoleChange, setPendingRoleChange] = useState<{
+    userId: string;
+    email: string;
+    currentRole: string;
+    newRole: 'admin' | 'user';
+  } | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -67,9 +83,19 @@ export const UserRoleManager = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: 'admin' | 'user') => {
+  const requestRoleChange = (userId: string, email: string, currentRole: string, newRole: 'admin' | 'user') => {
+    if (currentRole === newRole) return;
+    setPendingRoleChange({ userId, email, currentRole, newRole });
+  };
+
+  const confirmRoleChange = async () => {
+    if (!pendingRoleChange) return;
+    
+    const { userId, newRole } = pendingRoleChange;
+    
     try {
       setUpdating(userId);
+      setPendingRoleChange(null);
 
       await supabase
         .from('user_roles')
@@ -196,7 +222,7 @@ export const UserRoleManager = () => {
                   <TableCell className="text-right">
                     <Select
                       value={u.role || 'user'}
-                      onValueChange={(value) => updateUserRole(u.id, value as 'admin' | 'user')}
+                      onValueChange={(value) => requestRoleChange(u.id, u.email, u.role || 'user', value as 'admin' | 'user')}
                       disabled={u.id === user?.id || updating === u.id}
                     >
                       <SelectTrigger className="w-[120px]">
@@ -218,6 +244,30 @@ export const UserRoleManager = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={!!pendingRoleChange} onOpenChange={() => setPendingRoleChange(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Role Change</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to change the role for <strong>{pendingRoleChange?.email ? maskEmail(pendingRoleChange.email) : ''}</strong> from{' '}
+              <strong>{pendingRoleChange?.currentRole}</strong> to <strong>{pendingRoleChange?.newRole}</strong>?
+              {pendingRoleChange?.newRole === 'admin' && (
+                <span className="block mt-2 text-destructive">
+                  Warning: Admin users have full access to all system settings and user management.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRoleChange}>
+              Confirm Change
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
