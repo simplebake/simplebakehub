@@ -1,9 +1,14 @@
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Megaphone, Users, Mail, TrendingUp, Gift, Target } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Megaphone, Users, Mail, TrendingUp, Gift, Target, BarChart3 } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { BakingTrendsChart } from "@/components/analytics/BakingTrendsChart";
+import { SuccessRatingChart } from "@/components/analytics/SuccessRatingChart";
+import { PopularPremixesChart } from "@/components/analytics/PopularPremixesChart";
+import { EngagementMetrics } from "@/components/analytics/EngagementMetrics";
 
 const Marketing = () => {
   const { user, loading } = useAuth();
@@ -27,19 +32,9 @@ const Marketing = () => {
 
   const marketingFeatures = [
     {
-      title: "Customer Insights",
-      description: "View baking patterns, preferences, and engagement metrics",
-      icon: Users,
-    },
-    {
       title: "Email Campaigns",
       description: "Create and manage email communications with your customers",
       icon: Mail,
-    },
-    {
-      title: "Analytics",
-      description: "Track sales trends, popular products, and conversion rates",
-      icon: TrendingUp,
     },
     {
       title: "Promotions",
@@ -69,33 +64,76 @@ const Marketing = () => {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {marketingFeatures.map((feature) => (
-            <Card key={feature.title} className="hover:shadow-lg transition-shadow cursor-pointer">
+        <Tabs defaultValue="analytics" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="customers" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Customers
+            </TabsTrigger>
+            <TabsTrigger value="campaigns" className="flex items-center gap-2">
+              <Megaphone className="h-4 w-4" />
+              Campaigns
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <EngagementMetrics />
+            
+            <div className="grid gap-6 lg:grid-cols-2">
+              <BakingTrendsChart />
+              <SuccessRatingChart />
+            </div>
+
+            <PopularPremixesChart />
+          </TabsContent>
+
+          <TabsContent value="customers" className="space-y-6">
+            <Card>
               <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <feature.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
-                </div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Customer Insights
+                </CardTitle>
+                <CardDescription>
+                  View baking patterns, preferences, and engagement metrics
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <CardDescription>{feature.description}</CardDescription>
+                <p className="text-muted-foreground">
+                  Customer segmentation and detailed insights are coming soon. 
+                  Check the Analytics tab for current engagement data.
+                </p>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          </TabsContent>
 
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Coming Soon</CardTitle>
-            <CardDescription>
-              These marketing tools are being developed to help you grow your baking business.
-              Check back soon for updates!
-            </CardDescription>
-          </CardHeader>
-        </Card>
+          <TabsContent value="campaigns" className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              {marketingFeatures.map((feature) => (
+                <Card key={feature.title} className="hover:shadow-lg transition-shadow cursor-pointer opacity-75">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <feature.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{feature.title}</CardTitle>
+                        <span className="text-xs text-muted-foreground">Coming soon</span>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription>{feature.description}</CardDescription>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
