@@ -1,17 +1,19 @@
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight } from "lucide-react";
+import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { UserRoleManager } from "@/components/UserRoleManager";
+import { AuditLogsViewer } from "@/components/AuditLogsViewer";
 
 const Settings = () => {
   const { user, loading } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const [showUserRoles, setShowUserRoles] = useState(false);
+  const [showAuditLogs, setShowAuditLogs] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -85,7 +87,15 @@ const Settings = () => {
       title: "User Role Management",
       description: "Manage user accounts and access permissions",
       icon: Users,
-      onClick: () => setShowUserRoles(!showUserRoles),
+      onClick: () => { setShowUserRoles(!showUserRoles); setShowAuditLogs(false); },
+      isExpanded: showUserRoles,
+    },
+    {
+      title: "Audit Logs",
+      description: "Review security events and system activity",
+      icon: FileText,
+      onClick: () => { setShowAuditLogs(!showAuditLogs); setShowUserRoles(false); },
+      isExpanded: showAuditLogs,
     },
     {
       title: "Performance Targets",
@@ -161,7 +171,7 @@ const Settings = () => {
                         <card.icon className="h-5 w-5 text-destructive" />
                       </div>
                       {(card.href || card.onClick) && (
-                        <ChevronRight className={`h-4 w-4 text-muted-foreground group-hover:text-foreground transition-all ${card.onClick && showUserRoles ? 'rotate-90' : ''}`} />
+                        <ChevronRight className={`h-4 w-4 text-muted-foreground group-hover:text-foreground transition-all ${card.isExpanded ? 'rotate-90' : ''}`} />
                       )}
                     </div>
                   </CardHeader>
@@ -182,6 +192,13 @@ const Settings = () => {
             {showUserRoles && (
               <div className="mt-6">
                 <UserRoleManager />
+              </div>
+            )}
+
+            {/* Audit Logs Panel */}
+            {showAuditLogs && (
+              <div className="mt-6">
+                <AuditLogsViewer />
               </div>
             )}
           </section>
