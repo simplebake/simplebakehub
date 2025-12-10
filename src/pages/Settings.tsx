@@ -1,12 +1,13 @@
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText } from "lucide-react";
+import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText, MessageSquare } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { UserRoleManager } from "@/components/UserRoleManager";
 import { AuditLogsViewer } from "@/components/AuditLogsViewer";
+import { CustomerMessagesManager } from "@/components/CustomerMessagesManager";
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -14,6 +15,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const [showUserRoles, setShowUserRoles] = useState(false);
   const [showAuditLogs, setShowAuditLogs] = useState(false);
+  const [showCustomerMessages, setShowCustomerMessages] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -87,15 +89,22 @@ const Settings = () => {
       title: "User Role Management",
       description: "Manage user accounts and access permissions",
       icon: Users,
-      onClick: () => { setShowUserRoles(!showUserRoles); setShowAuditLogs(false); },
+      onClick: () => { setShowUserRoles(!showUserRoles); setShowAuditLogs(false); setShowCustomerMessages(false); },
       isExpanded: showUserRoles,
     },
     {
       title: "Audit Logs",
       description: "Review security events and system activity",
       icon: FileText,
-      onClick: () => { setShowAuditLogs(!showAuditLogs); setShowUserRoles(false); },
+      onClick: () => { setShowAuditLogs(!showAuditLogs); setShowUserRoles(false); setShowCustomerMessages(false); },
       isExpanded: showAuditLogs,
+    },
+    {
+      title: "Customer Messages",
+      description: "View and respond to customer feedback and support requests",
+      icon: MessageSquare,
+      onClick: () => { setShowCustomerMessages(!showCustomerMessages); setShowUserRoles(false); setShowAuditLogs(false); },
+      isExpanded: showCustomerMessages,
     },
     {
       title: "Performance Targets",
@@ -199,6 +208,13 @@ const Settings = () => {
             {showAuditLogs && (
               <div className="mt-6">
                 <AuditLogsViewer />
+              </div>
+            )}
+
+            {/* Customer Messages Panel */}
+            {showCustomerMessages && (
+              <div className="mt-6">
+                <CustomerMessagesManager />
               </div>
             )}
           </section>
