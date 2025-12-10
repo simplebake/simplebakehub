@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Crown, Users } from 'lucide-react';
+import { Loader2, User, Crown, Users, Shield } from 'lucide-react';
 import { maskEmail } from '@/lib/emailMasking';
 import {
   AlertDialog,
@@ -23,7 +23,7 @@ interface UserWithRole {
   id: string;
   email: string;
   created_at: string;
-  role: 'admin' | 'user' | null;
+  role: 'admin' | 'moderator' | 'user' | null;
 }
 
 export const UserRoleManager = () => {
@@ -36,7 +36,7 @@ export const UserRoleManager = () => {
     userId: string;
     email: string;
     currentRole: string;
-    newRole: 'admin' | 'user';
+    newRole: 'admin' | 'moderator' | 'user';
   } | null>(null);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export const UserRoleManager = () => {
       if (rolesError) throw rolesError;
 
       const rolesMap = new Map(
-        rolesData?.map(r => [r.user_id, r.role as 'admin' | 'user']) || []
+        rolesData?.map(r => [r.user_id, r.role as 'admin' | 'moderator' | 'user']) || []
       );
 
       const usersWithRoles: UserWithRole[] = profilesData?.map(profile => ({
@@ -83,7 +83,7 @@ export const UserRoleManager = () => {
     }
   };
 
-  const requestRoleChange = (userId: string, email: string, currentRole: string, newRole: 'admin' | 'user') => {
+  const requestRoleChange = (userId: string, email: string, currentRole: string, newRole: 'admin' | 'moderator' | 'user') => {
     if (currentRole === newRole) return;
     setPendingRoleChange({ userId, email, currentRole, newRole });
   };
@@ -149,12 +149,13 @@ export const UserRoleManager = () => {
   }
 
   const adminCount = users.filter(u => u.role === 'admin').length;
+  const moderatorCount = users.filter(u => u.role === 'moderator').length;
   const userCount = users.filter(u => u.role === 'user').length;
 
   return (
     <div className="space-y-4">
       {/* Summary Cards */}
-      <div className="grid gap-4 grid-cols-3">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
@@ -169,6 +170,14 @@ export const UserRoleManager = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">{adminCount}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Moderators</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{moderatorCount}</div>
           </CardContent>
         </Card>
         <Card>
@@ -207,9 +216,14 @@ export const UserRoleManager = () => {
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">{maskEmail(u.email)}</TableCell>
                   <TableCell>
-                    <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
+                    <Badge 
+                      variant={u.role === 'admin' ? 'default' : 'secondary'}
+                      className={u.role === 'moderator' ? 'bg-blue-100 text-blue-700' : ''}
+                    >
                       {u.role === 'admin' ? (
                         <Crown className="h-3 w-3 mr-1" />
+                      ) : u.role === 'moderator' ? (
+                        <Shield className="h-3 w-3 mr-1" />
                       ) : (
                         <User className="h-3 w-3 mr-1" />
                       )}
@@ -222,10 +236,10 @@ export const UserRoleManager = () => {
                   <TableCell className="text-right">
                     <Select
                       value={u.role || 'user'}
-                      onValueChange={(value) => requestRoleChange(u.id, u.email, u.role || 'user', value as 'admin' | 'user')}
+                      onValueChange={(value) => requestRoleChange(u.id, u.email, u.role || 'user', value as 'admin' | 'moderator' | 'user')}
                       disabled={u.id === user?.id || updating === u.id}
                     >
-                      <SelectTrigger className="w-[120px]">
+                      <SelectTrigger className="w-[130px]">
                         {updating === u.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
@@ -234,6 +248,7 @@ export const UserRoleManager = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="moderator">Moderator</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>
