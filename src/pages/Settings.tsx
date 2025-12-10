@@ -1,16 +1,17 @@
 import { Header } from "@/components/Header";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { UserRoleManager } from "@/components/UserRoleManager";
 
 const Settings = () => {
   const { user, loading } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
+  const [showUserRoles, setShowUserRoles] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -81,10 +82,10 @@ const Settings = () => {
       href: "/admin",
     },
     {
-      title: "User Management",
+      title: "User Role Management",
       description: "Manage user accounts and access permissions",
       icon: Users,
-      href: "/admin",
+      onClick: () => setShowUserRoles(!showUserRoles),
     },
     {
       title: "Performance Targets",
@@ -142,22 +143,25 @@ const Settings = () => {
 
         {/* Administration (Admin Only) */}
         {isAdmin && (
-          <section>
+          <section className="mb-10">
             <h2 className="text-lg font-semibold text-foreground mb-4">Administration</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {adminCards.map((card) => (
                 <Card 
                   key={card.title} 
-                  className={`group transition-all border-destructive/20 ${card.href ? 'cursor-pointer hover:bg-destructive/5 hover:shadow-md' : 'opacity-75'}`}
-                  onClick={() => card.href && navigate(card.href)}
+                  className={`group transition-all border-destructive/20 ${(card.href || card.onClick) ? 'cursor-pointer hover:bg-destructive/5 hover:shadow-md' : 'opacity-75'}`}
+                  onClick={() => {
+                    if (card.onClick) card.onClick();
+                    else if (card.href) navigate(card.href);
+                  }}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="p-2 rounded-lg bg-destructive/10">
                         <card.icon className="h-5 w-5 text-destructive" />
                       </div>
-                      {card.href && (
-                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      {(card.href || card.onClick) && (
+                        <ChevronRight className={`h-4 w-4 text-muted-foreground group-hover:text-foreground transition-all ${card.onClick && showUserRoles ? 'rotate-90' : ''}`} />
                       )}
                     </div>
                   </CardHeader>
@@ -166,13 +170,20 @@ const Settings = () => {
                     <CardDescription className="text-sm">
                       {card.description}
                     </CardDescription>
-                    {!card.href && (
+                    {!card.href && !card.onClick && (
                       <p className="text-xs text-muted-foreground mt-2">Coming soon</p>
                     )}
                   </CardContent>
                 </Card>
               ))}
             </div>
+
+            {/* User Role Management Panel */}
+            {showUserRoles && (
+              <div className="mt-6">
+                <UserRoleManager />
+              </div>
+            )}
           </section>
         )}
       </main>
