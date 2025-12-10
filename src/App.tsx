@@ -16,6 +16,8 @@ import Tutorials from "./pages/Tutorials";
 import ShareBake from "./pages/ShareBake";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
+import Marketing from "./pages/Marketing";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +44,8 @@ const App = () => {
               <Route path="/premixes/:id/bake" element={<GuidedBake />} />
               <Route path="/tutorials" element={<Tutorials />} />
               <Route path="/share" element={<ShareBake />} />
+              <Route path="/marketing" element={<Marketing />} />
+              <Route path="/settings" element={<Settings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
