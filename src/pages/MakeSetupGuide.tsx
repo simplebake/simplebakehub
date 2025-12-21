@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Copy, Download, ExternalLink, Check, Shield, Zap, CheckCircle2, Play, Loader2, AlertCircle, CheckCircle, Key, Save } from "lucide-react";
+import { ArrowLeft, Copy, Download, ExternalLink, Check, Shield, Zap, CheckCircle2, Play, Loader2, AlertCircle, CheckCircle, Key, Save, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface TestResult {
   success: boolean;
@@ -18,6 +20,7 @@ interface TestResult {
 }
 
 const MakeSetupGuide = () => {
+  const queryClient = useQueryClient();
   const [copied, setCopied] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
@@ -25,6 +28,24 @@ const MakeSetupGuide = () => {
   const [isSaving, setIsSaving] = useState(false);
   
   const incomingWebhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/incoming-webhook`;
+
+  // Fetch existing webhook config
+  const { data: savedConfig, isLoading: configLoading } = useQuery({
+    queryKey: ["webhook-config-saved"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      
+      const { data, error } = await supabase
+        .from("webhook_configs")
+        .select("secret_key, updated_at, created_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const makeBlueprint = {
     name: "Signed Webhook to Baking App",
@@ -199,6 +220,7 @@ const MakeSetupGuide = () => {
           .eq('id', existingConfig.id);
 
         if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ["webhook-config-saved"] });
         toast.success("Webhook configuration updated with new private key!");
       } else {
         // Create new config
@@ -212,6 +234,7 @@ const MakeSetupGuide = () => {
           });
 
         if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ["webhook-config-saved"] });
         toast.success("Webhook configuration saved with private key!");
       }
     } catch (error) {
@@ -341,14 +364,59 @@ const MakeSetupGuide = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Saved Key Status */}
+            {savedConfig && (
+              <div className="p-4 rounded-lg border border-green-200 bg-green-50 dark:border-green-900/50 dark:bg-green-950/20">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-green-700 dark:text-green-300">
+                        Private Key Saved
+                      </p>
+                      <Badge variant="outline" className="text-xs border-green-300 text-green-700 dark:border-green-700 dark:text-green-300">
+                        Active
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs font-mono text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
+                        {savedConfig.secret_key.substring(0, 8)}...{savedConfig.secret_key.substring(savedConfig.secret_key.length - 8)}
+                      </code>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="h-6 px-2 text-green-700 hover:text-green-800 hover:bg-green-100 dark:text-green-300 dark:hover:bg-green-900/30"
+                        onClick={() => copyToClipboard(savedConfig.secret_key, "Saved Key")}
+                      >
+                        {copied === "Saved Key" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        Last updated: {format(new Date(savedConfig.updated_at), "MMM d, yyyy 'at' h:mm a")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {configLoading && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Loading saved configuration...</span>
+              </div>
+            )}
+
             <Button onClick={generatePrivateKey} className="gap-2">
               <Key className="h-4 w-4" />
-              Generate New Key
+              {savedConfig ? "Generate New Key" : "Generate Key"}
             </Button>
             
             {generatedKey && (
               <div className="space-y-2">
-                <p className="text-sm font-medium">Your Private Key:</p>
+                <p className="text-sm font-medium">Your New Private Key:</p>
                 <div className="flex gap-2">
                   <code className="flex-1 bg-muted p-3 rounded-lg text-sm font-mono break-all">
                     {generatedKey}
@@ -378,7 +446,7 @@ const MakeSetupGuide = () => {
                   ) : (
                     <>
                       <Save className="h-4 w-4" />
-                      Save to Webhook Config
+                      {savedConfig ? "Update Webhook Config" : "Save to Webhook Config"}
                     </>
                   )}
                 </Button>
