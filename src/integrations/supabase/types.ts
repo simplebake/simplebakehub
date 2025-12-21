@@ -770,6 +770,45 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_configs: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          outgoing_url: string | null
+          retry_count: number
+          secret_key: string
+          subscribed_events: string[] | null
+          timeout_seconds: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          outgoing_url?: string | null
+          retry_count?: number
+          secret_key: string
+          subscribed_events?: string[] | null
+          timeout_seconds?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          outgoing_url?: string | null
+          retry_count?: number
+          secret_key?: string
+          subscribed_events?: string[] | null
+          timeout_seconds?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       webhook_logs: {
         Row: {
           created_at: string
