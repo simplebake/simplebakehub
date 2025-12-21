@@ -361,6 +361,99 @@ Headers:
     }
   };
 
+  const [isTestingSignature, setIsTestingSignature] = useState(false);
+  const [signatureTestResult, setSignatureTestResult] = useState<TestResult | null>(null);
+
+  const testSignatureValidation = async () => {
+    const secretKey = savedConfig?.secret_key || generatedKey;
+    
+    if (!secretKey) {
+      toast.error("Please generate and save a private key first");
+      return;
+    }
+
+    setIsTestingSignature(true);
+    setSignatureTestResult(null);
+    const startTime = Date.now();
+
+    try {
+      const payload = JSON.stringify({
+        eventType: "test.signature",
+        data: {
+          message: "Signature validation test",
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      const timestamp = new Date().toISOString();
+      
+      // Create HMAC signature using Web Crypto API
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(secretKey);
+      const messageData = encoder.encode(payload);
+      
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      
+      const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+      const signature = Array.from(new Uint8Array(signatureBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      // Send the signed request directly to the incoming-webhook endpoint
+      const response = await fetch(incomingWebhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Signature': signature,
+          'X-Webhook-Timestamp': timestamp,
+        },
+        body: payload,
+      });
+
+      const duration = Date.now() - startTime;
+      const responseData = await response.json().catch(() => null);
+
+      if (response.ok) {
+        setSignatureTestResult({
+          success: true,
+          status: response.status,
+          message: "Signature validated successfully! Your webhook is configured correctly.",
+          timestamp: new Date().toISOString(),
+          duration,
+          response: responseData
+        });
+        toast.success("Signature validation passed!");
+      } else {
+        setSignatureTestResult({
+          success: false,
+          status: response.status,
+          message: responseData?.error || `Validation failed with status ${response.status}`,
+          timestamp: new Date().toISOString(),
+          duration,
+          response: responseData
+        });
+        toast.error("Signature validation failed");
+      }
+    } catch (err) {
+      const duration = Date.now() - startTime;
+      setSignatureTestResult({
+        success: false,
+        message: err instanceof Error ? err.message : "Unknown error occurred",
+        timestamp: new Date().toISOString(),
+        duration
+      });
+      toast.error("Signature test failed");
+    } finally {
+      setIsTestingSignature(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -409,6 +502,113 @@ Headers:
                 Open Make.com
               </a>
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Visual Flow Diagram */}
+        <Card className="mb-8 border-blue-500/20 bg-blue-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-blue-500" />
+              Module Flow Diagram
+            </CardTitle>
+            <CardDescription>Visual overview of how your Make.com scenario should be connected</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto pb-4">
+              <div className="flex items-center gap-2 min-w-max">
+                {/* Module 1 - Trigger */}
+                <div className="flex flex-col items-center">
+                  <div className="w-28 h-20 rounded-lg border-2 border-purple-400 bg-purple-100 dark:bg-purple-900/30 flex flex-col items-center justify-center p-2">
+                    <Play className="h-5 w-5 text-purple-600 dark:text-purple-400 mb-1" />
+                    <span className="text-xs font-medium text-center text-purple-700 dark:text-purple-300">Trigger</span>
+                    <span className="text-[10px] text-purple-500 dark:text-purple-400">Module 1</span>
+                  </div>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex items-center">
+                  <div className="w-6 h-0.5 bg-muted-foreground/30" />
+                  <div className="w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-muted-foreground/30" />
+                </div>
+
+                {/* Module 2 - Set Payload */}
+                <div className="flex flex-col items-center">
+                  <div className="w-28 h-20 rounded-lg border-2 border-blue-400 bg-blue-100 dark:bg-blue-900/30 flex flex-col items-center justify-center p-2">
+                    <span className="text-lg mb-0.5">📦</span>
+                    <span className="text-xs font-medium text-center text-blue-700 dark:text-blue-300">Set Payload</span>
+                    <span className="text-[10px] text-blue-500 dark:text-blue-400">Module 2</span>
+                  </div>
+                  <code className="text-[10px] mt-1 text-muted-foreground">{"{{2.payload}}"}</code>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex items-center">
+                  <div className="w-6 h-0.5 bg-muted-foreground/30" />
+                  <div className="w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-muted-foreground/30" />
+                </div>
+
+                {/* Module 3 - Set Timestamp */}
+                <div className="flex flex-col items-center">
+                  <div className="w-28 h-20 rounded-lg border-2 border-cyan-400 bg-cyan-100 dark:bg-cyan-900/30 flex flex-col items-center justify-center p-2">
+                    <Clock className="h-5 w-5 text-cyan-600 dark:text-cyan-400 mb-1" />
+                    <span className="text-xs font-medium text-center text-cyan-700 dark:text-cyan-300">Set Timestamp</span>
+                    <span className="text-[10px] text-cyan-500 dark:text-cyan-400">Module 3</span>
+                  </div>
+                  <code className="text-[10px] mt-1 text-muted-foreground">{"{{3.timestamp}}"}</code>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex items-center">
+                  <div className="w-6 h-0.5 bg-muted-foreground/30" />
+                  <div className="w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-muted-foreground/30" />
+                </div>
+
+                {/* Module 4 - Sign */}
+                <div className="flex flex-col items-center">
+                  <div className="w-28 h-20 rounded-lg border-2 border-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 flex flex-col items-center justify-center p-2">
+                    <Key className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mb-1" />
+                    <span className="text-xs font-medium text-center text-yellow-700 dark:text-yellow-300">Encryptor Sign</span>
+                    <span className="text-[10px] text-yellow-500 dark:text-yellow-400">Module 4</span>
+                  </div>
+                  <code className="text-[10px] mt-1 text-muted-foreground">{"{{4.value}}"}</code>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex items-center">
+                  <div className="w-6 h-0.5 bg-muted-foreground/30" />
+                  <div className="w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-muted-foreground/30" />
+                </div>
+
+                {/* Module 5 - HTTP Request */}
+                <div className="flex flex-col items-center">
+                  <div className="w-28 h-20 rounded-lg border-2 border-green-400 bg-green-100 dark:bg-green-900/30 flex flex-col items-center justify-center p-2">
+                    <ExternalLink className="h-5 w-5 text-green-600 dark:text-green-400 mb-1" />
+                    <span className="text-xs font-medium text-center text-green-700 dark:text-green-300">HTTP Request</span>
+                    <span className="text-[10px] text-green-500 dark:text-green-400">Module 5</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Connection legend */}
+            <div className="mt-4 p-3 rounded-lg bg-muted/50 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Module Connections:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono bg-background px-1.5 py-0.5 rounded">{"{{2.payload}}"}</span>
+                  <span className="text-muted-foreground">→ Used in Module 4 & 5</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono bg-background px-1.5 py-0.5 rounded">{"{{3.timestamp}}"}</span>
+                  <span className="text-muted-foreground">→ HTTP header</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono bg-background px-1.5 py-0.5 rounded">{"{{4.value}}"}</span>
+                  <span className="text-muted-foreground">→ Signature header</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -611,8 +811,83 @@ Headers:
               </div>
             )}
 
+            <Separator className="my-4" />
+
+            {/* Signature Validation Test */}
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-primary" />
+                  Test Signature Validation
+                </h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Verify that the saved key correctly signs and validates webhook requests
+                </p>
+              </div>
+
+              <Button 
+                onClick={testSignatureValidation} 
+                disabled={isTestingSignature || (!savedConfig?.secret_key && !generatedKey)}
+                variant="secondary"
+                className="gap-2"
+              >
+                {isTestingSignature ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Validating Signature...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="h-4 w-4" />
+                    Test Signature Validation
+                  </>
+                )}
+              </Button>
+
+              {!savedConfig?.secret_key && !generatedKey && (
+                <p className="text-xs text-muted-foreground">
+                  Generate and save a private key above to test signature validation.
+                </p>
+              )}
+
+              {signatureTestResult && (
+                <div className={`p-4 rounded-lg border ${signatureTestResult.success ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900' : 'bg-destructive/10 border-destructive/20'}`}>
+                  <div className="flex items-start gap-3">
+                    {signatureTestResult.success ? (
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                    )}
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className={`font-medium ${signatureTestResult.success ? 'text-green-700 dark:text-green-300' : 'text-destructive'}`}>
+                          {signatureTestResult.success ? 'Signature Valid' : 'Signature Invalid'}
+                        </p>
+                        {signatureTestResult.duration && (
+                          <Badge variant="outline" className="text-xs">
+                            {signatureTestResult.duration}ms
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{signatureTestResult.message}</p>
+                      {signatureTestResult.response && (
+                        <div className="mt-3">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Response:</p>
+                          <pre className="bg-muted p-3 rounded text-xs font-mono overflow-x-auto max-h-40">
+                            {JSON.stringify(signatureTestResult.response, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Separator className="my-4" />
+
             <div className="text-sm text-muted-foreground">
-              <p>This test will:</p>
+              <p>The basic test will:</p>
               <ul className="list-disc list-inside mt-1 space-y-1">
                 <li>Send a <code className="bg-muted px-1 rounded">test.webhook</code> event to your configured endpoints</li>
                 <li>Show the response status and timing</li>
