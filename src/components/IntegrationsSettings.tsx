@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { 
@@ -34,7 +35,8 @@ import {
   ExternalLink,
   Heart,
   HeartOff,
-  Bell
+  Bell,
+  Copy
 } from "lucide-react";
 
 interface IntegrationConfig {
@@ -110,6 +112,13 @@ const authMethodLabels: Record<string, string> = {
   webhook: "Webhook URL",
 };
 
+const availableEvents = [
+  { id: "bake.created", label: "Bake Created", description: "When a user starts a new bake" },
+  { id: "bake.completed", label: "Bake Completed", description: "When a bake outcome is logged" },
+  { id: "order.placed", label: "Order Placed", description: "When a purchase is made" },
+  { id: "user.signup", label: "User Signup", description: "When a new user registers" },
+];
+
 export function IntegrationsSettings() {
   const queryClient = useQueryClient();
   const [showApiKey, setShowApiKey] = useState(false);
@@ -124,12 +133,42 @@ export function IntegrationsSettings() {
     enabled: boolean;
     webhookUrl?: string;
     oauthToken?: string;
+    subscribedEvents?: string[];
   }>>({
     shopify: { apiKey: "sk_live_•••••••••••••••••", syncInterval: "15min", enabled: true },
     resend: { apiKey: "re_•••••••••••••••••", syncInterval: "realtime", enabled: true },
     google: { apiKey: "", syncInterval: "1hour", enabled: false },
-    webhooks: { apiKey: "", syncInterval: "realtime", enabled: false, webhookUrl: "" },
+    webhooks: { apiKey: "", syncInterval: "realtime", enabled: false, webhookUrl: "", subscribedEvents: [] },
   });
+
+  // Fetch webhook config from database
+  const { data: webhookConfig, isLoading: configLoading } = useQuery({
+    queryKey: ["webhook-config"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("webhook_configs")
+        .select("*")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Update local state when webhook config is loaded
+  useEffect(() => {
+    if (webhookConfig) {
+      setIntegrationSettings(prev => ({
+        ...prev,
+        webhooks: {
+          ...prev.webhooks,
+          apiKey: webhookConfig.secret_key || "",
+          webhookUrl: webhookConfig.outgoing_url || "",
+          enabled: webhookConfig.is_enabled,
+          subscribedEvents: webhookConfig.subscribed_events || [],
+        },
+      }));
+    }
+  }, [webhookConfig]);
 
   // Fetch webhook logs
   const { data: webhookLogs, isLoading: logsLoading } = useQuery({
@@ -173,6 +212,60 @@ export function IntegrationsSettings() {
     },
   });
 
+  // Save webhook config mutation
+  const saveWebhookConfigMutation = useMutation({
+    mutationFn: async (config: {
+      outgoing_url: string;
+      secret_key: string;
+      subscribed_events: string[];
+      is_enabled: boolean;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Check if config exists
+      const { data: existing } = await supabase
+        .from("webhook_configs")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing
+        const { error } = await supabase
+          .from("webhook_configs")
+          .update({
+            outgoing_url: config.outgoing_url,
+            secret_key: config.secret_key,
+            subscribed_events: config.subscribed_events,
+            is_enabled: config.is_enabled,
+          })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from("webhook_configs")
+          .insert({
+            user_id: user.id,
+            outgoing_url: config.outgoing_url,
+            secret_key: config.secret_key,
+            subscribed_events: config.subscribed_events,
+            is_enabled: config.is_enabled,
+          });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhook-config"] });
+      toast.success("Webhook configuration saved successfully!");
+    },
+    onError: (error) => {
+      console.error("Save error:", error);
+      toast.error("Failed to save webhook configuration");
+    },
+  });
+
   // Acknowledge alert mutation
   const acknowledgeAlertMutation = useMutation({
     mutationFn: async (alertId: string) => {
@@ -192,7 +285,43 @@ export function IntegrationsSettings() {
     },
   });
 
+  // Test webhook mutation
+  const testWebhookMutation = useMutation({
+    mutationFn: async () => {
+      const settings = integrationSettings.webhooks;
+      if (!settings.webhookUrl) {
+        throw new Error("No outgoing webhook URL configured");
+      }
+
+      const { data, error } = await supabase.functions.invoke("send-webhook", {
+        body: {
+          event: "test.webhook",
+          data: {
+            message: "This is a test webhook from BakeAssist",
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["webhook-logs"] });
+      toast.success("Test webhook sent successfully!");
+    },
+    onError: (error) => {
+      console.error("Test webhook error:", error);
+      toast.error(`Test webhook failed: ${error.message}`);
+    },
+  });
+
   const handleTestConnection = async (integrationId: string) => {
+    if (integrationId === "webhooks") {
+      testWebhookMutation.mutate();
+      return;
+    }
+    
     setIsTesting(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
     setIsTesting(false);
@@ -200,6 +329,25 @@ export function IntegrationsSettings() {
   };
 
   const handleSaveSettings = async (integrationId: string) => {
+    if (integrationId === "webhooks") {
+      const settings = integrationSettings.webhooks;
+      
+      if (!settings.apiKey) {
+        toast.error("Please generate or enter a webhook secret key");
+        return;
+      }
+
+      setIsSaving(true);
+      await saveWebhookConfigMutation.mutateAsync({
+        outgoing_url: settings.webhookUrl || "",
+        secret_key: settings.apiKey,
+        subscribed_events: settings.subscribedEvents || [],
+        is_enabled: settings.enabled,
+      });
+      setIsSaving(false);
+      return;
+    }
+
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsSaving(false);
@@ -236,7 +384,7 @@ export function IntegrationsSettings() {
     });
   };
 
-  const updateSetting = (integrationId: string, key: string, value: string | boolean) => {
+  const updateSetting = (integrationId: string, key: string, value: string | boolean | string[]) => {
     setIntegrationSettings(prev => ({
       ...prev,
       [integrationId]: {
@@ -245,6 +393,21 @@ export function IntegrationsSettings() {
       },
     }));
   };
+
+  const toggleEventSubscription = (eventId: string) => {
+    const currentEvents = integrationSettings.webhooks.subscribedEvents || [];
+    const newEvents = currentEvents.includes(eventId)
+      ? currentEvents.filter(e => e !== eventId)
+      : [...currentEvents, eventId];
+    updateSetting("webhooks", "subscribedEvents", newEvents);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard!");
+  };
+
+  const incomingWebhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/incoming-webhook`;
 
   return (
     <Card>
@@ -511,19 +674,31 @@ export function IntegrationsSettings() {
                           <div className="flex items-center gap-2">
                             <Webhook className="h-4 w-4 text-primary" />
                             <span className="text-sm font-medium">Webhook Configuration</span>
+                            {configLoading && (
+                              <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+                            )}
                           </div>
                           
                           {/* Incoming Webhook URL (Your endpoint) */}
                           <div className="space-y-2">
-                            <Label htmlFor={`${integration.id}-incoming`}>Your Webhook Endpoint</Label>
-                            <Input
-                              id={`${integration.id}-incoming`}
-                              value={`${window.location.origin}/api/webhooks/incoming`}
-                              readOnly
-                              className="bg-muted font-mono text-sm"
-                            />
+                            <Label htmlFor={`${integration.id}-incoming`}>Your Webhook Endpoint (Incoming)</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id={`${integration.id}-incoming`}
+                                value={incomingWebhookUrl}
+                                readOnly
+                                className="bg-muted font-mono text-sm flex-1"
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => copyToClipboard(incomingWebhookUrl)}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </div>
                             <p className="text-xs text-muted-foreground">
-                              Share this URL with external services to receive events
+                              Share this URL with external services to receive events. Supports signature verification.
                             </p>
                           </div>
 
@@ -538,7 +713,7 @@ export function IntegrationsSettings() {
                               placeholder="https://your-service.com/webhook"
                             />
                             <p className="text-xs text-muted-foreground">
-                              URL to send events to external services
+                              URL where events will be sent. Leave empty to disable outgoing webhooks.
                             </p>
                           </div>
 
@@ -578,21 +753,44 @@ export function IntegrationsSettings() {
                               </Button>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Used to verify webhook signatures for security
+                              Used to verify webhook signatures. Share with external services for incoming webhooks.
                             </p>
                           </div>
 
-                          {/* Event Types */}
-                          <div className="space-y-2">
+                          {/* Event Subscriptions */}
+                          <div className="space-y-3">
                             <Label>Subscribed Events</Label>
-                            <div className="flex flex-wrap gap-2">
-                              {["bake.created", "bake.completed", "order.placed", "user.signup"].map((event) => (
-                                <Badge key={event} variant="secondary" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">
-                                  {event}
-                                </Badge>
+                            <p className="text-xs text-muted-foreground">
+                              Select which events to send to the outgoing webhook URL
+                            </p>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              {availableEvents.map((event) => (
+                                <div
+                                  key={event.id}
+                                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                    (settings?.subscribedEvents || []).includes(event.id)
+                                      ? 'border-primary bg-primary/5'
+                                      : 'border-border hover:bg-muted/50'
+                                  }`}
+                                  onClick={() => toggleEventSubscription(event.id)}
+                                >
+                                  <Checkbox
+                                    checked={(settings?.subscribedEvents || []).includes(event.id)}
+                                    onCheckedChange={() => toggleEventSubscription(event.id)}
+                                    className="mt-0.5"
+                                  />
+                                  <div className="space-y-1">
+                                    <div className="font-medium text-sm">{event.label}</div>
+                                    <div className="text-xs text-muted-foreground">{event.description}</div>
+                                  </div>
+                                </div>
                               ))}
-                              <Badge variant="outline" className="cursor-pointer">+ Add Event</Badge>
                             </div>
+                            {(settings?.subscribedEvents || []).length === 0 && (
+                              <p className="text-xs text-amber-600">
+                                No events selected. Select at least one event to enable outgoing webhooks.
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
@@ -623,21 +821,21 @@ export function IntegrationsSettings() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleTestConnection(integration.id)}
-                          disabled={isTesting || !settings?.enabled}
+                          disabled={(isTesting || testWebhookMutation.isPending) || !settings?.enabled || (integration.id === "webhooks" && !settings?.webhookUrl)}
                         >
-                          {isTesting ? (
+                          {(isTesting || testWebhookMutation.isPending) ? (
                             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                           ) : (
                             <TestTube className="h-4 w-4 mr-2" />
                           )}
-                          Test Connection
+                          {integration.id === "webhooks" ? "Send Test Webhook" : "Test Connection"}
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => handleSaveSettings(integration.id)}
-                          disabled={isSaving}
+                          disabled={isSaving || saveWebhookConfigMutation.isPending}
                         >
-                          {isSaving ? (
+                          {(isSaving || saveWebhookConfigMutation.isPending) ? (
                             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                           ) : (
                             <Save className="h-4 w-4 mr-2" />

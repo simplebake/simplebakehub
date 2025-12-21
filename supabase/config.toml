@@ -41,3 +41,12 @@ verify_jwt = false
 
 [functions.integration-health-check]
 verify_jwt = false
+
+[functions.incoming-webhook]
+verify_jwt = false
+
+[functions.send-webhook]
+verify_jwt = true
+
+[functions.trigger-webhook-event]
+verify_jwt = true
