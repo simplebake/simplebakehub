@@ -1,0 +1,468 @@
+{
+  "name": "Simple Bake Hub - Signed Webhook Integration",
+  "description": "A secure webhook integration that sends signed payloads to the Simple Bake Hub backend. Uses HMAC-SHA256 for request authentication and includes timestamp validation for replay attack prevention.",
+  "version": "1.0.0",
+  "author": "Simple Bake Hub",
+  "documentation": {
+    "overview": "This blueprint creates a Make.com scenario that receives events and forwards them to your Simple Bake Hub backend with cryptographic signatures for security.",
+    "security_features": [
+      "HMAC-SHA256 signature generation",
+      "Timestamp-based replay attack prevention (5-minute tolerance)",
+      "Secure secret key authentication"
+    ],
+    "event_types_supported": [
+      "order.created",
+      "order.updated", 
+      "order.completed",
+      "bake.started",
+      "bake.completed",
+      "user.registered",
+      "test.webhook"
+    ]
+  },
+  "configuration": {
+    "webhook_endpoint": "https://twszrhkovxpvosnfkdjk.supabase.co/functions/v1/incoming-webhook",
+    "secret_key": "whsec_9ecdc2249964410e90460117ef184317",
+    "signature_algorithm": "HMAC-SHA256",
+    "signature_format": "timestamp.payload",
+    "timestamp_tolerance_seconds": 300,
+    "retry_settings": {
+      "max_retries": 3,
+      "timeout_seconds": 30
+    }
+  },
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "name": "Webhook Trigger",
+      "description": "Receives incoming events from external systems or manual triggers",
+      "parameters": {
+        "hook": null,
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0
+        },
+        "restore": {
+          "parameters": {
+            "hook": {
+              "label": "Simple Bake Hub Events",
+              "data": {
+                "editable": "true"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "hook",
+            "type": "hook:gateway-webhook",
+            "label": "Webhook",
+            "required": true
+          },
+          {
+            "name": "maxResults",
+            "type": "number",
+            "label": "Maximum number of results"
+          }
+        ]
+      },
+      "notes": "Create a new webhook in Make.com and use its URL to receive events. The webhook will trigger this scenario when it receives data."
+    },
+    {
+      "id": 2,
+      "module": "util:SetVariable2",
+      "version": 1,
+      "name": "Set Payload Variable",
+      "description": "Creates the JSON payload that will be sent to the backend",
+      "parameters": {},
+      "mapper": {
+        "name": "payload",
+        "scope": "roundtrip",
+        "value": "{{toString(1.data)}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0
+        },
+        "restore": {
+          "expect": {
+            "scope": {
+              "label": "One cycle"
+            }
+          }
+        },
+        "expect": [
+          {
+            "name": "name",
+            "type": "text",
+            "label": "Variable name",
+            "required": true
+          },
+          {
+            "name": "scope",
+            "type": "select",
+            "label": "Variable lifetime",
+            "required": true,
+            "validate": {
+              "enum": ["roundtrip", "execution"]
+            }
+          },
+          {
+            "name": "value",
+            "type": "any",
+            "label": "Variable value"
+          }
+        ]
+      },
+      "notes": "Converts the incoming webhook data to a JSON string. Reference: {{1.data}} gets the data from the webhook trigger (module 1)."
+    },
+    {
+      "id": 3,
+      "module": "util:SetVariable2",
+      "version": 1,
+      "name": "Set Timestamp Variable",
+      "description": "Creates an ISO 8601 timestamp for signature generation and replay attack prevention",
+      "parameters": {},
+      "mapper": {
+        "name": "timestamp",
+        "scope": "roundtrip",
+        "value": "{{formatDate(now; \"YYYY-MM-DDTHH:mm:ssZ\")}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 600,
+          "y": 0
+        },
+        "restore": {
+          "expect": {
+            "scope": {
+              "label": "One cycle"
+            }
+          }
+        },
+        "expect": [
+          {
+            "name": "name",
+            "type": "text",
+            "label": "Variable name",
+            "required": true
+          },
+          {
+            "name": "scope",
+            "type": "select",
+            "label": "Variable lifetime",
+            "required": true,
+            "validate": {
+              "enum": ["roundtrip", "execution"]
+            }
+          },
+          {
+            "name": "value",
+            "type": "any",
+            "label": "Variable value"
+          }
+        ]
+      },
+      "notes": "Generates current timestamp in ISO 8601 format. This is included in the signature to prevent replay attacks. The backend rejects requests with timestamps older than 5 minutes."
+    },
+    {
+      "id": 4,
+      "module": "crypto:Sign",
+      "version": 1,
+      "name": "Generate HMAC-SHA256 Signature",
+      "description": "Creates a cryptographic signature of the payload for authentication",
+      "parameters": {},
+      "mapper": {
+        "algorithm": "sha256",
+        "key": "whsec_9ecdc2249964410e90460117ef184317",
+        "keyEncoding": "text",
+        "data": "{{3.timestamp}}.{{2.payload}}",
+        "dataEncoding": "text",
+        "digest": "hex"
+      },
+      "metadata": {
+        "designer": {
+          "x": 900,
+          "y": 0
+        },
+        "restore": {
+          "expect": {
+            "algorithm": {
+              "label": "SHA-256"
+            },
+            "keyEncoding": {
+              "label": "Text"
+            },
+            "dataEncoding": {
+              "label": "Text"
+            },
+            "digest": {
+              "label": "Hexadecimal"
+            }
+          }
+        },
+        "expect": [
+          {
+            "name": "algorithm",
+            "type": "select",
+            "label": "Algorithm",
+            "required": true,
+            "validate": {
+              "enum": ["md5", "sha1", "sha256", "sha512"]
+            }
+          },
+          {
+            "name": "key",
+            "type": "text",
+            "label": "Key",
+            "required": true
+          },
+          {
+            "name": "keyEncoding",
+            "type": "select",
+            "label": "Key encoding",
+            "required": true,
+            "validate": {
+              "enum": ["text", "hex", "base64"]
+            }
+          },
+          {
+            "name": "data",
+            "type": "text",
+            "label": "Data",
+            "required": true
+          },
+          {
+            "name": "dataEncoding",
+            "type": "select",
+            "label": "Data encoding",
+            "required": true,
+            "validate": {
+              "enum": ["text", "hex", "base64"]
+            }
+          },
+          {
+            "name": "digest",
+            "type": "select",
+            "label": "Digest",
+            "required": true,
+            "validate": {
+              "enum": ["hex", "base64"]
+            }
+          }
+        ]
+      },
+      "notes": "CRITICAL: Use 'Crypto > Sign' module, NOT 'AES256 Decrypt'. The signature format is 'timestamp.payload' which the backend verifies. The secret key must match exactly what's configured in the backend."
+    },
+    {
+      "id": 5,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "name": "Send Signed Request to Backend",
+      "description": "Sends the signed payload to the Simple Bake Hub webhook endpoint",
+      "parameters": {},
+      "mapper": {
+        "url": "https://twszrhkovxpvosnfkdjk.supabase.co/functions/v1/incoming-webhook",
+        "method": "post",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "x-webhook-timestamp",
+            "value": "{{3.timestamp}}"
+          },
+          {
+            "name": "x-webhook-signature",
+            "value": "{{4.value}}"
+          }
+        ],
+        "contentType": "json",
+        "parseResponse": true,
+        "stopOnHttpError": false,
+        "timeout": 30,
+        "allowRedirects": true,
+        "shareCookies": false,
+        "requestCompressedContent": true,
+        "inputMethod": "jsonString",
+        "jsonStringBodyContent": "{{2.payload}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 1200,
+          "y": 0
+        },
+        "restore": {
+          "expect": {
+            "method": {
+              "mode": "chose",
+              "label": "POST"
+            },
+            "headers": {
+              "mode": "chose",
+              "items": [null, null, null]
+            },
+            "contentType": {
+              "label": "application/json"
+            },
+            "parseResponse": {
+              "mode": "chose"
+            },
+            "stopOnHttpError": {
+              "mode": "chose"
+            },
+            "allowRedirects": {
+              "mode": "chose"
+            },
+            "shareCookies": {
+              "mode": "chose"
+            },
+            "requestCompressedContent": {
+              "mode": "chose"
+            },
+            "inputMethod": {
+              "label": "JSON string"
+            }
+          }
+        },
+        "expect": [
+          {
+            "name": "url",
+            "type": "url",
+            "label": "URL",
+            "required": true
+          },
+          {
+            "name": "method",
+            "type": "select",
+            "label": "Method",
+            "required": true
+          },
+          {
+            "name": "headers",
+            "type": "array",
+            "label": "Headers"
+          },
+          {
+            "name": "contentType",
+            "type": "select",
+            "label": "Body content type"
+          },
+          {
+            "name": "parseResponse",
+            "type": "boolean",
+            "label": "Parse response"
+          },
+          {
+            "name": "timeout",
+            "type": "uinteger",
+            "label": "Timeout"
+          }
+        ]
+      },
+      "notes": "Headers must be lowercase: 'x-webhook-timestamp' and 'x-webhook-signature'. The body contains the raw JSON payload string."
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {
+      "orphans": []
+    },
+    "zone": "eu2.make.com"
+  },
+  "troubleshooting": {
+    "common_errors": [
+      {
+        "error": "Invalid signature",
+        "causes": [
+          "Wrong secret key - ensure it matches exactly: whsec_9ecdc2249964410e90460117ef184317",
+          "Using wrong module - must use 'Crypto > Sign', not 'AES256 Decrypt'",
+          "Wrong signature format - must be 'timestamp.payload' not just 'payload'",
+          "Digest format wrong - must be 'Hexadecimal', not 'Base64'"
+        ]
+      },
+      {
+        "error": "Timestamp validation failed",
+        "causes": [
+          "Request took too long - backend rejects timestamps older than 5 minutes",
+          "System clock is incorrect",
+          "Timestamp format is wrong - must be ISO 8601 format"
+        ]
+      },
+      {
+        "error": "Module references non-existing module",
+        "causes": [
+          "Module IDs don't match - check that {{2.payload}}, {{3.timestamp}}, {{4.value}} reference the correct modules",
+          "Modules were reordered - update references after moving modules"
+        ]
+      }
+    ],
+    "testing": {
+      "test_payload": {
+        "eventType": "test.webhook",
+        "message": "Hello from Make.com!",
+        "timestamp": "{{formatDate(now; 'YYYY-MM-DDTHH:mm:ssZ')}}"
+      },
+      "expected_response": {
+        "success": true,
+        "message": "Webhook received and processed"
+      }
+    }
+  },
+  "module_reference_guide": {
+    "description": "Quick reference for module output variables",
+    "modules": {
+      "1": {
+        "name": "Webhook Trigger",
+        "outputs": {
+          "{{1.data}}": "The raw data received by the webhook"
+        }
+      },
+      "2": {
+        "name": "Set Payload",
+        "outputs": {
+          "{{2.payload}}": "The JSON string payload to send"
+        }
+      },
+      "3": {
+        "name": "Set Timestamp", 
+        "outputs": {
+          "{{3.timestamp}}": "ISO 8601 formatted timestamp"
+        }
+      },
+      "4": {
+        "name": "Crypto Sign",
+        "outputs": {
+          "{{4.value}}": "The HMAC-SHA256 signature in hexadecimal"
+        }
+      },
+      "5": {
+        "name": "HTTP Request",
+        "outputs": {
+          "{{5.data}}": "Response body from the backend",
+          "{{5.statusCode}}": "HTTP status code"
+        }
+      }
+    }
+  }
+}
