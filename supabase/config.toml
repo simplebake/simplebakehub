@@ -35,3 +35,6 @@ verify_jwt = true
 
 [functions.notify-moderators]
 verify_jwt = false
+
+[functions.notify-reporter]
+verify_jwt = false

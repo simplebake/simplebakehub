@@ -211,3 +211,51 @@ export const communityReportTemplate = (data: {
     </div>
   `,
 });
+
+export const reportResolutionTemplate = (data: {
+  status: string;
+  contentType: string;
+  resolutionNotes: string;
+}): EmailTemplate => ({
+  subject: `Your Report Has Been ${data.status === 'resolved' ? 'Resolved' : 'Reviewed'}`,
+  html: `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+      <div style="background: linear-gradient(135deg, ${data.status === 'resolved' ? '#10b981 0%, #059669 100%' : '#6b7280 0%, #4b5563 100%'}); padding: 30px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">${data.status === 'resolved' ? '✅' : '📋'} Report ${data.status === 'resolved' ? 'Resolved' : 'Reviewed'}</h1>
+      </div>
+      
+      <div style="padding: 30px;">
+        <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">
+          Thank you for helping keep our community safe. Your report has been reviewed by our moderation team.
+        </p>
+        
+        <div style="background-color: ${data.status === 'resolved' ? '#d1fae5' : '#f3f4f6'}; border-radius: 12px; padding: 24px; margin: 20px 0; border-left: 4px solid ${data.status === 'resolved' ? '#10b981' : '#6b7280'};">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280; font-size: 14px; width: 120px;">Status:</td>
+              <td style="padding: 8px 0; color: ${data.status === 'resolved' ? '#065f46' : '#374151'}; font-size: 14px; font-weight: 600; text-transform: capitalize;">${data.status}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Content Type:</td>
+              <td style="padding: 8px 0; color: #111827; font-size: 14px; text-transform: capitalize;">${data.contentType.replace('_', ' ')}</td>
+            </tr>
+          </table>
+          <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid ${data.status === 'resolved' ? '#a7f3d0' : '#e5e7eb'};">
+            <p style="color: #6b7280; font-size: 14px; margin: 0 0 8px 0;">Resolution Notes:</p>
+            <p style="color: #111827; font-size: 14px; margin: 0; line-height: 1.6;">${data.resolutionNotes}</p>
+          </div>
+        </div>
+        
+        <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
+          If you have any questions about this decision, please contact our support team.
+        </p>
+      </div>
+      
+      <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+        <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+          This is an automated notification from Simple Bake Hub
+        </p>
+      </div>
+    </div>
+  `,
+});

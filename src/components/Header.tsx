@@ -4,8 +4,9 @@ import { useAuth } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/auditLogger";
 import { useNavigate } from "react-router-dom";
-import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare } from "lucide-react";
+import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen } from "lucide-react";
 import { CartDrawer } from "./CartDrawer";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const navItems = [
   {
@@ -37,6 +38,7 @@ const navItems = [
 export const Header = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isSupport, isAdmin } = useUserRole();
 
   const handleLogout = async () => {
     const userId = user?.id;
@@ -73,6 +75,17 @@ export const Header = () => {
                     <span className="hidden md:inline">{item.label}</span>
                   </NavLink>
                 ))}
+                {(isSupport || isAdmin) && (
+                  <NavLink
+                    to="/tutorials/manage"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
+                    activeClassName="text-foreground bg-muted"
+                    aria-label="Manage tutorials"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    <span className="hidden md:inline">Tutorials</span>
+                  </NavLink>
+                )}
                 <div className="ml-2 flex items-center gap-2">
                   <CartDrawer />
                   <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
