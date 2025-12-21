@@ -141,6 +141,25 @@ const MakeSetupGuide = () => {
     toast.success("Blueprint downloaded! Import it into Make.com");
   };
 
+  const downloadFullBlueprint = async () => {
+    try {
+      const response = await fetch('/make-webhook-blueprint.json');
+      if (!response.ok) throw new Error('Failed to fetch');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "make-webhook-blueprint-full.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Full blueprint downloaded!");
+    } catch (error) {
+      toast.error("Could not download the blueprint file");
+    }
+  };
+
   const testWebhook = async () => {
     setIsTesting(true);
     setTestResult(null);
@@ -223,11 +242,9 @@ const MakeSetupGuide = () => {
             <CardDescription>Download the blueprint file and import it directly into Make.com</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
-            <Button asChild className="gap-2">
-              <a href="/make-webhook-blueprint.json" download="make-webhook-blueprint.json">
-                <Download className="h-4 w-4" />
-                Download Full Blueprint
-              </a>
+            <Button onClick={downloadFullBlueprint} className="gap-2">
+              <Download className="h-4 w-4" />
+              Download Full Blueprint
             </Button>
             <Button onClick={downloadBlueprint} variant="outline" className="gap-2">
               <Download className="h-4 w-4" />
