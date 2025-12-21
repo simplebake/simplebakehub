@@ -719,27 +719,7 @@ export function IntegrationsSettings() {
                               placeholder="https://hooks.zapier.com/hooks/catch/..."
                             />
                             <p className="text-xs text-muted-foreground">
-                              URL where events will be sent (e.g., Zapier, Make, n8n webhook URL)
-                            </p>
-                          </div>
-
-                          {/* Zapier Integration Guide */}
-                          <div className="p-4 rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900/50 dark:bg-orange-950/20 space-y-3">
-                            <div className="flex items-center gap-2">
-                              <svg className="h-5 w-5 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 21.6c-5.302 0-9.6-4.298-9.6-9.6S6.698 2.4 12 2.4s9.6 4.298 9.6 9.6-4.298 9.6-9.6 9.6zm5.657-9.6L12 6.343 6.343 12 12 17.657 17.657 12zM12 14.485L9.515 12 12 9.515 14.485 12 12 14.485z"/>
-                              </svg>
-                              <span className="font-medium text-sm text-orange-700 dark:text-orange-300">Zapier Integration</span>
-                            </div>
-                            <ol className="text-xs text-orange-700 dark:text-orange-300 space-y-1.5 list-decimal list-inside">
-                              <li>Go to <a href="https://zapier.com/app/editor" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">Zapier</a> and create a new Zap</li>
-                              <li>Add <strong>"Webhooks by Zapier"</strong> as the trigger</li>
-                              <li>Select <strong>"Catch Hook"</strong> and copy the webhook URL</li>
-                              <li>Paste the URL above and save</li>
-                              <li>Click <strong>"Test Webhook"</strong> to send test data to Zapier</li>
-                            </ol>
-                            <p className="text-xs text-orange-600 dark:text-orange-400">
-                              Once connected, baking events will trigger your Zap automatically!
+                              URL where events will be sent (e.g., Make, n8n, or any webhook receiver)
                             </p>
                           </div>
 
