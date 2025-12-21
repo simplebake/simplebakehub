@@ -20,6 +20,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Marketing from "./pages/Marketing";
 import Settings from "./pages/Settings";
 import Contact from "./pages/Contact";
+import MakeSetupGuide from "./pages/MakeSetupGuide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => {
               <Route path="/share" element={<ShareBake />} />
               <Route path="/marketing" element={<Marketing />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/make-setup" element={<MakeSetupGuide />} />
               <Route path="/contact" element={<Contact />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
