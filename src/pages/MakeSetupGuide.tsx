@@ -1136,38 +1136,185 @@ Headers:
             {/* Step 5 */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">5</div>
-                <h3 className="text-lg font-semibold">Add "Crypto → Sign" Module</h3>
+                <div className="h-8 w-8 rounded-full bg-yellow-500 text-white flex items-center justify-center font-bold">5</div>
+                <h3 className="text-lg font-semibold">Add "Encryptor → Sign" Module</h3>
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">Key Step</Badge>
               </div>
-              <div className="ml-11 space-y-3 text-muted-foreground">
+              <div className="ml-11 space-y-4 text-muted-foreground">
                 <p>• Search for <strong className="text-foreground">Encryptor</strong> → <strong className="text-foreground">Sign</strong></p>
-                <div className="bg-muted p-4 rounded-lg space-y-2">
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                    <span className="font-semibold text-foreground">Algorithm:</span>
-                    <code>sha256</code>
+                
+                {/* Visual Sign Module Guide */}
+                <div className="border-2 border-yellow-400 rounded-lg overflow-hidden">
+                  <div className="bg-yellow-400 px-4 py-2 flex items-center gap-2">
+                    <Key className="h-4 w-4 text-yellow-900" />
+                    <span className="font-semibold text-yellow-900">Encryptor - Sign Module Configuration</span>
                   </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                    <span className="font-semibold text-foreground">Key:</span>
-                    <code className="break-all">YOUR_WEBHOOK_SECRET_HERE</code>
+                  
+                  <div className="bg-card p-4 space-y-4">
+                    {/* Algorithm Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        Algorithm
+                        <Badge variant="outline" className="text-[10px] font-normal">Required</Badge>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-muted border rounded-md px-3 py-2 text-sm font-mono">
+                          sha256
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyToClipboard("sha256", "Algorithm")}
+                        >
+                          {copied === "Algorithm" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Select "sha256" from the dropdown menu</p>
+                    </div>
+
+                    {/* Key Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        Key
+                        <Badge variant="outline" className="text-[10px] font-normal border-yellow-500 text-yellow-600">Your Secret</Badge>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-md px-3 py-2 text-sm font-mono break-all">
+                          {savedConfig?.secret_key || generatedKey || "YOUR_WEBHOOK_SECRET_HERE"}
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyToClipboard(savedConfig?.secret_key || generatedKey || "YOUR_WEBHOOK_SECRET_HERE", "Sign Key")}
+                        >
+                          {copied === "Sign Key" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {savedConfig?.secret_key || generatedKey 
+                          ? "✓ Paste your saved private key (shown above)" 
+                          : "Generate and save a private key in the section above first"}
+                      </p>
+                    </div>
+
+                    {/* Key Encoding Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">Key encoding</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-muted border rounded-md px-3 py-2 text-sm font-mono">
+                          Text
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyToClipboard("Text", "Key Encoding")}
+                        >
+                          {copied === "Key Encoding" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Select "Text" - this means your key is plain text, not base64</p>
+                    </div>
+
+                    {/* Data Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        Data
+                        <Badge variant="outline" className="text-[10px] font-normal border-blue-500 text-blue-600">Module Reference</Badge>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-md px-3 py-2 text-sm font-mono">
+                          {"{{2.payload}}"}
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyToClipboard("{{2.payload}}", "Data Reference")}
+                        >
+                          {copied === "Data Reference" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Reference to the payload from Module 2. Click the input field, then select "payload" from Module 2's output.
+                      </p>
+                    </div>
+
+                    {/* Data Encoding Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">Data encoding</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-muted border rounded-md px-3 py-2 text-sm font-mono">
+                          Text
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyToClipboard("Text", "Data Encoding")}
+                        >
+                          {copied === "Data Encoding" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Select "Text" - the payload is a JSON string</p>
+                    </div>
+
+                    {/* Digest Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        Digest
+                        <Badge variant="outline" className="text-[10px] font-normal border-green-500 text-green-600">Output Format</Badge>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-md px-3 py-2 text-sm font-mono">
+                          Hexadecimal
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyToClipboard("Hexadecimal", "Digest")}
+                        >
+                          {copied === "Digest" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Select "Hexadecimal" - this outputs the signature as a hex string</p>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                    <span className="font-semibold text-foreground">Key encoding:</span>
-                    <code>Text</code>
+
+                  {/* Output Section */}
+                  <div className="bg-green-50 dark:bg-green-900/20 px-4 py-3 border-t border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-700 dark:text-green-300">Output</span>
+                      </div>
+                      <code className="text-sm font-mono bg-green-100 dark:bg-green-800 px-2 py-1 rounded text-green-800 dark:text-green-200">
+                        {"{{4.value}}"} → signature hex string
+                      </code>
+                    </div>
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                      Use this in your HTTP module headers as X-Webhook-Signature
+                    </p>
                   </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                    <span className="font-semibold text-foreground">Data:</span>
-                    <code>{'{{4.payload}}'}</code>
-                    <span></span>
-                    <span className="text-xs">(reference to payload variable from module #4)</span>
-                  </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                    <span className="font-semibold text-foreground">Data encoding:</span>
-                    <code>Text</code>
-                  </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                    <span className="font-semibold text-foreground">Digest:</span>
-                    <code>Hexadecimal</code>
-                  </div>
+                </div>
+
+                {/* Pro Tips */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-yellow-500" />
+                    Pro Tips for the Sign Module
+                  </p>
+                  <ul className="text-sm space-y-1.5">
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-500 mt-1">•</span>
+                      <span><strong>Finding module references:</strong> Click the data field, then browse the module tree on the left to find "payload" under your Set Variable module</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-500 mt-1">•</span>
+                      <span><strong>Module numbers:</strong> If your scenario layout is different, adjust the module number (e.g., {"{{3.payload}}"} if payload is in module 3)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-500 mt-1">•</span>
+                      <span><strong>Testing:</strong> Run your scenario once and check the Sign module output - it should be a 64-character hex string</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
