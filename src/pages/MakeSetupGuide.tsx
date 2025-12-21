@@ -1,14 +1,26 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Copy, Download, ExternalLink, Check, Shield, Zap, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Copy, Download, ExternalLink, Check, Shield, Zap, CheckCircle2, Play, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
+interface TestResult {
+  success: boolean;
+  status?: number;
+  message: string;
+  timestamp: string;
+  duration?: number;
+  response?: unknown;
+}
+
 const MakeSetupGuide = () => {
   const [copied, setCopied] = useState<string | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
   
   const incomingWebhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/incoming-webhook`;
 
@@ -129,6 +141,62 @@ const MakeSetupGuide = () => {
     toast.success("Blueprint downloaded! Import it into Make.com");
   };
 
+  const testWebhook = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    const startTime = Date.now();
+
+    try {
+      const testPayload = {
+        eventType: "test.webhook",
+        data: {
+          message: "Test webhook from setup guide",
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      const { data, error } = await supabase.functions.invoke('trigger-webhook-event', {
+        body: {
+          event: 'test.webhook',
+          data: testPayload
+        }
+      });
+
+      const duration = Date.now() - startTime;
+
+      if (error) {
+        setTestResult({
+          success: false,
+          message: error.message || "Failed to send test webhook",
+          timestamp: new Date().toISOString(),
+          duration
+        });
+        toast.error("Test webhook failed");
+      } else {
+        setTestResult({
+          success: true,
+          status: 200,
+          message: "Webhook sent successfully",
+          timestamp: new Date().toISOString(),
+          duration,
+          response: data
+        });
+        toast.success("Test webhook sent successfully");
+      }
+    } catch (err) {
+      const duration = Date.now() - startTime;
+      setTestResult({
+        success: false,
+        message: err instanceof Error ? err.message : "Unknown error occurred",
+        timestamp: new Date().toISOString(),
+        duration
+      });
+      toast.error("Test webhook failed");
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -200,7 +268,84 @@ const MakeSetupGuide = () => {
           </CardContent>
         </Card>
 
-        {/* Step by Step Guide */}
+        {/* Test Webhook */}
+        <Card className="mb-8 border-accent/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Play className="h-5 w-5" />
+              Test Your Webhook
+            </CardTitle>
+            <CardDescription>
+              Send a test request to verify your webhook configuration is working correctly
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              onClick={testWebhook} 
+              disabled={isTesting}
+              className="gap-2"
+            >
+              {isTesting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Sending Test...
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  Send Test Webhook
+                </>
+              )}
+            </Button>
+
+            {testResult && (
+              <div className={`p-4 rounded-lg border ${testResult.success ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900' : 'bg-destructive/10 border-destructive/20'}`}>
+                <div className="flex items-start gap-3">
+                  {testResult.success ? (
+                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                  )}
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className={`font-medium ${testResult.success ? 'text-green-700 dark:text-green-300' : 'text-destructive'}`}>
+                        {testResult.success ? 'Success' : 'Failed'}
+                      </p>
+                      {testResult.duration && (
+                        <Badge variant="outline" className="text-xs">
+                          {testResult.duration}ms
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{testResult.message}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Sent at: {new Date(testResult.timestamp).toLocaleString()}
+                    </p>
+                    
+                    {testResult.response && (
+                      <div className="mt-3">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Response:</p>
+                        <pre className="bg-muted p-3 rounded text-xs font-mono overflow-x-auto max-h-40">
+                          {JSON.stringify(testResult.response, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="text-sm text-muted-foreground">
+              <p>This test will:</p>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>Send a <code className="bg-muted px-1 rounded">test.webhook</code> event to your configured endpoints</li>
+                <li>Show the response status and timing</li>
+                <li>Help verify your webhook configuration is working</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Step-by-Step Setup</CardTitle>
