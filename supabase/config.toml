@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.notify-reporter]
 verify_jwt = false
+
+[functions.integration-health-check]
+verify_jwt = false
