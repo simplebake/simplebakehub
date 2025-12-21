@@ -35,9 +35,35 @@ async function verifySignature(payload: string, signature: string, secret: strin
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
     
-    return signature === expectedSignature;
+    // Timing-safe comparison to prevent timing attacks
+    if (signature.length !== expectedSignature.length) {
+      return false;
+    }
+    
+    let result = 0;
+    for (let i = 0; i < signature.length; i++) {
+      result |= signature.charCodeAt(i) ^ expectedSignature.charCodeAt(i);
+    }
+    
+    return result === 0;
   } catch (error) {
     console.error("Signature verification error:", error);
+    return false;
+  }
+}
+
+function isTimestampValid(timestamp: string | null, toleranceSeconds = 300): boolean {
+  if (!timestamp) return true; // If no timestamp provided, skip validation
+  
+  try {
+    const webhookTime = new Date(timestamp).getTime();
+    const now = Date.now();
+    const diff = Math.abs(now - webhookTime);
+    
+    // Reject if timestamp is more than 5 minutes old (prevents replay attacks)
+    return diff <= toleranceSeconds * 1000;
+  } catch {
+    console.warn("Invalid timestamp format:", timestamp);
     return false;
   }
 }
@@ -86,13 +112,38 @@ serve(async (req) => {
       console.error("Error fetching webhook configs:", configError);
     }
 
+    // Validate timestamp to prevent replay attacks
+    if (!isTimestampValid(timestamp)) {
+      console.warn("Webhook timestamp expired or invalid");
+      responseStatus = 401;
+      responseBody = { error: "Timestamp expired or invalid" };
+      errorMessage = "Webhook timestamp expired";
+      throw new Error("Timestamp expired");
+    }
+
     // Verify signature if provided and configs exist
     let signatureValid = true;
-    if (signature && configs && configs.length > 0) {
+    let signatureRequired = false;
+    
+    if (configs && configs.length > 0) {
+      // Check if any config has a secret (making signature verification required)
+      signatureRequired = configs.some(c => c.secret_key && c.secret_key.length > 0);
+    }
+
+    if (signatureRequired) {
+      if (!signature) {
+        console.warn("Missing webhook signature");
+        responseStatus = 401;
+        responseBody = { error: "Missing signature", hint: "Include X-Webhook-Signature header" };
+        errorMessage = "Missing webhook signature";
+        throw new Error("Missing signature");
+      }
+
       signatureValid = false;
-      for (const config of configs) {
-        if (await verifySignature(rawBody, signature, config.secret_key)) {
+      for (const config of configs!) {
+        if (config.secret_key && await verifySignature(rawBody, signature, config.secret_key)) {
           signatureValid = true;
+          console.log("Signature verified successfully");
           break;
         }
       }
