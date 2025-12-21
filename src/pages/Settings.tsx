@@ -12,6 +12,7 @@ import { RoleAccessGuide } from "@/components/RoleAccessGuide";
 import { TutorialsManager } from "@/components/TutorialsManager";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { ContentReportsManager } from "@/components/ContentReportsManager";
+import { IntegrationsSettings } from "@/components/IntegrationsSettings";
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -24,6 +25,7 @@ const Settings = () => {
   const [showTutorials, setShowTutorials] = useState(false);
   const [showNotificationPrefs, setShowNotificationPrefs] = useState(false);
   const [showContentReports, setShowContentReports] = useState(false);
+  const [showIntegrations, setShowIntegrations] = useState(false);
 
   const closeAllPanels = () => {
     setShowUserRoles(false);
@@ -33,6 +35,7 @@ const Settings = () => {
     setShowTutorials(false);
     setShowNotificationPrefs(false);
     setShowContentReports(false);
+    setShowIntegrations(false);
   };
 
   useEffect(() => {
@@ -51,7 +54,15 @@ const Settings = () => {
 
   if (!user) return null;
 
-  const settingsCards = [
+  const settingsCards: Array<{
+    title: string;
+    description: string;
+    icon: typeof User;
+    href?: string | null;
+    onClick?: () => void;
+    isExpanded?: boolean;
+    category: string;
+  }> = [
     {
       title: "App Settings",
       description: "Branding, app name, logo, and general configuration",
@@ -64,6 +75,8 @@ const Settings = () => {
       description: "Connect with Shopify and other third-party services",
       icon: Link2,
       href: null,
+      onClick: () => { closeAllPanels(); setShowIntegrations(true); },
+      isExpanded: showIntegrations,
       category: "general",
     },
     {
@@ -263,16 +276,19 @@ const Settings = () => {
             {settingsCards.map((card) => (
               <Card 
                 key={card.title} 
-                className={`group transition-all ${card.href ? 'cursor-pointer hover:bg-muted/50 hover:shadow-md' : 'opacity-75'}`}
-                onClick={() => card.href && navigate(card.href)}
+                className={`group transition-all ${(card.href || card.onClick) ? 'cursor-pointer hover:bg-muted/50 hover:shadow-md' : 'opacity-75'}`}
+                onClick={() => {
+                  if (card.onClick) card.onClick();
+                  else if (card.href) navigate(card.href);
+                }}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="p-2 rounded-lg bg-primary/10">
                       <card.icon className="h-5 w-5 text-primary" />
                     </div>
-                    {card.href && (
-                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    {(card.href || card.onClick) && (
+                      <ChevronRight className={`h-4 w-4 text-muted-foreground group-hover:text-foreground transition-all ${card.isExpanded ? 'rotate-90' : ''}`} />
                     )}
                   </div>
                 </CardHeader>
@@ -281,13 +297,20 @@ const Settings = () => {
                   <CardDescription className="text-sm">
                     {card.description}
                   </CardDescription>
-                  {!card.href && (
+                  {!card.href && !card.onClick && (
                     <p className="text-xs text-muted-foreground mt-2">Coming soon</p>
                   )}
                 </CardContent>
               </Card>
             ))}
           </div>
+
+          {/* Integrations Settings Panel */}
+          {showIntegrations && (
+            <div className="mt-6">
+              <IntegrationsSettings />
+            </div>
+          )}
         </section>
 
         {/* Administration (Staff - Admin, Moderator, Support) */}
