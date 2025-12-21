@@ -505,20 +505,95 @@ export function IntegrationsSettings() {
                         </div>
                       )}
 
-                      {/* Webhook URL */}
+                      {/* Webhook Configuration */}
                       {integration.authMethod === "webhook" && (
-                        <div className="space-y-2">
-                          <Label htmlFor={`${integration.id}-webhook`}>Webhook URL</Label>
-                          <Input
-                            id={`${integration.id}-webhook`}
-                            type="url"
-                            value={settings?.webhookUrl || ""}
-                            onChange={(e) => updateSetting(integration.id, 'webhookUrl', e.target.value)}
-                            placeholder="https://your-service.com/webhook"
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Incoming webhook URL for receiving events
-                          </p>
+                        <div className="space-y-4 p-4 rounded-lg border bg-muted/30">
+                          <div className="flex items-center gap-2">
+                            <Webhook className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-medium">Webhook Configuration</span>
+                          </div>
+                          
+                          {/* Incoming Webhook URL (Your endpoint) */}
+                          <div className="space-y-2">
+                            <Label htmlFor={`${integration.id}-incoming`}>Your Webhook Endpoint</Label>
+                            <Input
+                              id={`${integration.id}-incoming`}
+                              value={`${window.location.origin}/api/webhooks/incoming`}
+                              readOnly
+                              className="bg-muted font-mono text-sm"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Share this URL with external services to receive events
+                            </p>
+                          </div>
+
+                          {/* Outgoing Webhook URL */}
+                          <div className="space-y-2">
+                            <Label htmlFor={`${integration.id}-webhook`}>Outgoing Webhook URL</Label>
+                            <Input
+                              id={`${integration.id}-webhook`}
+                              type="url"
+                              value={settings?.webhookUrl || ""}
+                              onChange={(e) => updateSetting(integration.id, 'webhookUrl', e.target.value)}
+                              placeholder="https://your-service.com/webhook"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              URL to send events to external services
+                            </p>
+                          </div>
+
+                          {/* Webhook Secret */}
+                          <div className="space-y-2">
+                            <Label htmlFor={`${integration.id}-secret`}>Webhook Secret</Label>
+                            <div className="flex gap-2">
+                              <div className="relative flex-1">
+                                <Input
+                                  id={`${integration.id}-secret`}
+                                  type={showApiKey ? "text" : "password"}
+                                  value={settings?.apiKey || ""}
+                                  onChange={(e) => updateSetting(integration.id, 'apiKey', e.target.value)}
+                                  placeholder="whsec_..."
+                                  className="pr-10 font-mono text-sm"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3"
+                                  onClick={() => setShowApiKey(!showApiKey)}
+                                >
+                                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const secret = `whsec_${crypto.randomUUID().replace(/-/g, '')}`;
+                                  updateSetting(integration.id, 'apiKey', secret);
+                                  toast.success("New webhook secret generated");
+                                }}
+                              >
+                                Generate
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Used to verify webhook signatures for security
+                            </p>
+                          </div>
+
+                          {/* Event Types */}
+                          <div className="space-y-2">
+                            <Label>Subscribed Events</Label>
+                            <div className="flex flex-wrap gap-2">
+                              {["bake.created", "bake.completed", "order.placed", "user.signup"].map((event) => (
+                                <Badge key={event} variant="secondary" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">
+                                  {event}
+                                </Badge>
+                              ))}
+                              <Badge variant="outline" className="cursor-pointer">+ Add Event</Badge>
+                            </div>
+                          </div>
                         </div>
                       )}
 
