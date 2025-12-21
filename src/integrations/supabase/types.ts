@@ -375,6 +375,39 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          community_reports: boolean
+          created_at: string
+          id: string
+          new_messages: boolean
+          security_alerts: boolean
+          status_updates: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          community_reports?: boolean
+          created_at?: string
+          id?: string
+          new_messages?: boolean
+          security_alerts?: boolean
+          status_updates?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          community_reports?: boolean
+          created_at?: string
+          id?: string
+          new_messages?: boolean
+          security_alerts?: boolean
+          status_updates?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       premix_steps: {
         Row: {
           content: string

@@ -9,6 +9,8 @@ import { UserRoleManager } from "@/components/UserRoleManager";
 import { AuditLogsViewer } from "@/components/AuditLogsViewer";
 import { CustomerMessagesManager } from "@/components/CustomerMessagesManager";
 import { RoleAccessGuide } from "@/components/RoleAccessGuide";
+import { TutorialsManager } from "@/components/TutorialsManager";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -18,12 +20,16 @@ const Settings = () => {
   const [showAuditLogs, setShowAuditLogs] = useState(false);
   const [showCustomerMessages, setShowCustomerMessages] = useState(false);
   const [showRoleGuide, setShowRoleGuide] = useState(false);
+  const [showTutorials, setShowTutorials] = useState(false);
+  const [showNotificationPrefs, setShowNotificationPrefs] = useState(false);
 
   const closeAllPanels = () => {
     setShowUserRoles(false);
     setShowAuditLogs(false);
     setShowCustomerMessages(false);
     setShowRoleGuide(false);
+    setShowTutorials(false);
+    setShowNotificationPrefs(false);
   };
 
   useEffect(() => {
@@ -162,20 +168,31 @@ const Settings = () => {
       title: "Tutorials Management",
       description: "Create and manage tutorial content",
       icon: GraduationCap,
-      href: "/tutorials",
+      onClick: () => { closeAllPanels(); setShowTutorials(true); },
+      isExpanded: showTutorials,
     },
   ];
+
+  // Notification preferences card for all staff
+  const notificationCard = {
+    title: "Notification Preferences",
+    description: "Choose which email alerts you receive",
+    icon: Bell,
+    href: null as string | null,
+    onClick: () => { closeAllPanels(); setShowNotificationPrefs(true); },
+    isExpanded: showNotificationPrefs,
+  };
 
   // Combine cards based on role
   const getAdminCards = () => {
     if (isAdmin) {
-      return [...adminOnlyCards.slice(0, 3), ...moderatorCards, adminOnlyCards[3], adminOnlyCards[4], ...supportCards];
+      return [...adminOnlyCards.slice(0, 3), ...moderatorCards, adminOnlyCards[3], adminOnlyCards[4], ...supportCards, notificationCard];
     }
     if (isModerator) {
-      return moderatorCards;
+      return [...moderatorCards, notificationCard];
     }
     if (isSupport) {
-      return supportCards;
+      return [...supportCards, notificationCard];
     }
     return [];
   };
@@ -327,6 +344,20 @@ const Settings = () => {
             {isAdmin && showRoleGuide && (
               <div className="mt-6">
                 <RoleAccessGuide />
+              </div>
+            )}
+
+            {/* Tutorials Management Panel (Admin & Support) */}
+            {(isAdmin || isSupport) && showTutorials && (
+              <div className="mt-6">
+                <TutorialsManager />
+              </div>
+            )}
+
+            {/* Notification Preferences Panel (All Staff) */}
+            {isStaff && showNotificationPrefs && (
+              <div className="mt-6">
+                <NotificationPreferences />
               </div>
             )}
           </section>

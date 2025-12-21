@@ -69,10 +69,14 @@ const Contact = () => {
       // Notify moderators via edge function (fire and forget)
       supabase.functions.invoke('notify-moderators', {
         body: {
-          messageId: insertedMessage.id,
-          subject: result.data.subject,
-          category: result.data.category,
-          message: result.data.message,
+          type: 'new_message',
+          data: {
+            messageId: insertedMessage.id,
+            subject: result.data.subject,
+            category: result.data.category,
+            message: result.data.message,
+            email: user?.email,
+          }
         }
       }).catch((notifyError) => {
         console.error('Failed to notify moderators:', notifyError);
