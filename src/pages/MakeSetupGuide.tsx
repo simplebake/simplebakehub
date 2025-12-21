@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Copy, Download, ExternalLink, Check, Shield, Zap, CheckCircle2, Play, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Copy, Download, ExternalLink, Check, Shield, Zap, CheckCircle2, Play, Loader2, AlertCircle, CheckCircle, Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ const MakeSetupGuide = () => {
   const [copied, setCopied] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   
   const incomingWebhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/incoming-webhook`;
 
@@ -160,6 +161,16 @@ const MakeSetupGuide = () => {
     }
   };
 
+  const generatePrivateKey = () => {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    const key = Array.from(array)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    setGeneratedKey(key);
+    toast.success("Private key generated! Copy it and keep it secure.");
+  };
+
   const testWebhook = async () => {
     setIsTesting(true);
     setTestResult(null);
@@ -264,6 +275,46 @@ const MakeSetupGuide = () => {
                 Open Make.com
               </a>
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Private Key Generator */}
+        <Card className="mb-8 border-yellow-500/20 bg-yellow-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5 text-yellow-600" />
+              Generate Private Key
+            </CardTitle>
+            <CardDescription>
+              Generate a secure 256-bit private key for signing your webhooks
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button onClick={generatePrivateKey} className="gap-2">
+              <Key className="h-4 w-4" />
+              Generate New Key
+            </Button>
+            
+            {generatedKey && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Your Private Key:</p>
+                <div className="flex gap-2">
+                  <code className="flex-1 bg-muted p-3 rounded-lg text-sm font-mono break-all">
+                    {generatedKey}
+                  </code>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => copyToClipboard(generatedKey, "Private Key")}
+                  >
+                    {copied === "Private Key" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Save this key securely. Use it in both your Make.com scenario and your webhook configuration.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
