@@ -191,40 +191,44 @@ const MakeSetupGuide = () => {
         MAKE.COM WEBHOOK CONFIGURATION
 ═══════════════════════════════════════════════════════════
 
-📋 STEP 3: Set Variable - Payload
+MODULE 1: Trigger (Webhook or Schedule)
+────────────────────────────────────────────────────────────
+This is your starting module that triggers the scenario.
+
+MODULE 2: Set Variable - Payload
 ────────────────────────────────────────────────────────────
 Variable name: payload
 Variable value: {"eventType": "order.created", "orderId": "123", "total": 99.99}
 
-📋 STEP 4: Set Variable - Timestamp  
+MODULE 3: Set Variable - Timestamp  
 ────────────────────────────────────────────────────────────
 Variable name: timestamp
 Variable value: {{formatDate(now; "YYYY-MM-DDTHH:mm:ssZ")}}
 
-🔐 STEP 5: Encryptor → Sign Module
+MODULE 4: Encryptor → Sign
 ────────────────────────────────────────────────────────────
 Algorithm:      sha256
 Key:            ${secretKey}
 Key encoding:   Text
-Data:           {{4.payload}}
+Data:           {{2.payload}}
 Data encoding:  Text
 Digest:         Hexadecimal
 
-🌐 STEP 6: HTTP → Make a Request
+MODULE 5: HTTP → Make a Request
 ────────────────────────────────────────────────────────────
 URL:            ${incomingWebhookUrl}
 Method:         POST
 Body type:      Raw
 Content type:   JSON (application/json)
-Request content: {{4.payload}}
+Request content: {{2.payload}}
 
 Headers:
-  X-Webhook-Signature:  {{5.value}}
+  X-Webhook-Signature:  {{4.value}}
   X-Webhook-Timestamp:  {{3.timestamp}}
   Content-Type:         application/json
 
 ═══════════════════════════════════════════════════════════
-    Copy the values above into your Make.com modules!
+  Module references: 2=payload, 3=timestamp, 4=signature
 ═══════════════════════════════════════════════════════════
 `.trim();
 
