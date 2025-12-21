@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { newMessageTemplate, statusUpdateTemplate, securityAlertTemplate, communityReportTemplate } from "../_shared/emailTemplates.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -10,34 +11,37 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+type NotificationType = "new_message" | "status_update" | "security_alert" | "community_report";
+
 interface NotifyRequest {
-  messageId: string;
-  subject: string;
-  category: string;
-  message: string;
+  type: NotificationType;
+  data: Record<string, any>;
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messageId, subject, category, message }: NotifyRequest = await req.json();
+    const { type, data }: NotifyRequest = await req.json();
 
-    console.log("Received notification request for message:", messageId);
+    console.log(`Processing ${type} notification:`, data);
 
-    // Create Supabase client with service role for fetching moderator emails
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch all moderator and admin user IDs
+    // Determine which roles to notify based on notification type
+    const rolesToNotify = type === "security_alert" 
+      ? ["admin"] 
+      : ["admin", "moderator"];
+
+    // Fetch staff with relevant roles
     const { data: staffRoles, error: rolesError } = await supabase
       .from("user_roles")
       .select("user_id")
-      .in("role", ["admin", "moderator"]);
+      .in("role", rolesToNotify);
 
     if (rolesError) {
       console.error("Error fetching staff roles:", rolesError);
@@ -52,19 +56,54 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Fetch staff email addresses from profiles
     const staffUserIds = staffRoles.map(r => r.user_id);
+
+    // Map notification type to preference column
+    const preferenceColumn = {
+      new_message: "new_messages",
+      status_update: "status_updates",
+      security_alert: "security_alerts",
+      community_report: "community_reports",
+    }[type];
+
+    // Check notification preferences for each staff member
+    const { data: preferences, error: prefError } = await supabase
+      .from("notification_preferences")
+      .select("user_id")
+      .in("user_id", staffUserIds)
+      .eq(preferenceColumn, true);
+
+    // Staff without preferences record get all notifications (default behavior)
+    const staffWithPreferences = new Set(preferences?.map(p => p.user_id) || []);
+    const staffWhoWantNotifications = staffUserIds.filter(userId => {
+      // If no preference record exists, default to receiving notifications
+      if (!staffWithPreferences.has(userId)) return true;
+      // If preference exists and is true, include them
+      return preferences?.some(p => p.user_id === userId);
+    });
+
+    if (staffWhoWantNotifications.length === 0) {
+      console.log("No staff opted in for this notification type");
+      return new Response(
+        JSON.stringify({ success: true, message: "No staff opted in" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Fetch email addresses
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("email")
-      .in("id", staffUserIds);
+      .in("id", staffWhoWantNotifications);
 
     if (profilesError) {
       console.error("Error fetching staff profiles:", profilesError);
       throw new Error("Failed to fetch staff emails");
     }
 
-    if (!profiles || profiles.length === 0) {
+    const staffEmails = profiles?.map(p => p.email).filter(Boolean) || [];
+
+    if (staffEmails.length === 0) {
       console.log("No staff email addresses found");
       return new Response(
         JSON.stringify({ success: true, message: "No staff emails found" }),
@@ -72,36 +111,52 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const staffEmails = profiles.map(p => p.email).filter(Boolean);
-    console.log(`Sending notification to ${staffEmails.length} staff member(s)`);
+    console.log(`Sending ${type} notification to ${staffEmails.length} staff member(s)`);
 
-    // Send email notification
+    // Generate email content based on type
+    let emailContent;
+    switch (type) {
+      case "new_message":
+        emailContent = newMessageTemplate({
+          category: data.category,
+          subject: data.subject,
+          message: data.message,
+          senderEmail: data.email,
+        });
+        break;
+      case "status_update":
+        emailContent = statusUpdateTemplate({
+          messageSubject: data.messageSubject,
+          oldStatus: data.oldStatus,
+          newStatus: data.newStatus,
+          updatedBy: data.updatedBy,
+        });
+        break;
+      case "security_alert":
+        emailContent = securityAlertTemplate({
+          alertType: data.alertType,
+          ipAddress: data.ipAddress,
+          reason: data.reason,
+          timestamp: data.timestamp,
+        });
+        break;
+      case "community_report":
+        emailContent = communityReportTemplate({
+          reportType: data.reportType,
+          contentId: data.contentId,
+          reportedBy: data.reportedBy,
+          reason: data.reason,
+        });
+        break;
+      default:
+        throw new Error(`Unknown notification type: ${type}`);
+    }
+
     const emailResponse = await resend.emails.send({
       from: "Simple Bake Hub <onboarding@resend.dev>",
       to: staffEmails,
-      subject: `New Customer Message: ${subject}`,
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333; font-size: 24px;">New Customer Message</h1>
-          <p style="color: #666; font-size: 16px;">A new customer message has been received and requires your attention.</p>
-          
-          <div style="background-color: #f5f5f5; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0;"><strong>Category:</strong> ${category}</p>
-            <p style="margin: 0 0 10px 0;"><strong>Subject:</strong> ${subject}</p>
-            <p style="margin: 0;"><strong>Message:</strong></p>
-            <p style="margin: 10px 0 0 0; white-space: pre-wrap;">${message}</p>
-          </div>
-          
-          <p style="color: #666; font-size: 14px;">
-            Please log in to the Simple Bake Hub admin panel to respond to this message.
-          </p>
-          
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-          <p style="color: #999; font-size: 12px;">
-            This is an automated notification from Simple Bake Hub.
-          </p>
-        </div>
-      `,
+      subject: emailContent.subject,
+      html: emailContent.html,
     });
 
     console.log("Email sent successfully:", emailResponse);
