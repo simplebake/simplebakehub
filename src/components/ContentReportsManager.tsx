@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/supabase";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,8 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Flag, Clock, Eye, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
-import { maskEmail } from "@/lib/emailMasking";
+import { Flag, Clock, Eye, CheckCircle, XCircle, AlertTriangle, EyeOff, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface ContentReport {
   id: string;
@@ -105,22 +105,18 @@ export function ContentReportsManager() {
         .eq("id", id);
       if (error) throw error;
 
-      // Send notification for community reports
+      // Send notification to reporter when resolved/dismissed
       if (status === "resolved" || status === "dismissed") {
         try {
-          await supabase.functions.invoke('notify-moderators', {
+          await supabase.functions.invoke('notify-reporter', {
             body: {
-              type: 'community_report',
-              data: {
-                reportType: `Report ${status}`,
-                contentId: selectedReport?.content_id,
-                reportedBy: selectedReport?.reporter_profile?.name || 'Unknown',
-                reason: resolution_notes || `Report was ${status}`,
-              }
+              reportId: id,
+              status,
+              resolutionNotes: resolution_notes || `Your report has been ${status}.`,
             }
           });
         } catch (e) {
-          console.error('Failed to send notification:', e);
+          console.error('Failed to send reporter notification:', e);
         }
       }
     },
@@ -132,6 +128,52 @@ export function ContentReportsManager() {
     },
     onError: () => {
       toast.error("Failed to update report");
+    },
+  });
+
+  // Hide bake share (set is_visible to false)
+  const hideContentMutation = useMutation({
+    mutationFn: async ({ contentType, contentId }: { contentType: string; contentId: string }) => {
+      if (contentType === "bake_share") {
+        const { error } = await supabase
+          .from("bake_shares")
+          .update({ is_visible: false })
+          .eq("id", contentId);
+        if (error) throw error;
+      }
+      return { contentType, contentId };
+    },
+    onSuccess: () => {
+      toast.success("Content has been hidden");
+    },
+    onError: () => {
+      toast.error("Failed to hide content");
+    },
+  });
+
+  // Delete content (bake share or comment)
+  const deleteContentMutation = useMutation({
+    mutationFn: async ({ contentType, contentId }: { contentType: string; contentId: string }) => {
+      if (contentType === "bake_share") {
+        const { error } = await supabase
+          .from("bake_shares")
+          .delete()
+          .eq("id", contentId);
+        if (error) throw error;
+      } else if (contentType === "bake_comment") {
+        const { error } = await supabase
+          .from("bake_comments")
+          .delete()
+          .eq("id", contentId);
+        if (error) throw error;
+      }
+      return { contentType, contentId };
+    },
+    onSuccess: () => {
+      toast.success("Content has been deleted");
+    },
+    onError: () => {
+      toast.error("Failed to delete content");
     },
   });
 
@@ -329,33 +371,86 @@ export function ContentReportsManager() {
                 />
               </div>
 
-              <div className="flex gap-2">
-                {selectedReport.status === "pending" && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {selectedReport.status === "pending" && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleUpdateStatus("reviewing")}
+                      disabled={updateReportMutation.isPending}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Mark as Reviewing
+                    </Button>
+                  )}
                   <Button
-                    variant="outline"
-                    onClick={() => handleUpdateStatus("reviewing")}
+                    variant="default"
+                    onClick={() => handleUpdateStatus("resolved")}
                     disabled={updateReportMutation.isPending}
                   >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Mark as Reviewing
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Resolve
                   </Button>
-                )}
-                <Button
-                  variant="default"
-                  onClick={() => handleUpdateStatus("resolved")}
-                  disabled={updateReportMutation.isPending}
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Resolve
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleUpdateStatus("dismissed")}
-                  disabled={updateReportMutation.isPending}
-                >
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Dismiss
-                </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleUpdateStatus("dismissed")}
+                    disabled={updateReportMutation.isPending}
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Dismiss
+                  </Button>
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-sm font-medium mb-2">Content Actions</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedReport.content_type === "bake_share" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          hideContentMutation.mutate({
+                            contentType: selectedReport.content_type,
+                            contentId: selectedReport.content_id,
+                          });
+                        }}
+                        disabled={hideContentMutation.isPending}
+                      >
+                        <EyeOff className="w-4 h-4 mr-2" />
+                        Hide Content
+                      </Button>
+                    )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Content
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this content?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. The {selectedReport.content_type.replace('_', ' ')} will be permanently deleted.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                              deleteContentMutation.mutate({
+                                contentType: selectedReport.content_type,
+                                contentId: selectedReport.content_id,
+                              });
+                            }}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
               </div>
             </div>
           )}
