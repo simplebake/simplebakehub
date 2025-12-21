@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Copy, Download, ExternalLink, Check, Shield, Zap, CheckCircle2, Play, Loader2, AlertCircle, CheckCircle, Key, Save, Clock } from "lucide-react";
+import { ArrowLeft, Copy, Download, ExternalLink, Check, Shield, Zap, CheckCircle2, Play, Loader2, AlertCircle, CheckCircle, Key, Save, Clock, ArrowRight, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -526,10 +526,13 @@ Headers:
                   </div>
                 </div>
 
-                {/* Arrow */}
-                <div className="flex items-center">
-                  <div className="w-6 h-0.5 bg-muted-foreground/30" />
-                  <div className="w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-muted-foreground/30" />
+                {/* Animated Arrow */}
+                <div className="flex items-center relative">
+                  <div className="w-8 h-0.5 bg-gradient-to-r from-purple-400 to-blue-400 animate-flow-pulse" />
+                  <div className="absolute inset-0 overflow-hidden">
+                    <div className="w-2 h-0.5 bg-white/80 animate-flow-arrow" />
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-blue-400 -ml-1" />
                 </div>
 
                 {/* Module 2 - Set Payload */}
@@ -542,10 +545,13 @@ Headers:
                   <code className="text-[10px] mt-1 text-muted-foreground">{"{{2.payload}}"}</code>
                 </div>
 
-                {/* Arrow */}
-                <div className="flex items-center">
-                  <div className="w-6 h-0.5 bg-muted-foreground/30" />
-                  <div className="w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-muted-foreground/30" />
+                {/* Animated Arrow */}
+                <div className="flex items-center relative">
+                  <div className="w-8 h-0.5 bg-gradient-to-r from-blue-400 to-cyan-400 animate-flow-pulse" style={{ animationDelay: '0.3s' }} />
+                  <div className="absolute inset-0 overflow-hidden">
+                    <div className="w-2 h-0.5 bg-white/80 animate-flow-arrow" style={{ animationDelay: '0.3s' }} />
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-cyan-400 -ml-1" />
                 </div>
 
                 {/* Module 3 - Set Timestamp */}
@@ -558,10 +564,13 @@ Headers:
                   <code className="text-[10px] mt-1 text-muted-foreground">{"{{3.timestamp}}"}</code>
                 </div>
 
-                {/* Arrow */}
-                <div className="flex items-center">
-                  <div className="w-6 h-0.5 bg-muted-foreground/30" />
-                  <div className="w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-muted-foreground/30" />
+                {/* Animated Arrow */}
+                <div className="flex items-center relative">
+                  <div className="w-8 h-0.5 bg-gradient-to-r from-cyan-400 to-yellow-400 animate-flow-pulse" style={{ animationDelay: '0.6s' }} />
+                  <div className="absolute inset-0 overflow-hidden">
+                    <div className="w-2 h-0.5 bg-white/80 animate-flow-arrow" style={{ animationDelay: '0.6s' }} />
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-yellow-400 -ml-1" />
                 </div>
 
                 {/* Module 4 - Sign */}
@@ -574,10 +583,13 @@ Headers:
                   <code className="text-[10px] mt-1 text-muted-foreground">{"{{4.value}}"}</code>
                 </div>
 
-                {/* Arrow */}
-                <div className="flex items-center">
-                  <div className="w-6 h-0.5 bg-muted-foreground/30" />
-                  <div className="w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-muted-foreground/30" />
+                {/* Animated Arrow */}
+                <div className="flex items-center relative">
+                  <div className="w-8 h-0.5 bg-gradient-to-r from-yellow-400 to-green-400 animate-flow-pulse" style={{ animationDelay: '0.9s' }} />
+                  <div className="absolute inset-0 overflow-hidden">
+                    <div className="w-2 h-0.5 bg-white/80 animate-flow-arrow" style={{ animationDelay: '0.9s' }} />
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-green-400 -ml-1" />
                 </div>
 
                 {/* Module 5 - HTTP Request */}
@@ -893,6 +905,156 @@ Headers:
                 <li>Show the response status and timing</li>
                 <li>Help verify your webhook configuration is working</li>
               </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Troubleshooting Section */}
+        <Card className="mb-8 border-orange-500/20 bg-orange-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-orange-500" />
+              Troubleshooting Guide
+            </CardTitle>
+            <CardDescription>Common signature validation errors and how to fix them</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Error 1 */}
+            <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <p className="font-medium text-destructive">"Missing signature"</p>
+                  <p className="text-sm text-muted-foreground">
+                    The <code className="bg-muted px-1 rounded">X-Webhook-Signature</code> header is not being sent.
+                  </p>
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium">Solutions:</p>
+                    <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                      <li>Add the Encryptor → Sign module before your HTTP request</li>
+                      <li>In HTTP module headers, add: <code className="bg-muted px-1 rounded">X-Webhook-Signature: {"{{4.value}}"}</code></li>
+                      <li>Ensure the Encryptor module is connected and configured correctly</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Error 2 */}
+            <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <p className="font-medium text-destructive">"Invalid signature"</p>
+                  <p className="text-sm text-muted-foreground">
+                    The signature doesn't match what the server expects.
+                  </p>
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium">Solutions:</p>
+                    <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                      <li><strong>Key mismatch:</strong> Ensure the key in Make.com matches your saved private key exactly</li>
+                      <li><strong>Wrong data signed:</strong> Sign the exact payload string, not a modified version</li>
+                      <li><strong>Algorithm:</strong> Use <code className="bg-muted px-1 rounded">sha256</code> with <code className="bg-muted px-1 rounded">Hexadecimal</code> digest</li>
+                      <li><strong>Encoding:</strong> Set both Key encoding and Data encoding to <code className="bg-muted px-1 rounded">Text</code></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Error 3 */}
+            <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <p className="font-medium text-destructive">"Timestamp expired" or "Missing timestamp"</p>
+                  <p className="text-sm text-muted-foreground">
+                    The <code className="bg-muted px-1 rounded">X-Webhook-Timestamp</code> header is missing or too old.
+                  </p>
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium">Solutions:</p>
+                    <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                      <li>Add the Set Variable module for timestamp with: <code className="bg-muted px-1 rounded">{'{{formatDate(now; "YYYY-MM-DDTHH:mm:ssZ")}}'}</code></li>
+                      <li>Add the header: <code className="bg-muted px-1 rounded">X-Webhook-Timestamp: {"{{3.timestamp}}"}</code></li>
+                      <li>Ensure your scenario runs promptly (timestamps older than 5 minutes may be rejected)</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Error 4 */}
+            <div className="p-4 rounded-lg border border-yellow-500/20 bg-yellow-500/5">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <p className="font-medium text-yellow-700 dark:text-yellow-400">"Module references non-existing module"</p>
+                  <p className="text-sm text-muted-foreground">
+                    Make.com can't find the referenced module number.
+                  </p>
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium">Solutions:</p>
+                    <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                      <li>Module numbers depend on your scenario layout - check the module IDs in Make.com</li>
+                      <li>Click on a module and look at the URL or module info for the actual number</li>
+                      <li>Update references to match your actual module numbers (e.g., if your payload is module 3, use <code className="bg-muted px-1 rounded">{"{{3.payload}}"}</code>)</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Error 5 */}
+            <div className="p-4 rounded-lg border border-blue-500/20 bg-blue-500/5">
+              <div className="flex items-start gap-3">
+                <HelpCircle className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <p className="font-medium text-blue-700 dark:text-blue-400">"CORS error" or "Network error"</p>
+                  <p className="text-sm text-muted-foreground">
+                    The request is being blocked by browser security or network issues.
+                  </p>
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium">Solutions:</p>
+                    <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                      <li>This is normal when testing from a browser - the webhook endpoint handles CORS for Make.com requests</li>
+                      <li>Use the "Test Signature Validation" button above which makes a proper signed request</li>
+                      <li>Check your network connection and ensure the Supabase project is running</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Checklist */}
+            <div className="p-4 rounded-lg border border-green-500/20 bg-green-500/5">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <p className="font-medium text-green-700 dark:text-green-400">Quick Verification Checklist</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                      Private key is saved and matches Make.com Encryptor key
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                      Encryptor uses SHA256 algorithm with Hexadecimal digest
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                      Both encoding settings are set to "Text"
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                      HTTP headers include X-Webhook-Signature and X-Webhook-Timestamp
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                      Request content matches the data that was signed
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -95,10 +95,35 @@ export default {
             height: "0",
           },
         },
+        "flow-pulse": {
+          "0%, 100%": {
+            opacity: "0.3",
+            transform: "scaleX(1)",
+          },
+          "50%": {
+            opacity: "1",
+            transform: "scaleX(1.1)",
+          },
+        },
+        "flow-arrow": {
+          "0%": {
+            transform: "translateX(-100%)",
+            opacity: "0",
+          },
+          "50%": {
+            opacity: "1",
+          },
+          "100%": {
+            transform: "translateX(100%)",
+            opacity: "0",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "flow-pulse": "flow-pulse 2s ease-in-out infinite",
+        "flow-arrow": "flow-arrow 1.5s ease-in-out infinite",
       },
     },
   },
