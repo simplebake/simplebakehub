@@ -784,6 +784,33 @@ export function IntegrationsSettings() {
                             </p>
                           </div>
 
+                          {/* Signature Verification Guide */}
+                          <div className="p-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-950/20 space-y-3">
+                            <div className="flex items-center gap-2">
+                              <Shield className="h-5 w-5 text-blue-500" />
+                              <span className="font-medium text-sm text-blue-700 dark:text-blue-300">Signature Verification</span>
+                            </div>
+                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                              When sending webhooks TO your app, include these headers:
+                            </p>
+                            <div className="bg-blue-100 dark:bg-blue-900/30 rounded p-2 font-mono text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                              <div><strong>X-Webhook-Signature:</strong> HMAC-SHA256(payload, secret)</div>
+                              <div><strong>X-Webhook-Timestamp:</strong> ISO 8601 timestamp</div>
+                            </div>
+                            <details className="text-xs text-blue-700 dark:text-blue-300">
+                              <summary className="cursor-pointer font-medium hover:underline">How to sign in Make.com</summary>
+                              <ol className="mt-2 space-y-1.5 list-decimal list-inside pl-2">
+                                <li>Add an <strong>HTTP → Make a request</strong> module</li>
+                                <li>Set URL to your incoming webhook endpoint</li>
+                                <li>Add header: <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">X-Webhook-Timestamp</code> = <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">{"{{now}}"}</code></li>
+                                <li>Add a <strong>Crypto → Sign</strong> module before the HTTP module</li>
+                                <li>Set Algorithm to <strong>SHA-256</strong>, Key to your webhook secret</li>
+                                <li>Set Data to your JSON payload string</li>
+                                <li>Add header: <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">X-Webhook-Signature</code> = signature output</li>
+                              </ol>
+                            </details>
+                          </div>
+
                           {/* Event Subscriptions */}
                           <div className="space-y-3">
                             <Label>Subscribed Events</Label>
