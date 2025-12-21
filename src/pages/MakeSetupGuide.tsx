@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Copy, Download, ExternalLink, Check, Shield, Zap, CheckCircle2, Play, Loader2, AlertCircle, CheckCircle, Key } from "lucide-react";
+import { ArrowLeft, Copy, Download, ExternalLink, Check, Shield, Zap, CheckCircle2, Play, Loader2, AlertCircle, CheckCircle, Key, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ const MakeSetupGuide = () => {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   const incomingWebhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/incoming-webhook`;
 
@@ -171,6 +172,56 @@ const MakeSetupGuide = () => {
     toast.success("Private key generated! Copy it and keep it secure.");
   };
 
+  const saveKeyToConfig = async () => {
+    if (!generatedKey) return;
+    
+    setIsSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error("Please log in to save your webhook configuration");
+        return;
+      }
+
+      // Check if user already has a webhook config
+      const { data: existingConfig } = await supabase
+        .from('webhook_configs')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingConfig) {
+        // Update existing config
+        const { error } = await supabase
+          .from('webhook_configs')
+          .update({ secret_key: generatedKey, updated_at: new Date().toISOString() })
+          .eq('id', existingConfig.id);
+
+        if (error) throw error;
+        toast.success("Webhook configuration updated with new private key!");
+      } else {
+        // Create new config
+        const { error } = await supabase
+          .from('webhook_configs')
+          .insert({
+            user_id: user.id,
+            secret_key: generatedKey,
+            is_enabled: true,
+            subscribed_events: ['test.webhook', 'order.created', 'bake.completed']
+          });
+
+        if (error) throw error;
+        toast.success("Webhook configuration saved with private key!");
+      }
+    } catch (error) {
+      console.error('Error saving webhook config:', error);
+      toast.error("Failed to save webhook configuration. You may need admin permissions.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const testWebhook = async () => {
     setIsTesting(true);
     setTestResult(null);
@@ -313,6 +364,24 @@ const MakeSetupGuide = () => {
                 <p className="text-xs text-muted-foreground">
                   Save this key securely. Use it in both your Make.com scenario and your webhook configuration.
                 </p>
+                <Button 
+                  onClick={saveKeyToConfig} 
+                  disabled={isSaving}
+                  variant="secondary" 
+                  className="gap-2 mt-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Save to Webhook Config
+                    </>
+                  )}
+                </Button>
               </div>
             )}
           </CardContent>
