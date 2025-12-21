@@ -716,10 +716,31 @@ export function IntegrationsSettings() {
                               type="url"
                               value={settings?.webhookUrl || ""}
                               onChange={(e) => updateSetting(integration.id, 'webhookUrl', e.target.value)}
-                              placeholder="https://hooks.zapier.com/hooks/catch/..."
+                              placeholder="https://hook.make.com/..."
                             />
                             <p className="text-xs text-muted-foreground">
                               URL where events will be sent (e.g., Make, n8n, or any webhook receiver)
+                            </p>
+                          </div>
+
+                          {/* Make.com Integration Guide */}
+                          <div className="p-4 rounded-lg border border-purple-200 bg-purple-50 dark:border-purple-900/50 dark:bg-purple-950/20 space-y-3">
+                            <div className="flex items-center gap-2">
+                              <svg className="h-5 w-5 text-purple-500" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                              </svg>
+                              <span className="font-medium text-sm text-purple-700 dark:text-purple-300">Make.com Integration</span>
+                            </div>
+                            <ol className="text-xs text-purple-700 dark:text-purple-300 space-y-1.5 list-decimal list-inside">
+                              <li>Go to <a href="https://www.make.com/en/login" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">Make.com</a> and create a new Scenario</li>
+                              <li>Add a <strong>"Webhooks"</strong> module as the trigger</li>
+                              <li>Select <strong>"Custom webhook"</strong> and click <strong>"Add"</strong></li>
+                              <li>Copy the webhook URL and paste it above</li>
+                              <li>Click <strong>"Test Webhook"</strong> below, then <strong>"OK"</strong> in Make</li>
+                              <li>Add more modules to process the data (e.g., Google Sheets, Email, Slack)</li>
+                            </ol>
+                            <p className="text-xs text-purple-600 dark:text-purple-400">
+                              Once connected, baking events will trigger your Make scenario automatically!
                             </p>
                           </div>
 
