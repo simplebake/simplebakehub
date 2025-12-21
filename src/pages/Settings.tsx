@@ -1,6 +1,6 @@
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText, MessageSquare, BookOpen, GraduationCap } from "lucide-react";
+import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText, MessageSquare, BookOpen, GraduationCap, Flag } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -11,6 +11,7 @@ import { CustomerMessagesManager } from "@/components/CustomerMessagesManager";
 import { RoleAccessGuide } from "@/components/RoleAccessGuide";
 import { TutorialsManager } from "@/components/TutorialsManager";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
+import { ContentReportsManager } from "@/components/ContentReportsManager";
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -22,6 +23,7 @@ const Settings = () => {
   const [showRoleGuide, setShowRoleGuide] = useState(false);
   const [showTutorials, setShowTutorials] = useState(false);
   const [showNotificationPrefs, setShowNotificationPrefs] = useState(false);
+  const [showContentReports, setShowContentReports] = useState(false);
 
   const closeAllPanels = () => {
     setShowUserRoles(false);
@@ -30,6 +32,7 @@ const Settings = () => {
     setShowRoleGuide(false);
     setShowTutorials(false);
     setShowNotificationPrefs(false);
+    setShowContentReports(false);
   };
 
   useEffect(() => {
@@ -152,6 +155,13 @@ const Settings = () => {
       icon: MessageSquare,
       onClick: () => { closeAllPanels(); setShowCustomerMessages(true); },
       isExpanded: showCustomerMessages,
+    },
+    {
+      title: "Content Reports",
+      description: "Review and moderate reported community content",
+      icon: Flag,
+      onClick: () => { closeAllPanels(); setShowContentReports(true); },
+      isExpanded: showContentReports,
     },
   ];
 
@@ -337,6 +347,13 @@ const Settings = () => {
             {(isAdmin || isModerator) && showCustomerMessages && (
               <div className="mt-6">
                 <CustomerMessagesManager />
+              </div>
+            )}
+
+            {/* Content Reports Panel (Admin & Moderator) */}
+            {(isAdmin || isModerator) && showContentReports && (
+              <div className="mt-6">
+                <ContentReportsManager />
               </div>
             )}
 

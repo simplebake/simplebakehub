@@ -50,12 +50,38 @@ export const CustomerMessagesManager = () => {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, oldStatus, subject }: { id: string; status: string; oldStatus: string; subject: string }) => {
       const { error } = await supabase
         .from("customer_messages")
         .update({ status, updated_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
+
+      // Send status update notification
+      if (oldStatus !== status) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("name")
+            .eq("id", user?.id)
+            .single();
+
+          await supabase.functions.invoke('notify-moderators', {
+            body: {
+              type: 'status_update',
+              data: {
+                messageSubject: subject,
+                oldStatus,
+                newStatus: status,
+                updatedBy: profile?.name || user?.email || 'Unknown',
+              }
+            }
+          });
+        } catch (e) {
+          console.error('Failed to send status notification:', e);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customer-messages"] });
@@ -219,7 +245,13 @@ export const CustomerMessagesManager = () => {
                 <Select
                   value={selectedMessage.status}
                   onValueChange={(value) => {
-                    updateStatusMutation.mutate({ id: selectedMessage.id, status: value });
+                    const oldStatus = selectedMessage.status;
+                    updateStatusMutation.mutate({ 
+                      id: selectedMessage.id, 
+                      status: value, 
+                      oldStatus, 
+                      subject: selectedMessage.subject 
+                    });
                     setSelectedMessage({ ...selectedMessage, status: value });
                   }}
                 >
