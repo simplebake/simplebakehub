@@ -223,9 +223,15 @@ const MakeSetupGuide = () => {
             <CardDescription>Download the blueprint file and import it directly into Make.com</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
-            <Button onClick={downloadBlueprint} className="gap-2">
+            <Button asChild className="gap-2">
+              <a href="/make-webhook-blueprint.json" download="make-webhook-blueprint.json">
+                <Download className="h-4 w-4" />
+                Download Full Blueprint
+              </a>
+            </Button>
+            <Button onClick={downloadBlueprint} variant="outline" className="gap-2">
               <Download className="h-4 w-4" />
-              Download Blueprint
+              Download Basic Blueprint
             </Button>
             <Button 
               variant="outline" 
