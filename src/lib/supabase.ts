@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { logAuthEvent } from './auditLogger';
@@ -40,11 +40,13 @@ const setLastLoggedKey = (key: string) => {
   }
 };
 
+// Track if we've logged the initial sign-in for this hook instance
+let hasLoggedInitialSignIn = false;
+
 export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const hasLoggedInitialSignIn = useRef(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -66,14 +68,14 @@ export const useAuthState = () => {
 
         // For SIGNED_IN, only log once per session to avoid rate limits
         if (event === 'SIGNED_IN') {
-          if (hasLoggedInitialSignIn.current) {
+          if (hasLoggedInitialSignIn) {
             return; // Skip subsequent SIGNED_IN events (token refreshes)
           }
-          hasLoggedInitialSignIn.current = true;
+          hasLoggedInitialSignIn = true;
           setLastLoggedKey(eventKey);
           logAuthEvent('signin', userId, { method: 'password' });
         } else if (event === 'SIGNED_OUT') {
-          hasLoggedInitialSignIn.current = false;
+          hasLoggedInitialSignIn = false;
           setLastLoggedKey(eventKey);
           logAuthEvent('signout', userId);
         } else if (event === 'PASSWORD_RECOVERY') {
