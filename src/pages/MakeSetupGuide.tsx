@@ -418,9 +418,14 @@ const MakeSetupGuide = () => {
               <div className="space-y-2">
                 <p className="text-sm font-medium">Your New Private Key:</p>
                 <div className="flex gap-2">
-                  <code className="flex-1 bg-muted p-3 rounded-lg text-sm font-mono break-all">
+                  <div 
+                    className="flex-1 bg-muted p-3 rounded-lg text-sm font-mono break-all select-all"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
+                  >
                     {generatedKey}
-                  </code>
+                  </div>
                   <Button 
                     variant="outline" 
                     size="icon"
