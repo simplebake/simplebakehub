@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { logAuthEvent } from './auditLogger';
@@ -23,10 +23,28 @@ export const useAuth = () => {
   return context;
 };
 
+// Track last logged event to prevent duplicates
+const getLastLoggedKey = () => {
+  try {
+    return sessionStorage.getItem('lastAuthEventLogged');
+  } catch {
+    return null;
+  }
+};
+
+const setLastLoggedKey = (key: string) => {
+  try {
+    sessionStorage.setItem('lastAuthEventLogged', key);
+  } catch {
+    // Ignore storage errors
+  }
+};
+
 export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const hasLoggedInitialSignIn = useRef(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -36,25 +54,33 @@ export const useAuthState = () => {
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Log authentication events (deferred to avoid blocking)
-        setTimeout(() => {
-          const userId = session?.user?.id;
-          
-          switch (event) {
-            case 'SIGNED_IN':
-              logAuthEvent('signin', userId, { method: 'password' });
-              break;
-            case 'SIGNED_OUT':
-              logAuthEvent('signout', userId);
-              break;
-            case 'USER_UPDATED':
-              // Don't log routine updates
-              break;
-            case 'PASSWORD_RECOVERY':
-              logAuthEvent('password_reset', userId);
-              break;
+        // Log authentication events with deduplication
+        const userId = session?.user?.id;
+        const eventKey = `${event}-${userId}-${Math.floor(Date.now() / 300000)}`; // 5-minute window
+        const lastLogged = getLastLoggedKey();
+
+        // Skip if we've already logged this event recently
+        if (lastLogged === eventKey) {
+          return;
+        }
+
+        // For SIGNED_IN, only log once per session to avoid rate limits
+        if (event === 'SIGNED_IN') {
+          if (hasLoggedInitialSignIn.current) {
+            return; // Skip subsequent SIGNED_IN events (token refreshes)
           }
-        }, 0);
+          hasLoggedInitialSignIn.current = true;
+          setLastLoggedKey(eventKey);
+          logAuthEvent('signin', userId, { method: 'password' });
+        } else if (event === 'SIGNED_OUT') {
+          hasLoggedInitialSignIn.current = false;
+          setLastLoggedKey(eventKey);
+          logAuthEvent('signout', userId);
+        } else if (event === 'PASSWORD_RECOVERY') {
+          setLastLoggedKey(eventKey);
+          logAuthEvent('password_reset', userId);
+        }
+        // Don't log USER_UPDATED events
       }
     );
 
