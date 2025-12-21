@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Heart, MessageCircle, Upload } from "lucide-react";
+import { Heart, MessageCircle, Upload, Flag } from "lucide-react";
 import { z } from "zod";
+import { ReportContentDialog } from "@/components/ReportContentDialog";
 
 interface Premix {
   id: string;
@@ -401,6 +402,17 @@ const ShareBake = () => {
                             <MessageCircle className="h-4 w-4 mr-1" />
                             {share.bake_comments?.length || 0}
                           </Button>
+                          {share.user_id !== user.id && (
+                            <ReportContentDialog
+                              contentType="bake_share"
+                              contentId={share.id}
+                              trigger={
+                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                                  <Flag className="h-4 w-4" />
+                                </Button>
+                              }
+                            />
+                          )}
                         </div>
                       </CardContent>
                     </Card>

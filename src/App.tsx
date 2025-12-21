@@ -13,6 +13,7 @@ import Admin from "./pages/Admin";
 import Premixes from "./pages/Premixes";
 import GuidedBake from "./pages/GuidedBake";
 import Tutorials from "./pages/Tutorials";
+import TutorialsManagement from "./pages/TutorialsManagement";
 import ShareBake from "./pages/ShareBake";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
@@ -44,6 +45,7 @@ const App = () => {
               <Route path="/premixes" element={<Premixes />} />
               <Route path="/premixes/:id/bake" element={<GuidedBake />} />
               <Route path="/tutorials" element={<Tutorials />} />
+              <Route path="/tutorials/manage" element={<TutorialsManagement />} />
               <Route path="/share" element={<ShareBake />} />
               <Route path="/marketing" element={<Marketing />} />
               <Route path="/settings" element={<Settings />} />
