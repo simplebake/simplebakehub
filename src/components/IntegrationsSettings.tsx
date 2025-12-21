@@ -797,17 +797,191 @@ export function IntegrationsSettings() {
                               <div><strong>X-Webhook-Signature:</strong> HMAC-SHA256(payload, secret)</div>
                               <div><strong>X-Webhook-Timestamp:</strong> ISO 8601 timestamp</div>
                             </div>
-                            <details className="text-xs text-blue-700 dark:text-blue-300">
-                              <summary className="cursor-pointer font-medium hover:underline">How to sign in Make.com</summary>
-                              <ol className="mt-2 space-y-1.5 list-decimal list-inside pl-2">
-                                <li>Add an <strong>HTTP → Make a request</strong> module</li>
-                                <li>Set URL to your incoming webhook endpoint</li>
-                                <li>Add header: <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">X-Webhook-Timestamp</code> = <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">{"{{now}}"}</code></li>
-                                <li>Add a <strong>Crypto → Sign</strong> module before the HTTP module</li>
-                                <li>Set Algorithm to <strong>SHA-256</strong>, Key to your webhook secret</li>
-                                <li>Set Data to your JSON payload string</li>
-                                <li>Add header: <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">X-Webhook-Signature</code> = signature output</li>
-                              </ol>
+                          </div>
+
+                          {/* Detailed Make.com Setup Guide */}
+                          <div className="p-4 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 space-y-4">
+                            <div className="flex items-center gap-2">
+                              <ExternalLink className="h-5 w-5 text-amber-600" />
+                              <span className="font-medium text-sm text-amber-800 dark:text-amber-300">
+                                Make.com Signed Webhook Setup (Step-by-Step)
+                              </span>
+                            </div>
+                            
+                            {/* Step 1: Create Scenario */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-6 w-6 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-bold">1</div>
+                                <span className="font-medium text-sm text-amber-800 dark:text-amber-300">Create New Scenario</span>
+                              </div>
+                              <div className="ml-8 text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                                <p>• Go to <strong>Scenarios</strong> → <strong>Create a new scenario</strong></p>
+                                <p>• Click the <strong>+</strong> button to add your first module</p>
+                              </div>
+                            </div>
+
+                            {/* Step 2: Add Trigger */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-6 w-6 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-bold">2</div>
+                                <span className="font-medium text-sm text-amber-800 dark:text-amber-300">Add a Trigger Module</span>
+                              </div>
+                              <div className="ml-8 text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                                <p>• Search for <strong>"Schedule"</strong> or your data source (Airtable, Google Sheets, etc.)</p>
+                                <p>• Configure it to run at your desired interval</p>
+                                <p>• For testing, use <strong>Flow Control → Set Variable</strong> with test data:</p>
+                                <div className="bg-amber-100 dark:bg-amber-900/30 rounded p-2 font-mono text-[10px] mt-1">
+                                  {`{"event": "test.event", "data": {"message": "Hello from Make!"}}`}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Step 3: Set Variable for Payload */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-6 w-6 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-bold">3</div>
+                                <span className="font-medium text-sm text-amber-800 dark:text-amber-300">Add "Set Variable" Module</span>
+                              </div>
+                              <div className="ml-8 text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                                <p>• Search for <strong>Tools</strong> → <strong>Set variable</strong></p>
+                                <p>• <strong>Variable name:</strong> <code className="bg-amber-100 dark:bg-amber-900/50 px-1 rounded">payload</code></p>
+                                <p>• <strong>Variable value:</strong> Your JSON payload as a string</p>
+                                <div className="bg-amber-100 dark:bg-amber-900/30 rounded p-2 font-mono text-[10px] mt-1">
+                                  {`{"eventType": "order.created", "orderId": "123", "total": 99.99}`}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Step 4: Set Timestamp Variable */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-6 w-6 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-bold">4</div>
+                                <span className="font-medium text-sm text-amber-800 dark:text-amber-300">Add "Set Variable" for Timestamp</span>
+                              </div>
+                              <div className="ml-8 text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                                <p>• Add another <strong>Tools</strong> → <strong>Set variable</strong></p>
+                                <p>• <strong>Variable name:</strong> <code className="bg-amber-100 dark:bg-amber-900/50 px-1 rounded">timestamp</code></p>
+                                <p>• <strong>Variable value:</strong> Use the formula:</p>
+                                <div className="bg-amber-100 dark:bg-amber-900/30 rounded p-2 font-mono text-[10px] mt-1">
+                                  {"{{formatDate(now; \"YYYY-MM-DDTHH:mm:ssZ\")}}"}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Step 5: Crypto Sign Module */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-6 w-6 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-bold">5</div>
+                                <span className="font-medium text-sm text-amber-800 dark:text-amber-300">Add "Crypto → Sign" Module</span>
+                              </div>
+                              <div className="ml-8 text-xs text-amber-700 dark:text-amber-400 space-y-2">
+                                <p>• Search for <strong>Encryptor</strong> → <strong>Sign</strong></p>
+                                <div className="bg-amber-100 dark:bg-amber-900/30 rounded p-2 space-y-1.5">
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-semibold min-w-[80px]">Algorithm:</span>
+                                    <code className="text-[10px]">sha256</code>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-semibold min-w-[80px]">Key:</span>
+                                    <code className="text-[10px] break-all">{settings?.apiKey || "your_webhook_secret_here"}</code>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-semibold min-w-[80px]">Key encoding:</span>
+                                    <code className="text-[10px]">Text</code>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-semibold min-w-[80px]">Data:</span>
+                                    <code className="text-[10px]">{"{{4.payload}}"}</code>
+                                    <span className="text-[10px] text-amber-600">(reference to payload variable)</span>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-semibold min-w-[80px]">Data encoding:</span>
+                                    <code className="text-[10px]">Text</code>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-semibold min-w-[80px]">Digest:</span>
+                                    <code className="text-[10px]">Hexadecimal</code>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Step 6: HTTP Request Module */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-6 w-6 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-bold">6</div>
+                                <span className="font-medium text-sm text-amber-800 dark:text-amber-300">Add "HTTP → Make a Request" Module</span>
+                              </div>
+                              <div className="ml-8 text-xs text-amber-700 dark:text-amber-400 space-y-2">
+                                <p>• Search for <strong>HTTP</strong> → <strong>Make a request</strong></p>
+                                <div className="bg-amber-100 dark:bg-amber-900/30 rounded p-2 space-y-1.5">
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-semibold min-w-[80px]">URL:</span>
+                                    <code className="text-[10px] break-all">{incomingWebhookUrl}</code>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-semibold min-w-[80px]">Method:</span>
+                                    <code className="text-[10px]">POST</code>
+                                  </div>
+                                  <div className="flex flex-col gap-1 mt-2">
+                                    <span className="font-semibold">Headers:</span>
+                                    <div className="ml-2 space-y-1">
+                                      <div className="flex gap-2">
+                                        <code className="text-[10px] bg-amber-200 dark:bg-amber-800/50 px-1 rounded">Content-Type</code>
+                                        <code className="text-[10px]">application/json</code>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <code className="text-[10px] bg-amber-200 dark:bg-amber-800/50 px-1 rounded">X-Webhook-Timestamp</code>
+                                        <code className="text-[10px]">{"{{5.timestamp}}"}</code>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <code className="text-[10px] bg-amber-200 dark:bg-amber-800/50 px-1 rounded">X-Webhook-Signature</code>
+                                        <code className="text-[10px]">{"{{6.value}}"}</code>
+                                        <span className="text-[10px] text-amber-600">(Crypto output)</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-start gap-2 mt-2">
+                                    <span className="font-semibold min-w-[80px]">Body type:</span>
+                                    <code className="text-[10px]">Raw</code>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-semibold min-w-[80px]">Content type:</span>
+                                    <code className="text-[10px]">JSON (application/json)</code>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-semibold min-w-[80px]">Request content:</span>
+                                    <code className="text-[10px]">{"{{4.payload}}"}</code>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Final Flow Diagram */}
+                            <div className="space-y-2 pt-2 border-t border-amber-300 dark:border-amber-800">
+                              <span className="font-medium text-sm text-amber-800 dark:text-amber-300">Complete Flow:</span>
+                              <div className="flex items-center gap-1 flex-wrap text-xs">
+                                <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900/30 border-amber-300">Trigger</Badge>
+                                <span>→</span>
+                                <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900/30 border-amber-300">Set Payload</Badge>
+                                <span>→</span>
+                                <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900/30 border-amber-300">Set Timestamp</Badge>
+                                <span>→</span>
+                                <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900/30 border-amber-300">Crypto Sign</Badge>
+                                <span>→</span>
+                                <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900/30 border-amber-300">HTTP Request</Badge>
+                              </div>
+                            </div>
+
+                            {/* Troubleshooting Tips */}
+                            <details className="text-xs text-amber-700 dark:text-amber-300 pt-2 border-t border-amber-300 dark:border-amber-800">
+                              <summary className="cursor-pointer font-medium hover:underline">Troubleshooting Tips</summary>
+                              <ul className="mt-2 space-y-1 list-disc list-inside pl-2">
+                                <li><strong>401 Error:</strong> Check that the secret key matches exactly</li>
+                                <li><strong>Timestamp expired:</strong> Ensure timestamp is current (within 5 minutes)</li>
+                                <li><strong>Signature mismatch:</strong> Verify payload is exactly the same string used for signing</li>
+                                <li><strong>Module references:</strong> The {"{{4.payload}}"} syntax references module #4's output - adjust based on your actual module order</li>
+                              </ul>
                             </details>
                           </div>
 
