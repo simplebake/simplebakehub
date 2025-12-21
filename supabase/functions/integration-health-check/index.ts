@@ -27,10 +27,28 @@ const integrations: IntegrationConfig[] = [
   {
     id: "resend",
     name: "Resend",
-    healthEndpoint: "https://resend.com/api/health",
-    expectedStatus: 200,
+    // Resend doesn't have a public health endpoint, so we'll check via API
   },
 ];
+
+async function checkResendHealth(): Promise<{ healthy: boolean; responseTime: number; error?: string }> {
+  const startTime = Date.now();
+  try {
+    // Use Resend API to verify the API key is working
+    const { data, error } = await resend.domains.list();
+    const responseTime = Date.now() - startTime;
+    
+    if (error) {
+      return { healthy: false, responseTime, error: error.message };
+    }
+    
+    return { healthy: true, responseTime };
+  } catch (error: unknown) {
+    const responseTime = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return { healthy: false, responseTime, error: errorMessage };
+  }
+}
 
 async function checkIntegrationHealth(
   integration: IntegrationConfig
@@ -187,7 +205,10 @@ serve(async (req) => {
     for (const integration of integrations) {
       console.log(`Checking ${integration.name}...`);
       
-      const healthResult = await checkIntegrationHealth(integration);
+      // Use custom check for Resend since it doesn't have a public health endpoint
+      const healthResult = integration.id === "resend" 
+        ? await checkResendHealth()
+        : await checkIntegrationHealth(integration);
       
       // Get previous health state
       const { data: prevHealth } = await supabase
