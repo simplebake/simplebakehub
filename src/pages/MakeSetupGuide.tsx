@@ -183,6 +183,62 @@ const MakeSetupGuide = () => {
     }
   };
 
+  const generateMakeConfig = () => {
+    const secretKey = savedConfig?.secret_key || generatedKey || "YOUR_WEBHOOK_SECRET_HERE";
+    
+    const config = `
+═══════════════════════════════════════════════════════════
+        MAKE.COM WEBHOOK CONFIGURATION
+═══════════════════════════════════════════════════════════
+
+📋 STEP 3: Set Variable - Payload
+────────────────────────────────────────────────────────────
+Variable name: payload
+Variable value: {"eventType": "order.created", "orderId": "123", "total": 99.99}
+
+📋 STEP 4: Set Variable - Timestamp  
+────────────────────────────────────────────────────────────
+Variable name: timestamp
+Variable value: {{formatDate(now; "YYYY-MM-DDTHH:mm:ssZ")}}
+
+🔐 STEP 5: Encryptor → Sign Module
+────────────────────────────────────────────────────────────
+Algorithm:      sha256
+Key:            ${secretKey}
+Key encoding:   Text
+Data:           {{4.payload}}
+Data encoding:  Text
+Digest:         Hexadecimal
+
+🌐 STEP 6: HTTP → Make a Request
+────────────────────────────────────────────────────────────
+URL:            ${incomingWebhookUrl}
+Method:         POST
+Body type:      Raw
+Content type:   JSON (application/json)
+Request content: {{4.payload}}
+
+Headers:
+  X-Webhook-Signature:  {{5.value}}
+  X-Webhook-Timestamp:  {{3.timestamp}}
+  Content-Type:         application/json
+
+═══════════════════════════════════════════════════════════
+    Copy the values above into your Make.com modules!
+═══════════════════════════════════════════════════════════
+`.trim();
+
+    return config;
+  };
+
+  const copyMakeConfig = () => {
+    const config = generateMakeConfig();
+    navigator.clipboard.writeText(config);
+    setCopied("Make Config");
+    toast.success("Make.com configuration copied to clipboard!");
+    setTimeout(() => setCopied(null), 2000);
+  };
+
   const generatePrivateKey = () => {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
@@ -338,10 +394,10 @@ const MakeSetupGuide = () => {
             <Button 
               variant="outline" 
               className="gap-2"
-              onClick={() => copyToClipboard(JSON.stringify(makeBlueprint, null, 2), "Blueprint JSON")}
+              onClick={copyMakeConfig}
             >
-              {copied === "Blueprint JSON" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              Copy Configuration
+              {copied === "Make Config" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              Copy Make.com Config
             </Button>
             <Button variant="outline" asChild>
               <a href="https://www.make.com/en/login" target="_blank" rel="noopener noreferrer" className="gap-2">
