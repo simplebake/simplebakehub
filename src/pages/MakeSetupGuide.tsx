@@ -1589,49 +1589,323 @@ Headers:
             {/* Step 6 */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">6</div>
+                <div className="h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">6</div>
                 <h3 className="text-lg font-semibold">Add "HTTP → Make a Request" Module</h3>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">Final Step</Badge>
               </div>
-              <div className="ml-11 space-y-3 text-muted-foreground">
+              <div className="ml-11 space-y-4 text-muted-foreground">
                 <p>• Search for <strong className="text-foreground">HTTP</strong> → <strong className="text-foreground">Make a request</strong></p>
-                <div className="bg-muted p-4 rounded-lg space-y-2">
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                    <span className="font-semibold text-foreground">URL:</span>
-                    <code className="break-all">{incomingWebhookUrl}</code>
+                
+                {/* Visual HTTP Module Guide */}
+                <div className="border-2 border-blue-400 rounded-lg overflow-hidden">
+                  <div className="bg-blue-400 px-4 py-2 flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-blue-900" />
+                    <span className="font-semibold text-blue-900">HTTP - Make a request Module Configuration</span>
                   </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                    <span className="font-semibold text-foreground">Method:</span>
-                    <code>POST</code>
-                  </div>
-                  <div className="mt-3">
-                    <span className="font-semibold text-foreground text-sm">Headers:</span>
-                    <div className="mt-2 space-y-1 ml-2">
-                      <div className="flex gap-2 text-sm">
-                        <Badge variant="outline">Content-Type</Badge>
-                        <code>application/json</code>
+                  
+                  <div className="bg-card p-4 space-y-4">
+                    {/* URL Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        URL
+                        <Badge variant="outline" className="text-[10px] font-normal">Required</Badge>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-muted border rounded-md px-3 py-2 text-sm font-mono break-all">
+                          {incomingWebhookUrl}
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyToClipboard(incomingWebhookUrl, "HTTP URL")}
+                        >
+                          {copied === "HTTP URL" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
                       </div>
-                      <div className="flex gap-2 text-sm">
-                        <Badge variant="outline">X-Webhook-Timestamp</Badge>
-                        <code>{'{{5.timestamp}}'}</code>
+                      <p className="text-xs text-muted-foreground">Your webhook endpoint URL</p>
+                    </div>
+
+                    {/* Method Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">Method</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-muted border rounded-md px-3 py-2 text-sm font-mono">
+                          POST
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyToClipboard("POST", "HTTP Method")}
+                        >
+                          {copied === "HTTP Method" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
                       </div>
-                      <div className="flex gap-2 text-sm">
-                        <Badge variant="outline">X-Webhook-Signature</Badge>
-                        <code>{'{{6.value}}'}</code>
-                        <span className="text-xs">(Crypto output)</span>
+                      <p className="text-xs text-muted-foreground">Select "POST" from the dropdown</p>
+                    </div>
+
+                    {/* Headers Section */}
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        Headers
+                        <Badge variant="outline" className="text-[10px] font-normal border-orange-500 text-orange-600">3 Required</Badge>
+                      </label>
+                      <p className="text-xs text-muted-foreground">Click "Add a header" button 3 times to add each header below:</p>
+                      
+                      <div className="space-y-3 pl-4 border-l-2 border-blue-300 dark:border-blue-700">
+                        {/* Header 1: Content-Type */}
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-medium text-foreground">Header 1:</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Name:</span>
+                              <div className="flex items-center gap-1">
+                                <div className="flex-1 bg-muted border rounded-md px-2 py-1.5 text-xs font-mono">
+                                  Content-Type
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => copyToClipboard("Content-Type", "Header1Name")}
+                                >
+                                  {copied === "Header1Name" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Value:</span>
+                              <div className="flex items-center gap-1">
+                                <div className="flex-1 bg-muted border rounded-md px-2 py-1.5 text-xs font-mono">
+                                  application/json
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => copyToClipboard("application/json", "Header1Value")}
+                                >
+                                  {copied === "Header1Value" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Header 2: X-Webhook-Timestamp */}
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-medium text-foreground">Header 2:</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Name:</span>
+                              <div className="flex items-center gap-1">
+                                <div className="flex-1 bg-muted border rounded-md px-2 py-1.5 text-xs font-mono">
+                                  X-Webhook-Timestamp
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => copyToClipboard("X-Webhook-Timestamp", "Header2Name")}
+                                >
+                                  {copied === "Header2Name" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Value:</span>
+                              <div className="flex items-center gap-1">
+                                <div className="flex-1 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-md px-2 py-1.5 text-xs font-mono">
+                                  {"{{3.timestamp}}"}
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => copyToClipboard("{{3.timestamp}}", "Header2Value")}
+                                >
+                                  {copied === "Header2Value" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground">References the timestamp from Module 3 (Set Variable)</p>
+                        </div>
+
+                        {/* Header 3: X-Webhook-Signature */}
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-medium text-foreground">Header 3:</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Name:</span>
+                              <div className="flex items-center gap-1">
+                                <div className="flex-1 bg-muted border rounded-md px-2 py-1.5 text-xs font-mono">
+                                  X-Webhook-Signature
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => copyToClipboard("X-Webhook-Signature", "Header3Name")}
+                                >
+                                  {copied === "Header3Name" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-xs text-muted-foreground">Value:</span>
+                              <div className="flex items-center gap-1">
+                                <div className="flex-1 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-md px-2 py-1.5 text-xs font-mono">
+                                  {"{{4.value}}"}
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => copyToClipboard("{{4.value}}", "Header3Value")}
+                                >
+                                  {copied === "Header3Value" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground">References the signature from Module 4 (Encryptor Sign)</p>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Body Type Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">Body type</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-muted border rounded-md px-3 py-2 text-sm font-mono">
+                          Raw
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyToClipboard("Raw", "Body Type")}
+                        >
+                          {copied === "Body Type" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Select "Raw" from the dropdown</p>
+                    </div>
+
+                    {/* Content Type Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">Content type</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-muted border rounded-md px-3 py-2 text-sm font-mono">
+                          JSON (application/json)
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyToClipboard("JSON (application/json)", "Content Type Select")}
+                        >
+                          {copied === "Content Type Select" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Select "JSON (application/json)" from the dropdown</p>
+                    </div>
+
+                    {/* Request Content Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        Request content
+                        <Badge variant="outline" className="text-[10px] font-normal border-blue-500 text-blue-600">Module Reference</Badge>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-md px-3 py-2 text-sm font-mono">
+                          {"{{2.payload}}"}
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyToClipboard("{{2.payload}}", "Request Content")}
+                        >
+                          {copied === "Request Content" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        References the payload from Module 2. <strong>Must be the same payload used in the Sign module!</strong>
+                      </p>
+                    </div>
+
+                    {/* Parse Response Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">Parse response</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-muted border rounded-md px-3 py-2 text-sm font-mono">
+                          Yes
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Enable this to easily access the JSON response from your webhook</p>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm mt-3">
-                    <span className="font-semibold text-foreground">Body type:</span>
-                    <code>Raw</code>
+
+                  {/* Success Section */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-3 border-t border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Expected Response</span>
+                      </div>
+                      <code className="text-sm font-mono bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">
+                        Status: 200 OK
+                      </code>
+                    </div>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      If successful, you'll see: {"{"}"success": true, "message": "Webhook received and processed"{"}"}
+                    </p>
                   </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                    <span className="font-semibold text-foreground">Content type:</span>
-                    <code>JSON (application/json)</code>
-                  </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                    <span className="font-semibold text-foreground">Request content:</span>
-                    <code>{'{{4.payload}}'}</code>
+                </div>
+
+                {/* Pro Tips */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-blue-500" />
+                    Pro Tips for the HTTP Module
+                  </p>
+                  <ul className="text-sm space-y-1.5">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span><strong>Module numbers matter:</strong> Adjust references if your modules are in different positions (e.g., {"{{5.value}}"} if Sign is module 5)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span><strong>Payload consistency:</strong> The Request content must use the exact same variable as the Sign module's Data field</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span><strong>Error debugging:</strong> If you get 401 errors, check the signature. If 400 errors, check the payload format</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Module Reference Summary */}
+                <div className="p-4 rounded-lg border bg-muted/30">
+                  <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                    <ArrowRight className="h-4 w-4" />
+                    Quick Reference: Module Mapping
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div className="p-2 rounded bg-muted">
+                      <span className="text-muted-foreground block">Module 2</span>
+                      <code className="font-mono">{"{{2.payload}}"}</code>
+                    </div>
+                    <div className="p-2 rounded bg-muted">
+                      <span className="text-muted-foreground block">Module 3</span>
+                      <code className="font-mono">{"{{3.timestamp}}"}</code>
+                    </div>
+                    <div className="p-2 rounded bg-muted">
+                      <span className="text-muted-foreground block">Module 4</span>
+                      <code className="font-mono">{"{{4.value}}"}</code>
+                    </div>
+                    <div className="p-2 rounded bg-blue-100 dark:bg-blue-900/30">
+                      <span className="text-blue-600 dark:text-blue-400 block">Module 5</span>
+                      <span className="font-mono text-blue-700 dark:text-blue-300">HTTP Request</span>
+                    </div>
                   </div>
                 </div>
               </div>
