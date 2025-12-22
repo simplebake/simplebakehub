@@ -363,6 +363,58 @@ Headers:
 
   const [isTestingSignature, setIsTestingSignature] = useState(false);
   const [signatureTestResult, setSignatureTestResult] = useState<TestResult | null>(null);
+  
+  // Debug signature tool state
+  const [debugPayload, setDebugPayload] = useState('{"eventType": "order.created", "orderId": "123", "total": 99.99}');
+  const [debugSignature, setDebugSignature] = useState<string | null>(null);
+  const [isGeneratingSignature, setIsGeneratingSignature] = useState(false);
+  
+  const generateDebugSignature = async () => {
+    const secretKey = savedConfig?.secret_key || generatedKey;
+    
+    if (!secretKey) {
+      toast.error("Please generate and save a private key first");
+      return;
+    }
+
+    if (!debugPayload.trim()) {
+      toast.error("Please enter a payload to sign");
+      return;
+    }
+
+    setIsGeneratingSignature(true);
+    
+    try {
+      // Normalize the payload - remove extra whitespace for consistent signing
+      const normalizedPayload = debugPayload.trim();
+      
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(secretKey);
+      const messageData = encoder.encode(normalizedPayload);
+      
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      
+      const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+      const signature = Array.from(new Uint8Array(signatureBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
+      setDebugSignature(signature);
+      toast.success("Signature generated! Compare with Make.com output.");
+    } catch (error) {
+      console.error("Error generating signature:", error);
+      toast.error("Failed to generate signature");
+      setDebugSignature(null);
+    } finally {
+      setIsGeneratingSignature(false);
+    }
+  };
 
   const testSignatureValidation = async () => {
     const secretKey = savedConfig?.secret_key || generatedKey;
@@ -1114,6 +1166,161 @@ Headers:
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Debug Signature Tool */}
+        <Card className="mb-8 border-purple-500/20 bg-purple-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5 text-purple-500" />
+              Debug Signature Tool
+            </CardTitle>
+            <CardDescription>
+              Paste your payload and generate the expected signature to compare with Make.com's output
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Exact Payload Format for Make.com */}
+            <div className="p-4 rounded-lg border border-blue-500/20 bg-blue-500/5">
+              <h4 className="font-medium flex items-center gap-2 mb-3">
+                <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                Exact Payload Format for Make.com
+              </h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                In Make.com's <strong>Set Variable</strong> module, your payload must be a <strong>single-line JSON string</strong> with no extra spaces or formatting:
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-medium text-green-600 mb-1">✓ CORRECT (single line, no extra spaces):</p>
+                  <div className="flex gap-2">
+                    <code className="flex-1 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg text-sm font-mono break-all text-green-800 dark:text-green-200">
+                      {`{"eventType":"order.created","orderId":"123","total":99.99}`}
+                    </code>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => {
+                        copyToClipboard('{"eventType":"order.created","orderId":"123","total":99.99}', "Correct payload");
+                        setDebugPayload('{"eventType":"order.created","orderId":"123","total":99.99}');
+                      }}
+                    >
+                      {copied === "Correct payload" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-destructive mb-1">✗ WRONG (extra spaces, multi-line):</p>
+                  <code className="block bg-destructive/10 p-3 rounded-lg text-sm font-mono break-all text-destructive">
+                    {`{ "eventType": "order.created", "orderId": "123" }`}
+                  </code>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                <strong>Important:</strong> The signature is generated from the exact bytes of your payload string. Even a single extra space will produce a completely different signature!
+              </p>
+            </div>
+
+            {/* Payload Input */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium">
+                Paste Your Payload (exactly as used in Make.com):
+              </label>
+              <textarea
+                value={debugPayload}
+                onChange={(e) => setDebugPayload(e.target.value)}
+                className="w-full h-32 p-3 rounded-lg border bg-muted font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder='{"eventType":"order.created","orderId":"123"}'
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-form-type="other"
+              />
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Characters: {debugPayload.length}</span>
+                <span>•</span>
+                <span>Bytes: {new TextEncoder().encode(debugPayload).length}</span>
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <Button 
+              onClick={generateDebugSignature}
+              disabled={isGeneratingSignature || (!savedConfig?.secret_key && !generatedKey)}
+              className="gap-2"
+            >
+              {isGeneratingSignature ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Key className="h-4 w-4" />
+                  Generate Expected Signature
+                </>
+              )}
+            </Button>
+
+            {!savedConfig?.secret_key && !generatedKey && (
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                Please generate and save a private key first (Step 1 above)
+              </p>
+            )}
+
+            {/* Generated Signature */}
+            {debugSignature && (
+              <div className="space-y-3">
+                <div className="p-4 rounded-lg border border-green-500/20 bg-green-500/5">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                    <div className="flex-1 space-y-3">
+                      <p className="font-medium text-green-700 dark:text-green-300">Expected Signature:</p>
+                      <div className="flex gap-2">
+                        <code className="flex-1 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg text-sm font-mono break-all text-green-800 dark:text-green-200 select-all">
+                          {debugSignature}
+                        </code>
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => copyToClipboard(debugSignature, "Debug signature")}
+                        >
+                          {copied === "Debug signature" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        This is the signature your backend expects. Compare this with the output from Make.com's Encryptor module.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Comparison Instructions */}
+                <div className="p-4 rounded-lg border bg-muted/50">
+                  <h4 className="font-medium text-sm mb-2">How to compare in Make.com:</h4>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Run your scenario once</li>
+                    <li>Click on the Encryptor module's output bubble</li>
+                    <li>Look at the <code className="bg-muted px-1 rounded">value</code> field</li>
+                    <li>Compare it character-by-character with the signature above</li>
+                  </ol>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    <strong>If they don't match:</strong> Your payload in Make.com differs from what you pasted here. Check for extra spaces, different formatting, or encoding issues.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Current Key Being Used */}
+            {(savedConfig?.secret_key || generatedKey) && (
+              <div className="p-3 rounded-lg border bg-muted/30 text-sm">
+                <span className="text-muted-foreground">Using key: </span>
+                <code className="font-mono">
+                  {(savedConfig?.secret_key || generatedKey || '').substring(0, 8)}...{(savedConfig?.secret_key || generatedKey || '').slice(-8)}
+                </code>
+              </div>
+            )}
           </CardContent>
         </Card>
 
