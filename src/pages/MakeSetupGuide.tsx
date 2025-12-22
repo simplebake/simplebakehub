@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { MakeTroubleshootingWizard } from "@/components/MakeTroubleshootingWizard";
 
 interface TestResult {
   success: boolean;
@@ -1111,6 +1112,9 @@ Headers:
             </div>
           </CardContent>
         </Card>
+
+        {/* Troubleshooting Wizard */}
+        <MakeTroubleshootingWizard />
 
         {/* Debug Signature Tool */}
         <Card className="mb-8 border-purple-500/20 bg-purple-500/5">
