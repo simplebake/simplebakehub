@@ -557,63 +557,6 @@ Headers:
           </CardContent>
         </Card>
 
-        {/* Video Tutorial */}
-        <Card className="mb-8 border-red-500/20 bg-red-500/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Play className="h-5 w-5 text-red-500" />
-              Video Tutorial
-            </CardTitle>
-            <CardDescription>Watch a step-by-step guide to setting up your Make.com webhook scenario</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-muted border">
-              <iframe
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                title="Make.com Webhook Setup Tutorial"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full"
-              />
-            </div>
-            <div className="mt-4 space-y-3">
-              <h4 className="font-medium text-sm">What you'll learn:</h4>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                  <span>Creating a new scenario in Make.com</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                  <span>Adding the Set Variable modules</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                  <span>Configuring the Encryptor Sign module</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                  <span>Setting up the HTTP Request module</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                  <span>Adding signature and timestamp headers</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                  <span>Testing and debugging your webhook</span>
-                </li>
-              </ul>
-            </div>
-            <div className="mt-4 p-3 rounded-lg bg-muted/50 flex items-start gap-3">
-              <HelpCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-              <div className="text-sm text-muted-foreground">
-                <p className="font-medium text-foreground mb-1">Need more help?</p>
-                <p>Check out the <a href="https://www.make.com/en/help" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Make.com documentation</a> or reach out to our support team.</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Visual Flow Diagram */}
         <Card className="mb-8 border-blue-500/20 bg-blue-500/5">
