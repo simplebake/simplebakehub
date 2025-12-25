@@ -12,10 +12,53 @@ import { supabase } from "@/integrations/supabase/client";
 import { MessageSquare, Send, HelpCircle, Bug, Lightbulb, Loader2 } from "lucide-react";
 import { z } from "zod";
 
+// Patterns to detect potential malicious content
+const dangerousPatterns = [
+  /<script\b[^>]*>[\s\S]*?<\/script>/gi,
+  /<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi,
+  /javascript:/gi,
+  /on\w+\s*=/gi,
+  /<\s*img[^>]+onerror/gi,
+];
+
+const sqlPatterns = [
+  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER)\b.*\b(FROM|INTO|TABLE|DATABASE)\b)/gi,
+  /(--)|(\/\*)/g,
+  /(\bOR\b|\bAND\b)\s+\d+\s*=\s*\d+/gi,
+];
+
+const containsDangerousContent = (text: string): boolean => {
+  return dangerousPatterns.some(pattern => pattern.test(text)) ||
+         sqlPatterns.some(pattern => pattern.test(text));
+};
+
+const excessiveUrlPattern = /(https?:\/\/[^\s]+)/gi;
+const hasExcessiveUrls = (text: string): boolean => {
+  const matches = text.match(excessiveUrlPattern);
+  return matches ? matches.length > 3 : false;
+};
+
+const sanitizeInput = (text: string): string => {
+  return text
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+};
+
 const messageSchema = z.object({
-  subject: z.string().trim().min(1, "Subject is required").max(200, "Subject must be less than 200 characters"),
+  subject: z.string()
+    .trim()
+    .min(1, "Subject is required")
+    .max(200, "Subject must be less than 200 characters")
+    .refine(val => !containsDangerousContent(val), "Subject contains invalid content"),
   category: z.enum(["feedback", "help", "bug", "suggestion"], { required_error: "Please select a category" }),
-  message: z.string().trim().min(10, "Message must be at least 10 characters").max(2000, "Message must be less than 2000 characters"),
+  message: z.string()
+    .trim()
+    .min(10, "Message must be at least 10 characters")
+    .max(2000, "Message must be less than 2000 characters")
+    .refine(val => !containsDangerousContent(val), "Message contains invalid content")
+    .refine(val => !hasExcessiveUrls(val), "Too many links detected"),
 });
 
 const categories = [
@@ -55,12 +98,16 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
+      // Sanitize inputs before storing
+      const sanitizedSubject = sanitizeInput(result.data.subject);
+      const sanitizedMessage = sanitizeInput(result.data.message);
+
       // Insert the message
       const { data: insertedMessage, error } = await supabase.from("customer_messages").insert({
         user_id: user?.id,
-        subject: result.data.subject,
+        subject: sanitizedSubject,
         category: result.data.category,
-        message: result.data.message,
+        message: sanitizedMessage,
         email: user?.email,
       }).select().single();
 
