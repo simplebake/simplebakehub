@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +9,56 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageSquare, Send, HelpCircle, Bug, Lightbulb, Loader2 } from "lucide-react";
+import { MessageSquare, Send, HelpCircle, Bug, Lightbulb, Loader2, Clock } from "lucide-react";
 import { z } from "zod";
+
+// Rate limiting configuration
+const RATE_LIMIT_KEY = 'contact_form_submissions';
+const MAX_SUBMISSIONS = 3;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+interface RateLimitEntry {
+  timestamps: number[];
+}
+
+const getRateLimitData = (): RateLimitEntry => {
+  try {
+    const data = localStorage.getItem(RATE_LIMIT_KEY);
+    if (data) {
+      const parsed = JSON.parse(data) as RateLimitEntry;
+      // Filter out expired timestamps
+      const now = Date.now();
+      parsed.timestamps = parsed.timestamps.filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
+      return parsed;
+    }
+  } catch {
+    // Invalid data, reset
+  }
+  return { timestamps: [] };
+};
+
+const saveRateLimitData = (data: RateLimitEntry): void => {
+  localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(data));
+};
+
+const checkRateLimit = (): { allowed: boolean; remainingTime: number; remaining: number } => {
+  const data = getRateLimitData();
+  const remaining = MAX_SUBMISSIONS - data.timestamps.length;
+  
+  if (data.timestamps.length >= MAX_SUBMISSIONS) {
+    const oldestTimestamp = Math.min(...data.timestamps);
+    const remainingTime = Math.ceil((RATE_LIMIT_WINDOW_MS - (Date.now() - oldestTimestamp)) / 1000);
+    return { allowed: false, remainingTime, remaining: 0 };
+  }
+  
+  return { allowed: true, remainingTime: 0, remaining };
+};
+
+const recordSubmission = (): void => {
+  const data = getRateLimitData();
+  data.timestamps.push(Date.now());
+  saveRateLimitData(data);
+};
 
 // Patterns to detect potential malicious content
 const dangerousPatterns = [
@@ -78,10 +126,42 @@ const Contact = () => {
     message: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [rateLimitInfo, setRateLimitInfo] = useState<{ allowed: boolean; remainingTime: number; remaining: number }>({ allowed: true, remainingTime: 0, remaining: MAX_SUBMISSIONS });
+
+  // Check rate limit on mount and periodically
+  const updateRateLimitStatus = useCallback(() => {
+    setRateLimitInfo(checkRateLimit());
+  }, []);
+
+  useEffect(() => {
+    updateRateLimitStatus();
+    const interval = setInterval(updateRateLimitStatus, 1000);
+    return () => clearInterval(interval);
+  }, [updateRateLimitStatus]);
+
+  const formatRemainingTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (minutes > 0) {
+      return `${minutes}m ${secs}s`;
+    }
+    return `${secs}s`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+
+    // Check rate limit before submission
+    const rateCheck = checkRateLimit();
+    if (!rateCheck.allowed) {
+      toast({
+        title: "Too many submissions",
+        description: `Please wait ${formatRemainingTime(rateCheck.remainingTime)} before submitting again.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     const result = messageSchema.safeParse(formData);
     if (!result.success) {
@@ -128,6 +208,10 @@ const Contact = () => {
       }).catch((notifyError) => {
         console.error('Failed to notify moderators:', notifyError);
       });
+
+      // Record successful submission for rate limiting
+      recordSubmission();
+      updateRateLimitStatus();
 
       toast({
         title: "Message sent!",
@@ -231,16 +315,28 @@ const Contact = () => {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {!rateLimitInfo.allowed && (
+                <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+                  <Clock className="h-4 w-4 flex-shrink-0" />
+                  <span>Rate limit reached. Please wait {formatRemainingTime(rateLimitInfo.remainingTime)} before submitting again.</span>
+                </div>
+              )}
+
+              <Button type="submit" className="w-full" disabled={isSubmitting || !rateLimitInfo.allowed}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Sending...
                   </>
+                ) : !rateLimitInfo.allowed ? (
+                  <>
+                    <Clock className="mr-2 h-4 w-4" />
+                    Please Wait...
+                  </>
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Send Message
+                    Send Message ({rateLimitInfo.remaining} left)
                   </>
                 )}
               </Button>
