@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Target, Plus, Trash2, Loader2, Edit2, TrendingUp, TrendingDown, RefreshCw, Zap } from "lucide-react";
 import { format } from "date-fns";
+import { PerformanceGoalsTrends } from "./PerformanceGoalsTrends";
 
 interface PerformanceGoal {
   id: string;
@@ -667,6 +668,11 @@ export const PerformanceGoals = () => {
           </div>
         )}
       </CardContent>
+
+      {/* Historical Trends Chart */}
+      <div className="mt-6">
+        <PerformanceGoalsTrends />
+      </div>
     </Card>
   );
 };
