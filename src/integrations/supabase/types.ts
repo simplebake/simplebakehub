@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          setting_key: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           created_at: string
@@ -528,6 +552,54 @@ export type Database = {
           status_updates?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      performance_goals: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_value: number | null
+          end_date: string | null
+          goal_name: string
+          goal_type: string
+          id: string
+          is_active: boolean
+          period: string
+          start_date: string
+          target_value: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_value?: number | null
+          end_date?: string | null
+          goal_name: string
+          goal_type: string
+          id?: string
+          is_active?: boolean
+          period?: string
+          start_date?: string
+          target_value: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_value?: number | null
+          end_date?: string | null
+          goal_name?: string
+          goal_type?: string
+          id?: string
+          is_active?: boolean
+          period?: string
+          start_date?: string
+          target_value?: number
+          unit?: string
+          updated_at?: string
         }
         Relationships: []
       }

@@ -13,6 +13,8 @@ import { TutorialsManager } from "@/components/TutorialsManager";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { ContentReportsManager } from "@/components/ContentReportsManager";
 import { IntegrationsSettings } from "@/components/IntegrationsSettings";
+import { AppSettings } from "@/components/AppSettings";
+import { PerformanceGoals } from "@/components/PerformanceGoals";
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -26,6 +28,8 @@ const Settings = () => {
   const [showNotificationPrefs, setShowNotificationPrefs] = useState(false);
   const [showContentReports, setShowContentReports] = useState(false);
   const [showIntegrations, setShowIntegrations] = useState(false);
+  const [showAppSettings, setShowAppSettings] = useState(false);
+  const [showPerformanceGoals, setShowPerformanceGoals] = useState(false);
 
   const closeAllPanels = () => {
     setShowUserRoles(false);
@@ -36,6 +40,8 @@ const Settings = () => {
     setShowNotificationPrefs(false);
     setShowContentReports(false);
     setShowIntegrations(false);
+    setShowAppSettings(false);
+    setShowPerformanceGoals(false);
   };
 
   useEffect(() => {
@@ -68,6 +74,8 @@ const Settings = () => {
       description: "Branding, app name, logo, and general configuration",
       icon: Palette,
       href: null,
+      onClick: isAdmin ? () => { closeAllPanels(); setShowAppSettings(true); } : undefined,
+      isExpanded: showAppSettings,
       category: "general",
     },
     {
@@ -149,7 +157,8 @@ const Settings = () => {
       title: "Performance Targets",
       description: "Set and monitor business KPIs and goals",
       icon: Target,
-      href: null,
+      onClick: () => { closeAllPanels(); setShowPerformanceGoals(true); },
+      isExpanded: showPerformanceGoals,
     },
   ];
 
@@ -311,6 +320,13 @@ const Settings = () => {
               <IntegrationsSettings />
             </div>
           )}
+
+          {/* App Settings Panel (Admin only) */}
+          {isAdmin && showAppSettings && (
+            <div className="mt-6">
+              <AppSettings />
+            </div>
+          )}
         </section>
 
         {/* Administration (Staff - Admin, Moderator, Support) */}
@@ -398,6 +414,13 @@ const Settings = () => {
             {isStaff && showNotificationPrefs && (
               <div className="mt-6">
                 <NotificationPreferences />
+              </div>
+            )}
+
+            {/* Performance Goals Panel (Admin only) */}
+            {isAdmin && showPerformanceGoals && (
+              <div className="mt-6">
+                <PerformanceGoals />
               </div>
             )}
           </section>
