@@ -178,38 +178,36 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      // Sanitize inputs before storing
-      const sanitizedSubject = sanitizeInput(result.data.subject);
-      const sanitizedMessage = sanitizeInput(result.data.message);
-
-      // Insert the message
-      const { data: insertedMessage, error } = await supabase.from("customer_messages").insert({
-        user_id: user?.id,
-        subject: sanitizedSubject,
-        category: result.data.category,
-        message: sanitizedMessage,
-        email: user?.email,
-      }).select().single();
-
-      if (error) throw error;
-
-      // Notify moderators via edge function (fire and forget)
-      supabase.functions.invoke('notify-moderators', {
+      // Submit via server-side rate-limited edge function
+      const { data: response, error } = await supabase.functions.invoke('submit-contact', {
         body: {
-          type: 'new_message',
-          data: {
-            messageId: insertedMessage.id,
-            subject: result.data.subject,
-            category: result.data.category,
-            message: result.data.message,
-            email: user?.email,
-          }
+          name: user?.user_metadata?.name || 'Anonymous',
+          email: user?.email || '',
+          subject: result.data.subject,
+          category: result.data.category,
+          message: result.data.message,
+          userId: user?.id || null,
         }
-      }).catch((notifyError) => {
-        console.error('Failed to notify moderators:', notifyError);
       });
 
-      // Record successful submission for rate limiting
+      if (error) {
+        // Check for rate limit error
+        if (error.message?.includes('429') || response?.error?.includes('Rate limit')) {
+          toast({
+            title: "Too many submissions",
+            description: "Please wait before submitting again.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw error;
+      }
+
+      if (response?.error) {
+        throw new Error(response.error);
+      }
+
+      // Record successful submission for client-side rate limiting too
       recordSubmission();
       updateRateLimitStatus();
 
