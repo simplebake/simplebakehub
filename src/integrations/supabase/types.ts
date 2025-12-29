@@ -555,6 +555,38 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_goal_history: {
+        Row: {
+          created_at: string
+          goal_id: string
+          id: string
+          recorded_at: string
+          recorded_value: number
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          id?: string
+          recorded_at?: string
+          recorded_value: number
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          id?: string
+          recorded_at?: string
+          recorded_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_goal_history_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "performance_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       performance_goals: {
         Row: {
           created_at: string

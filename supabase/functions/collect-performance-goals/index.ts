@@ -160,10 +160,26 @@ Deno.serve(async (req) => {
         if (updateError) {
           console.error(`Error updating goal ${goal.id}:`, updateError)
           results.push({ id: goal.id, name: goal.goal_name, success: false, error: updateError.message })
-        } else {
-          console.log(`Updated goal "${goal.goal_name}": ${currentValue}`)
-          results.push({ id: goal.id, name: goal.goal_name, success: true, value: currentValue })
+          continue
         }
+
+        // Store historical snapshot
+        const { error: historyError } = await supabase
+          .from('performance_goal_history')
+          .insert({
+            goal_id: goal.id,
+            recorded_value: currentValue,
+            recorded_at: new Date().toISOString()
+          })
+
+        if (historyError) {
+          console.error(`Error storing history for goal ${goal.id}:`, historyError)
+        } else {
+          console.log(`Stored history snapshot for "${goal.goal_name}": ${currentValue}`)
+        }
+
+        console.log(`Updated goal "${goal.goal_name}": ${currentValue}`)
+        results.push({ id: goal.id, name: goal.goal_name, success: true, value: currentValue })
       } catch (err) {
         console.error(`Error processing goal ${goal.id}:`, err)
         results.push({ id: goal.id, name: goal.goal_name, success: false, error: String(err) })
