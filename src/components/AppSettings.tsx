@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Palette, Save, Loader2 } from "lucide-react";
+import { Palette, Save, Loader2, Upload, X, Image } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 
 interface AppSettingsData {
@@ -17,6 +17,7 @@ interface AppSettingsData {
   supportEmail: string;
   maintenanceMode: boolean;
   welcomeMessage: string;
+  logoUrl: string;
 }
 
 const defaultSettings: AppSettingsData = {
@@ -25,12 +26,15 @@ const defaultSettings: AppSettingsData = {
   supportEmail: "",
   maintenanceMode: false,
   welcomeMessage: "Welcome to our baking community!",
+  logoUrl: "",
 };
 
 export const AppSettings = () => {
   const [settings, setSettings] = useState<AppSettingsData>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -54,6 +58,7 @@ export const AppSettings = () => {
           supportEmail: (value.supportEmail as string) || defaultSettings.supportEmail,
           maintenanceMode: (value.maintenanceMode as boolean) || defaultSettings.maintenanceMode,
           welcomeMessage: (value.welcomeMessage as string) || defaultSettings.welcomeMessage,
+          logoUrl: (value.logoUrl as string) || defaultSettings.logoUrl,
         });
       }
     } catch (error) {
@@ -61,6 +66,77 @@ export const AppSettings = () => {
       toast.error("Failed to load app settings");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo must be less than 2MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `logo-${Date.now()}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+
+      // Delete old logo if exists
+      if (settings.logoUrl) {
+        const oldPath = settings.logoUrl.split("/branding/")[1];
+        if (oldPath) {
+          await supabase.storage.from("branding").remove([oldPath]);
+        }
+      }
+
+      // Upload new logo
+      const { error: uploadError } = await supabase.storage
+        .from("branding")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("branding")
+        .getPublicUrl(filePath);
+
+      setSettings({ ...settings, logoUrl: urlData.publicUrl });
+      toast.success("Logo uploaded successfully");
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      toast.error("Failed to upload logo");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeLogo = async () => {
+    if (!settings.logoUrl) return;
+
+    try {
+      const oldPath = settings.logoUrl.split("/branding/")[1];
+      if (oldPath) {
+        await supabase.storage.from("branding").remove([oldPath]);
+      }
+      setSettings({ ...settings, logoUrl: "" });
+      toast.success("Logo removed");
+    } catch (error) {
+      console.error("Error removing logo:", error);
+      toast.error("Failed to remove logo");
     }
   };
 
@@ -79,6 +155,7 @@ export const AppSettings = () => {
         supportEmail: settings.supportEmail,
         maintenanceMode: settings.maintenanceMode,
         welcomeMessage: settings.welcomeMessage,
+        logoUrl: settings.logoUrl,
       } as Json;
 
       if (existing) {
@@ -127,6 +204,69 @@ export const AppSettings = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Logo Section */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-foreground">Logo</h3>
+          
+          <div className="flex items-start gap-4">
+            <div className="w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center bg-muted/50 overflow-hidden">
+              {settings.logoUrl ? (
+                <img 
+                  src={settings.logoUrl} 
+                  alt="App Logo" 
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <Image className="h-8 w-8 text-muted-foreground/50" />
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Logo
+                  </>
+                )}
+              </Button>
+              {settings.logoUrl && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeLogo}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Remove
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Recommended: 512x512px, PNG or SVG, max 2MB
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
         {/* Branding Section */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium text-foreground">Branding</h3>
