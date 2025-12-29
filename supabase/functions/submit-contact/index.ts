@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
@@ -20,7 +20,143 @@ const contactSchema = z.object({
   userId: z.string().uuid().optional().nullable(),
 });
 
-// Dangerous pattern detection
+// ============ IP Blocking Utilities ============
+
+interface BlockedIPCheck {
+  isBlocked: boolean;
+  reason?: string;
+  expiresAt?: string;
+}
+
+async function checkIPBlocked(
+  supabase: SupabaseClient,
+  ipAddress: string
+): Promise<BlockedIPCheck> {
+  try {
+    await supabase.rpc('cleanup_expired_blocks');
+
+    const { data, error } = await supabase
+      .from('blocked_ips')
+      .select('reason, expires_at')
+      .eq('ip_address', ipAddress)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking blocked IP:', error);
+      return { isBlocked: false };
+    }
+
+    if (data) {
+      return {
+        isBlocked: true,
+        reason: data.reason,
+        expiresAt: data.expires_at
+      };
+    }
+
+    return { isBlocked: false };
+  } catch (error) {
+    console.error('Error in checkIPBlocked:', error);
+    return { isBlocked: false };
+  }
+}
+
+async function autoBlockIPForRateLimit(
+  supabase: SupabaseClient,
+  ipAddress: string,
+  endpoint: string,
+  violationCount: number
+): Promise<void> {
+  try {
+    const { data: existingBlock } = await supabase
+      .from('blocked_ips')
+      .select('id, is_active')
+      .eq('ip_address', ipAddress)
+      .maybeSingle();
+
+    if (existingBlock?.is_active) {
+      await supabase
+        .from('blocked_ips')
+        .update({ violation_count: violationCount })
+        .eq('id', existingBlock.id);
+      return;
+    }
+
+    let blockDurationHours = 24;
+    if (violationCount >= 5) {
+      blockDurationHours = 168; // 7 days
+    } else if (violationCount >= 3) {
+      blockDurationHours = 72; // 3 days
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + blockDurationHours);
+
+    const { error: insertError } = await supabase
+      .from('blocked_ips')
+      .insert({
+        ip_address: ipAddress,
+        reason: `Automatic block: ${violationCount} rate limit violations on ${endpoint} endpoint`,
+        auto_blocked: true,
+        violation_count: violationCount,
+        expires_at: expiresAt.toISOString(),
+        is_active: true
+      });
+
+    if (insertError) {
+      console.error('Error auto-blocking IP:', insertError);
+    } else {
+      console.log(`Auto-blocked IP ${ipAddress} for ${blockDurationHours} hours after ${violationCount} violations`);
+      
+      await supabase.from('audit_logs').insert({
+        event_type: 'security_ip_blocked',
+        ip_address: ipAddress,
+        endpoint: endpoint,
+        details: {
+          auto_blocked: true,
+          violation_count: violationCount,
+          block_duration_hours: blockDurationHours,
+          reason: 'rate_limit_violations'
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error in autoBlockIPForRateLimit:', error);
+  }
+}
+
+async function checkAndAutoBlock(
+  supabase: SupabaseClient,
+  ipAddress: string,
+  endpoint: string
+): Promise<void> {
+  try {
+    const oneDayAgo = new Date();
+    oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+
+    const { data: violations, error } = await supabase
+      .from('rate_limits')
+      .select('*')
+      .eq('ip_address', ipAddress)
+      .gte('request_count', RATE_LIMIT)
+      .gte('window_start', oneDayAgo.toISOString());
+
+    if (error) {
+      console.error('Error checking violations:', error);
+      return;
+    }
+
+    if (violations && violations.length >= 3) {
+      await autoBlockIPForRateLimit(supabase, ipAddress, endpoint, violations.length);
+    }
+  } catch (error) {
+    console.error('Error in checkAndAutoBlock:', error);
+  }
+}
+
+// ============ Security Pattern Detection ============
+
 const dangerousPatterns = [
   /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
   /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
@@ -54,7 +190,6 @@ function sanitizeInput(text: string): string {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -65,12 +200,33 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get client IP
     const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
                      req.headers.get('x-real-ip') ||
                      'unknown';
 
     console.log(`Contact form submission from IP: ${clientIP}`);
+
+    // Check if IP is blocked
+    const blockCheck = await checkIPBlocked(supabase, clientIP);
+    if (blockCheck.isBlocked) {
+      console.log(`Blocked IP attempted access: ${clientIP}`);
+      
+      await supabase.from('audit_logs').insert({
+        event_type: 'blocked_ip_access_attempt',
+        ip_address: clientIP,
+        endpoint: 'submit-contact',
+        details: { reason: blockCheck.reason, expires_at: blockCheck.expiresAt }
+      });
+
+      return new Response(
+        JSON.stringify({ 
+          error: 'Access denied. Your IP has been temporarily blocked.',
+          reason: blockCheck.reason,
+          expiresAt: blockCheck.expiresAt
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Check rate limit
     const oneHourAgo = new Date(Date.now() - RATE_LIMIT_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
@@ -92,13 +248,15 @@ serve(async (req) => {
     if (currentCount >= RATE_LIMIT) {
       console.log(`Rate limit exceeded for IP: ${clientIP}`);
       
-      // Log the rate limit violation
       await supabase.from('audit_logs').insert({
         event_type: 'rate_limit_exceeded',
         ip_address: clientIP,
         endpoint: 'submit-contact',
         details: { count: currentCount, limit: RATE_LIMIT }
       });
+
+      // Check for repeated violations and auto-block if needed
+      await checkAndAutoBlock(supabase, clientIP, 'submit-contact');
 
       return new Response(
         JSON.stringify({ 
