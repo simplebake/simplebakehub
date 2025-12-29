@@ -1,5 +1,8 @@
 project_id = "twszrhkovxpvosnfkdjk"
 
+[functions.collect-performance-goals]
+verify_jwt = false
+
 [functions.process-data]
 verify_jwt = true
 

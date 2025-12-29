@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ChefHat, Plus, ShoppingCart, DollarSign, Percent, AlertTriangle, Megaphone, Users, ArrowRight, Clock, TrendingDown, Package } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
 import { Header } from "@/components/Header";
+import { PerformanceGoalsWidget } from "@/components/PerformanceGoalsWidget";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -194,6 +195,11 @@ const Index = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Performance Goals Widget - Admin Only */}
+        <div className="mb-8">
+          <PerformanceGoalsWidget />
         </div>
 
         {/* Shortcuts */}
