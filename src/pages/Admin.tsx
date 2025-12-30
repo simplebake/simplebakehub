@@ -12,6 +12,7 @@ import { AuditLogsViewer } from '@/components/AuditLogsViewer';
 import { SecurityDashboard } from '@/components/SecurityDashboard';
 import { BlockedIPsManager } from '@/components/BlockedIPsManager';
 import { SecurityAnalytics } from '@/components/SecurityAnalytics';
+import { RLSHealthDashboard } from '@/components/RLSHealthDashboard';
 import { maskEmail } from '@/lib/emailMasking';
 
 interface UserWithRole {
@@ -183,6 +184,7 @@ const Admin = () => {
         </div>
 
         <div className="space-y-8 mb-8">
+          <RLSHealthDashboard />
           <SecurityAnalytics />
           <SecurityDashboard />
           <BlockedIPsManager />
