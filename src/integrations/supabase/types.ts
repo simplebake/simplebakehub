@@ -978,7 +978,7 @@ export type Database = {
       cleanup_expired_blocks: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
-      get_rate_limit_violations: {
+      get_rate_limit_violations_admin: {
         Args: never
         Returns: {
           endpoint: string
@@ -988,7 +988,7 @@ export type Database = {
           violation_count: number
         }[]
       }
-      get_rate_limit_violations_admin: {
+      get_rate_limit_violations_secure: {
         Args: never
         Returns: {
           endpoint: string
