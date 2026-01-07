@@ -96,13 +96,6 @@ export const Header = () => {
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <NavLink
-                  to="/shop"
-                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  activeClassName="text-foreground"
-                >
-                  Shop
-                </NavLink>
                 <NavLink to="/auth">
                   <Button size="sm">Sign In</Button>
                 </NavLink>
