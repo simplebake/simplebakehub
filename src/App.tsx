@@ -16,7 +16,7 @@ import Tutorials from "./pages/Tutorials";
 import TutorialsManagement from "./pages/TutorialsManagement";
 import ShareBake from "./pages/ShareBake";
 
-import ProductDetail from "./pages/ProductDetail";
+
 import Marketing from "./pages/Marketing";
 import Settings from "./pages/Settings";
 import Contact from "./pages/Contact";
@@ -39,7 +39,7 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               
-              <Route path="/product/:handle" element={<ProductDetail />} />
+              
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
