@@ -28,14 +28,10 @@ import {
   TestTube,
   Clock,
   Activity,
-  AlertTriangle,
   ArrowUpRight,
   ArrowDownLeft,
   Shield,
   ExternalLink,
-  Heart,
-  HeartOff,
-  Bell,
   Copy
 } from "lucide-react";
 
@@ -114,7 +110,7 @@ export function IntegrationsSettings() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isCheckingHealth, setIsCheckingHealth] = useState(false);
+  
 
   // Form state for integration settings
   const [integrationSettings, setIntegrationSettings] = useState<Record<string, {
@@ -173,33 +169,6 @@ export function IntegrationsSettings() {
     },
   });
 
-  // Fetch integration health
-  const { data: healthData, isLoading: healthLoading } = useQuery({
-    queryKey: ["integration-health"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("integration_health")
-        .select("*")
-        .order("last_check_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Fetch active alerts
-  const { data: alerts } = useQuery({
-    queryKey: ["integration-alerts"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("integration_alerts")
-        .select("*")
-        .is("acknowledged_at", null)
-        .order("created_at", { ascending: false })
-        .limit(10);
-      if (error) throw error;
-      return data;
-    },
-  });
 
   // Save webhook config mutation
   const saveWebhookConfigMutation = useMutation({
@@ -255,24 +224,6 @@ export function IntegrationsSettings() {
     },
   });
 
-  // Acknowledge alert mutation
-  const acknowledgeAlertMutation = useMutation({
-    mutationFn: async (alertId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase
-        .from("integration_alerts")
-        .update({
-          acknowledged_at: new Date().toISOString(),
-          acknowledged_by: user?.id,
-        })
-        .eq("id", alertId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["integration-alerts"] });
-      toast.success("Alert acknowledged");
-    },
-  });
 
   // Test webhook mutation
   const testWebhookMutation = useMutation({
@@ -349,17 +300,6 @@ export function IntegrationsSettings() {
     toast.success(`${integrationId.charAt(0).toUpperCase() + integrationId.slice(1)} settings saved successfully!`);
   };
 
-  const handleRunHealthCheck = async () => {
-    setIsCheckingHealth(true);
-    try {
-      queryClient.invalidateQueries({ queryKey: ["integration-health"] });
-      toast.success("Health check completed");
-    } catch (error) {
-      toast.error("Health check failed");
-    } finally {
-      setIsCheckingHealth(false);
-    }
-  };
 
   const handleOAuthConnect = (integration: IntegrationConfig) => {
     if (!integration.oauthConfig) return;
@@ -416,46 +356,14 @@ export function IntegrationsSettings() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="configure">Configure</TabsTrigger>
             <TabsTrigger value="webhooks">Webhook Logs</TabsTrigger>
-            <TabsTrigger value="health">Health</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4 mt-4">
-            {/* Active Alerts */}
-            {alerts && alerts.length > 0 && (
-              <Card className="border-destructive/50 bg-destructive/5">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2 text-destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    Active Alerts ({alerts.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {alerts.map((alert) => (
-                    <div key={alert.id} className="flex items-center justify-between p-2 rounded-lg bg-background border">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="destructive" className="text-xs capitalize">
-                          {alert.alert_type.replace("_", " ")}
-                        </Badge>
-                        <span className="text-sm">{alert.message}</span>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => acknowledgeAlertMutation.mutate(alert.id)}
-                      >
-                        Acknowledge
-                      </Button>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
             {integrations.map((integration) => (
               <div
                 key={integration.id}
@@ -1143,136 +1051,6 @@ export function IntegrationsSettings() {
             </Card>
           </TabsContent>
 
-          {/* Health Monitoring Tab */}
-          <TabsContent value="health" className="mt-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-medium flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Integration Health Monitor
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Real-time monitoring with automatic alerts
-                  </p>
-                </div>
-                <Button
-                  onClick={handleRunHealthCheck}
-                  disabled={isCheckingHealth}
-                >
-                  {isCheckingHealth ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                  )}
-                  Run Health Check
-                </Button>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {healthLoading ? (
-                  <div className="col-span-full text-center py-8 text-muted-foreground">
-                    Loading health data...
-                  </div>
-                ) : healthData && healthData.length > 0 ? (
-                  healthData.map((health) => (
-                    <Card key={health.id} className={health.is_healthy ? "border-green-500/30" : "border-destructive/30"}>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-sm">{health.integration_name}</CardTitle>
-                          {health.is_healthy ? (
-                            <Heart className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <HeartOff className="h-5 w-5 text-destructive" />
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={health.is_healthy ? "default" : "destructive"}>
-                            {health.is_healthy ? "Healthy" : "Unhealthy"}
-                          </Badge>
-                          {health.response_time_ms && (
-                            <span className="text-xs text-muted-foreground">
-                              {health.response_time_ms}ms
-                            </span>
-                          )}
-                        </div>
-                        {health.error_message && (
-                          <p className="text-xs text-destructive">{health.error_message}</p>
-                        )}
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <p>Last check: {format(new Date(health.last_check_at), "MMM d, HH:mm")}</p>
-                          {health.consecutive_failures > 0 && (
-                            <p className="text-destructive">
-                              Consecutive failures: {health.consecutive_failures}
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <>
-                    {integrations.slice(0, 3).map((integration) => (
-                      <Card key={integration.id} className="border-border">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-sm">{integration.name}</CardTitle>
-                            <Badge variant="secondary">Not Monitored</Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-xs text-muted-foreground">
-                            Run a health check to start monitoring
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </>
-                )}
-              </div>
-
-              {/* Alert Configuration */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Bell className="h-4 w-4" />
-                    Alert Configuration
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Connection Failure Alerts</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Notify admins when integrations become unreachable
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>High Latency Alerts</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Alert when response time exceeds 5 seconds
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Recovery Notifications</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Notify when integrations recover from failures
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
