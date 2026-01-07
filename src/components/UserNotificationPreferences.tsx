@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Bell, BellRing, Award, ChefHat, Loader2 } from "lucide-react";
+import { Bell, BellRing, Award, ChefHat, Loader2, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface UserPreferences {
@@ -30,6 +30,7 @@ export function UserNotificationPreferences() {
   const [pushSupported, setPushSupported] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission | null>(null);
   const [subscribing, setSubscribing] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
 
   useEffect(() => {
     // Check if push notifications are supported
@@ -160,6 +161,36 @@ export function UserNotificationPreferences() {
     }
   };
 
+  const sendTestNotification = async () => {
+    if (!user) return;
+    
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          userId: user.id,
+          title: '🧁 Test Notification',
+          body: 'Your push notifications are working! Happy baking!',
+          tag: 'test',
+          url: '/settings',
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.sent > 0) {
+        toast.success("Test notification sent! Check your browser notifications.");
+      } else {
+        toast.info("No active subscriptions found. Try re-enabling push notifications.");
+      }
+    } catch (error: any) {
+      console.error("Error sending test notification:", error);
+      toast.error("Failed to send test notification");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!user) return;
 
@@ -282,21 +313,41 @@ export function UserNotificationPreferences() {
                   )}
                 </Button>
               ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={disablePushNotifications}
-                  disabled={subscribing}
-                >
-                  {subscribing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Disabling...
-                    </>
-                  ) : (
-                    "Disable Push Notifications"
-                  )}
-                </Button>
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={disablePushNotifications}
+                    disabled={subscribing}
+                  >
+                    {subscribing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Disabling...
+                      </>
+                    ) : (
+                      "Disable Push Notifications"
+                    )}
+                  </Button>
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    onClick={sendTestNotification}
+                    disabled={sendingTest}
+                  >
+                    {sendingTest ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Send Test
+                      </>
+                    )}
+                  </Button>
+                </>
               )}
             </div>
           )}
