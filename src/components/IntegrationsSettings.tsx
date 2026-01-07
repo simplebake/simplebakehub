@@ -16,7 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { 
-  ShoppingBag, 
   Mail, 
   Webhook, 
   Key, 
@@ -44,7 +43,7 @@ interface IntegrationConfig {
   id: string;
   name: string;
   description: string;
-  icon: typeof ShoppingBag;
+  icon: typeof Mail;
   isConnected: boolean;
   authMethod: "api_key" | "oauth" | "webhook";
   syncInterval?: string;
@@ -56,16 +55,6 @@ interface IntegrationConfig {
 }
 
 const integrations: IntegrationConfig[] = [
-  {
-    id: "shopify",
-    name: "Shopify",
-    description: "E-commerce platform for product management and orders",
-    icon: ShoppingBag,
-    isConnected: true,
-    authMethod: "api_key",
-    syncInterval: "15min",
-    lastSync: "2 minutes ago",
-  },
   {
     id: "resend",
     name: "Resend",
@@ -136,7 +125,6 @@ export function IntegrationsSettings() {
     oauthToken?: string;
     subscribedEvents?: string[];
   }>>({
-    shopify: { apiKey: "sk_live_•••••••••••••••••", syncInterval: "15min", enabled: true },
     resend: { apiKey: "re_•••••••••••••••••", syncInterval: "realtime", enabled: true },
     google: { apiKey: "", syncInterval: "1hour", enabled: false },
     webhooks: { apiKey: "", syncInterval: "realtime", enabled: false, webhookUrl: "", subscribedEvents: [] },
@@ -364,7 +352,6 @@ export function IntegrationsSettings() {
   const handleRunHealthCheck = async () => {
     setIsCheckingHealth(true);
     try {
-      await supabase.functions.invoke("integration-health-check");
       queryClient.invalidateQueries({ queryKey: ["integration-health"] });
       toast.success("Health check completed");
     } catch (error) {
