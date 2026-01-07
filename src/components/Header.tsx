@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/auditLogger";
 import { useNavigate } from "react-router-dom";
-import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen } from "lucide-react";
+import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie } from "lucide-react";
 import { CartDrawer } from "./CartDrawer";
 import { useUserRole } from "@/hooks/useUserRole";
 
@@ -14,6 +14,12 @@ const navItems = [
     path: "/",
     icon: Home,
     ariaLabel: "Home overview",
+  },
+  {
+    label: "Guided Bakes",
+    path: "/premixes",
+    icon: Cookie,
+    ariaLabel: "Guided baking premixes",
   },
   {
     label: "Marketing & Customers",
