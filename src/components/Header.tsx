@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/auditLogger";
 import { useNavigate } from "react-router-dom";
 import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie } from "lucide-react";
-import { CartDrawer } from "./CartDrawer";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const navItems = [
@@ -92,13 +91,10 @@ export const Header = () => {
                     <span className="hidden md:inline">Tutorials</span>
                   </NavLink>
                 )}
-                <div className="ml-2 flex items-center gap-2">
-                  <CartDrawer />
-                  <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
-                    <LogOut className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-2">Logout</span>
-                  </Button>
-                </div>
+                <Button variant="ghost" size="sm" onClick={handleLogout} className="ml-2 text-muted-foreground hover:text-foreground">
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-2">Logout</span>
+                </Button>
               </>
             ) : (
               <div className="flex items-center gap-2">
