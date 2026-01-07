@@ -17,26 +17,31 @@ import { SuccessRatingChart } from "@/components/analytics/SuccessRatingChart";
 import { PopularPremixesChart } from "@/components/analytics/PopularPremixesChart";
 import { EngagementMetrics } from "@/components/analytics/EngagementMetrics";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ContentItem {
-  id: number;
+  id: string;
   title: string;
   channel: string;
   status: string;
-  nextAction: string;
+  next_action: string;
 }
 
 interface Campaign {
+  id: string;
   name: string;
   status: string;
   channel: string;
-  dates: string;
+  start_date: string;
+  end_date: string;
   kpi: string;
 }
 
 const Marketing = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [contentTab, setContentTab] = useState("ideas");
   
   // Dialog states
@@ -51,33 +56,82 @@ const Marketing = () => {
   // Form states for campaign
   const [newCampaignName, setNewCampaignName] = useState("");
   const [newCampaignChannel, setNewCampaignChannel] = useState("");
-  const [newCampaignDates, setNewCampaignDates] = useState("");
+  const [newCampaignStartDate, setNewCampaignStartDate] = useState("");
+  const [newCampaignEndDate, setNewCampaignEndDate] = useState("");
   const [newCampaignKpi, setNewCampaignKpi] = useState("");
 
-  // Content engine data
-  const [contentIdeas, setContentIdeas] = useState<ContentItem[]>([
-    { id: 1, title: "Autumn Baking Tips Blog Post", channel: "Blog", status: "idea", nextAction: "Outline content" },
-    { id: 2, title: "Customer Success Story: Mary", channel: "Social", status: "idea", nextAction: "Reach out to customer" },
-    { id: 3, title: "Gluten-Free Christmas Guide", channel: "Email", status: "idea", nextAction: "Plan structure" },
-  ]);
+  // Fetch content ideas from database
+  const { data: contentIdeas = [] } = useQuery({
+    queryKey: ['content-ideas'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('content_ideas')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as ContentItem[];
+    },
+    enabled: !!user,
+  });
 
-  const [contentDrafts] = useState<ContentItem[]>([
-    { id: 4, title: "Newsletter: October Recipes", channel: "Email", status: "draft", nextAction: "Final review" },
-    { id: 5, title: "Instagram Reel: Quick Bread Tips", channel: "Social", status: "draft", nextAction: "Edit video" },
-  ]);
+  // Fetch campaigns from database
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ['campaigns'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as Campaign[];
+    },
+    enabled: !!user,
+  });
 
-  const [contentPublished] = useState<ContentItem[]>([
-    { id: 6, title: "September Newsletter", channel: "Email", status: "published", nextAction: "Review metrics" },
-    { id: 7, title: "Blog: 5 Common Mistakes", channel: "Blog", status: "published", nextAction: "Promote on social" },
-  ]);
+  // Mutations
+  const addContentIdeaMutation = useMutation({
+    mutationFn: async (newIdea: { title: string; channel: string; next_action: string }) => {
+      const { data, error } = await supabase
+        .from('content_ideas')
+        .insert({
+          user_id: user!.id,
+          title: newIdea.title,
+          channel: newIdea.channel,
+          next_action: newIdea.next_action,
+          status: 'draft',
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['content-ideas'] });
+    },
+  });
 
-  // Campaigns data
-  const [campaigns, setCampaigns] = useState<Campaign[]>([
-    { name: "Autumn Sale 2024", status: "active", channel: "Multi-channel", dates: "Oct 1 - Oct 31", kpi: "£2,400 revenue" },
-    { name: "New Customer Welcome", status: "active", channel: "Email", dates: "Ongoing", kpi: "42% open rate" },
-    { name: "Referral Programme", status: "active", channel: "In-app", dates: "Ongoing", kpi: "18 referrals" },
-    { name: "Summer Flash Sale", status: "completed", channel: "Email + Social", dates: "Aug 1 - Aug 7", kpi: "£1,850 revenue" },
-  ]);
+  const addCampaignMutation = useMutation({
+    mutationFn: async (newCampaign: { name: string; channel: string; start_date: string; end_date: string; kpi: string }) => {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .insert({
+          user_id: user!.id,
+          name: newCampaign.name,
+          channel: newCampaign.channel,
+          start_date: newCampaign.start_date,
+          end_date: newCampaign.end_date,
+          kpi: newCampaign.kpi,
+          status: 'planning',
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+    },
+  });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -85,7 +139,7 @@ const Marketing = () => {
     }
   }, [user, loading, navigate]);
 
-  const handleAddContentIdea = () => {
+  const handleAddContentIdea = async () => {
     if (!newContentTitle.trim() || !newContentChannel || !newContentNextAction.trim()) {
       toast({
         title: "Missing fields",
@@ -95,28 +149,33 @@ const Marketing = () => {
       return;
     }
 
-    const newIdea: ContentItem = {
-      id: Date.now(),
-      title: newContentTitle.trim(),
-      channel: newContentChannel,
-      status: "idea",
-      nextAction: newContentNextAction.trim(),
-    };
-
-    setContentIdeas([newIdea, ...contentIdeas]);
-    setNewContentTitle("");
-    setNewContentChannel("");
-    setNewContentNextAction("");
-    setContentDialogOpen(false);
-    
-    toast({
-      title: "Content idea added",
-      description: `"${newIdea.title}" has been added to your ideas`,
-    });
+    try {
+      await addContentIdeaMutation.mutateAsync({
+        title: newContentTitle.trim(),
+        channel: newContentChannel,
+        next_action: newContentNextAction.trim(),
+      });
+      
+      setNewContentTitle("");
+      setNewContentChannel("");
+      setNewContentNextAction("");
+      setContentDialogOpen(false);
+      
+      toast({
+        title: "Content idea added",
+        description: `"${newContentTitle}" has been added to your ideas`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add content idea",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleCreateCampaign = () => {
-    if (!newCampaignName.trim() || !newCampaignChannel || !newCampaignDates.trim() || !newCampaignKpi.trim()) {
+  const handleCreateCampaign = async () => {
+    if (!newCampaignName.trim() || !newCampaignChannel || !newCampaignStartDate || !newCampaignEndDate || !newCampaignKpi.trim()) {
       toast({
         title: "Missing fields",
         description: "Please fill in all fields",
@@ -125,25 +184,33 @@ const Marketing = () => {
       return;
     }
 
-    const newCampaign: Campaign = {
-      name: newCampaignName.trim(),
-      status: "active",
-      channel: newCampaignChannel,
-      dates: newCampaignDates.trim(),
-      kpi: newCampaignKpi.trim(),
-    };
-
-    setCampaigns([newCampaign, ...campaigns]);
-    setNewCampaignName("");
-    setNewCampaignChannel("");
-    setNewCampaignDates("");
-    setNewCampaignKpi("");
-    setCampaignDialogOpen(false);
-    
-    toast({
-      title: "Campaign created",
-      description: `"${newCampaign.name}" has been added`,
-    });
+    try {
+      await addCampaignMutation.mutateAsync({
+        name: newCampaignName.trim(),
+        channel: newCampaignChannel,
+        start_date: newCampaignStartDate,
+        end_date: newCampaignEndDate,
+        kpi: newCampaignKpi.trim(),
+      });
+      
+      setNewCampaignName("");
+      setNewCampaignChannel("");
+      setNewCampaignStartDate("");
+      setNewCampaignEndDate("");
+      setNewCampaignKpi("");
+      setCampaignDialogOpen(false);
+      
+      toast({
+        title: "Campaign created",
+        description: `"${newCampaignName}" has been added`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create campaign",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -155,6 +222,11 @@ const Marketing = () => {
   }
 
   if (!user) return null;
+
+  // Filter content by status
+  const contentDrafts = contentIdeas.filter(item => item.status === 'draft');
+  const contentPublished = contentIdeas.filter(item => item.status === 'published');
+  const contentIdeasOnly = contentIdeas.filter(item => item.status === 'idea');
 
   // Placeholder metrics
   const summaryMetrics = [
@@ -168,7 +240,7 @@ const Marketing = () => {
     switch (contentTab) {
       case "drafts": return contentDrafts;
       case "published": return contentPublished;
-      default: return contentIdeas;
+      default: return contentIdeasOnly;
     }
   };
 
@@ -250,7 +322,7 @@ const Marketing = () => {
           <CardContent>
             <Tabs value={contentTab} onValueChange={setContentTab}>
               <TabsList className="mb-4">
-                <TabsTrigger value="ideas">Ideas ({contentIdeas.length})</TabsTrigger>
+                <TabsTrigger value="ideas">Ideas ({contentIdeasOnly.length})</TabsTrigger>
                 <TabsTrigger value="drafts">Drafts ({contentDrafts.length})</TabsTrigger>
                 <TabsTrigger value="published">Published ({contentPublished.length})</TabsTrigger>
               </TabsList>
@@ -269,7 +341,7 @@ const Marketing = () => {
                       <TableCell className="font-medium">{item.title}</TableCell>
                       <TableCell>{item.channel}</TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.nextAction}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.next_action}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -296,12 +368,16 @@ const Marketing = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {campaigns.map((campaign, index) => (
-                  <TableRow key={index} className="cursor-pointer hover:bg-muted/50">
+                {campaigns.map((campaign) => (
+                  <TableRow key={campaign.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell className="font-medium">{campaign.name}</TableCell>
                     <TableCell>{getStatusBadge(campaign.status)}</TableCell>
                     <TableCell>{campaign.channel}</TableCell>
-                    <TableCell className="text-muted-foreground">{campaign.dates}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {campaign.start_date === campaign.end_date 
+                        ? campaign.start_date 
+                        : `${campaign.start_date} - ${campaign.end_date}`}
+                    </TableCell>
                     <TableCell>{campaign.kpi}</TableCell>
                   </TableRow>
                 ))}
@@ -438,13 +514,21 @@ const Marketing = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="campaign-dates">Dates</Label>
+              <Label htmlFor="campaign-start-date">Start Date</Label>
               <Input
-                id="campaign-dates"
-                placeholder="e.g., Dec 1 - Dec 25 or Ongoing"
-                value={newCampaignDates}
-                onChange={(e) => setNewCampaignDates(e.target.value)}
-                maxLength={50}
+                id="campaign-start-date"
+                type="date"
+                value={newCampaignStartDate}
+                onChange={(e) => setNewCampaignStartDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="campaign-end-date">End Date</Label>
+              <Input
+                id="campaign-end-date"
+                type="date"
+                value={newCampaignEndDate}
+                onChange={(e) => setNewCampaignEndDate(e.target.value)}
               />
             </div>
             <div className="space-y-2">
