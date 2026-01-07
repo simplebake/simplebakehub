@@ -4,13 +4,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthContext, useAuthState } from "@/lib/supabase";
+import { AuthContext, useAuthState, useAuth } from "@/lib/supabase";
 import { AdminRoute } from "@/components/AdminRoute";
+import { LandingPage } from "@/components/LandingPage";
 
-// Eagerly load Index for fast initial paint
-import Index from "./pages/Index";
-
-// Lazy load other pages to reduce initial bundle size
+// Lazy load all pages to reduce initial bundle size
+const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -35,6 +34,25 @@ const PageLoader = () => (
   </div>
 );
 
+// Home route that shows landing page immediately for guests, lazy-loads dashboard for users
+const HomeRoute = () => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <PageLoader />;
+  }
+  
+  if (!user) {
+    return <LandingPage />;
+  }
+  
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Index />
+    </Suspense>
+  );
+};
+
 const App = () => {
   const authState = useAuthState();
 
@@ -47,7 +65,7 @@ const App = () => {
           <BrowserRouter>
             <Suspense fallback={<PageLoader />}>
               <Routes>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={<HomeRoute />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/profile" element={<Profile />} />
