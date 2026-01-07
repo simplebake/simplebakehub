@@ -159,15 +159,13 @@ const Tutorials = () => {
                     </Badge>
                   </div>
                   <CardTitle>{tutorial.title}</CardTitle>
-                  <CardDescription>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {tutorial.tags?.map(tag => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardDescription>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {tutorial.tags?.map(tag => (
+                      <Badge key={tag} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <Button

@@ -31,8 +31,8 @@ const Index = () => {
               <Button size="lg" onClick={() => navigate("/auth")} className="text-lg px-8 py-6">
                 Get Started
               </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("/shop")} className="text-lg px-8 py-6">
-                Browse Shop
+              <Button size="lg" variant="outline" onClick={() => navigate("/tutorials")} className="text-lg px-8 py-6">
+                View Tutorials
               </Button>
             </div>
           </div>
