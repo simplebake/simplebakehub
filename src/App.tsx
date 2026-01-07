@@ -15,7 +15,7 @@ import GuidedBake from "./pages/GuidedBake";
 import Tutorials from "./pages/Tutorials";
 import TutorialsManagement from "./pages/TutorialsManagement";
 import ShareBake from "./pages/ShareBake";
-import Shop from "./pages/Shop";
+
 import ProductDetail from "./pages/ProductDetail";
 import Marketing from "./pages/Marketing";
 import Settings from "./pages/Settings";
@@ -38,7 +38,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/shop" element={<Shop />} />
+              
               <Route path="/product/:handle" element={<ProductDetail />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<Profile />} />
