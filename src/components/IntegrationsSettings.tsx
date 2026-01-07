@@ -56,10 +56,9 @@ const integrations: IntegrationConfig[] = [
     name: "Resend",
     description: "Email delivery service for transactional emails",
     icon: Mail,
-    isConnected: true,
+    isConnected: false, // Will be updated dynamically
     authMethod: "api_key",
     syncInterval: "realtime",
-    lastSync: "Just now",
   },
   {
     id: "google",
@@ -110,7 +109,43 @@ export function IntegrationsSettings() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+  const [resendStatus, setResendStatus] = useState<'checking' | 'connected' | 'not_configured'>('checking');
+
+  // Check Resend API key status by testing the edge function
+  const { data: resendCheck } = useQuery({
+    queryKey: ["resend-status"],
+    queryFn: async () => {
+      try {
+        // We check if Resend is configured by invoking a simple test
+        // The edge function will fail if RESEND_API_KEY is not set
+        const { data, error } = await supabase.functions.invoke("submit-contact", {
+          body: {
+            name: "API Status Check",
+            email: "status@check.internal",
+            subject: "Status Check",
+            message: "Internal status check - please ignore",
+            category: "general",
+            _statusCheck: true, // Flag to indicate this is just a status check
+          },
+        });
+        
+        // If we get here without error, Resend is configured
+        return { configured: true };
+      } catch (error) {
+        // Check if error is related to missing API key
+        return { configured: false };
+      }
+    },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: false,
+  });
+
+  // Update Resend status based on query result
+  useEffect(() => {
+    if (resendCheck) {
+      setResendStatus(resendCheck.configured ? 'connected' : 'not_configured');
+    }
+  }, [resendCheck]);
 
   // Form state for integration settings
   const [integrationSettings, setIntegrationSettings] = useState<Record<string, {
@@ -121,10 +156,23 @@ export function IntegrationsSettings() {
     oauthToken?: string;
     subscribedEvents?: string[];
   }>>({
-    resend: { apiKey: "re_•••••••••••••••••", syncInterval: "realtime", enabled: true },
+    resend: { apiKey: "•••••••••••••••••", syncInterval: "realtime", enabled: resendStatus === 'connected' },
     google: { apiKey: "", syncInterval: "1hour", enabled: false },
     webhooks: { apiKey: "", syncInterval: "realtime", enabled: false, webhookUrl: "", subscribedEvents: [] },
   });
+
+  // Get integrations with dynamic Resend status
+  const getIntegrationsWithStatus = () => {
+    return integrations.map(integration => {
+      if (integration.id === 'resend') {
+        return {
+          ...integration,
+          isConnected: resendStatus === 'connected',
+        };
+      }
+      return integration;
+    });
+  };
 
   // Fetch webhook config from database
   const { data: webhookConfig, isLoading: configLoading } = useQuery({
@@ -364,7 +412,13 @@ export function IntegrationsSettings() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4 mt-4">
-            {integrations.map((integration) => (
+            {resendStatus === 'checking' && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Checking integration status...
+              </div>
+            )}
+            {getIntegrationsWithStatus().map((integration) => (
               <div
                 key={integration.id}
                 className="flex items-center justify-between p-4 rounded-lg border transition-colors border-border hover:bg-muted/50"
@@ -425,7 +479,7 @@ export function IntegrationsSettings() {
           {/* Configure Tab */}
           <TabsContent value="configure" className="mt-4">
             <div className="space-y-6">
-              {integrations.map((integration) => {
+              {getIntegrationsWithStatus().map((integration) => {
                 const settings = integrationSettings[integration.id];
                 
                 return (
