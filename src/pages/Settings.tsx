@@ -11,6 +11,7 @@ import { CustomerMessagesManager } from "@/components/CustomerMessagesManager";
 import { RoleAccessGuide } from "@/components/RoleAccessGuide";
 import { TutorialsManager } from "@/components/TutorialsManager";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
+import { UserNotificationPreferences } from "@/components/UserNotificationPreferences";
 import { ContentReportsManager } from "@/components/ContentReportsManager";
 import { IntegrationsSettings } from "@/components/IntegrationsSettings";
 import { AppSettings } from "@/components/AppSettings";
@@ -30,6 +31,7 @@ const Settings = () => {
   const [showIntegrations, setShowIntegrations] = useState(false);
   const [showAppSettings, setShowAppSettings] = useState(false);
   const [showPerformanceGoals, setShowPerformanceGoals] = useState(false);
+  const [showUserNotificationPrefs, setShowUserNotificationPrefs] = useState(false);
 
   const closeAllPanels = () => {
     setShowUserRoles(false);
@@ -42,6 +44,7 @@ const Settings = () => {
     setShowIntegrations(false);
     setShowAppSettings(false);
     setShowPerformanceGoals(false);
+    setShowUserNotificationPrefs(false);
   };
 
   useEffect(() => {
@@ -99,6 +102,8 @@ const Settings = () => {
       description: "Configure alert rules and notification preferences",
       icon: Bell,
       href: null,
+      onClick: () => { closeAllPanels(); setShowUserNotificationPrefs(true); },
+      isExpanded: showUserNotificationPrefs,
       category: "general",
     },
     {
@@ -325,6 +330,13 @@ const Settings = () => {
           {isAdmin && showAppSettings && (
             <div className="mt-6">
               <AppSettings />
+            </div>
+          )}
+
+          {/* User Notification Preferences Panel */}
+          {showUserNotificationPrefs && (
+            <div className="mt-6">
+              <UserNotificationPreferences />
             </div>
           )}
         </section>
