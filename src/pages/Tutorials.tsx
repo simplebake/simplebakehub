@@ -1,6 +1,6 @@
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Download, Upload } from "lucide-react";
 
 interface Tutorial {
   id: string;
@@ -28,6 +29,7 @@ const Tutorials = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
   const [allTags, setAllTags] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -96,6 +98,69 @@ const Tutorials = () => {
     }
   };
 
+  const handleExport = () => {
+    if (tutorials.length === 0) {
+      toast.error("No tutorials to export");
+      return;
+    }
+    
+    const exportData = tutorials.map(({ id, ...rest }) => rest);
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tutorials-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${tutorials.length} tutorials`);
+  };
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const content = e.target?.result as string;
+        const importedTutorials = JSON.parse(content);
+        
+        if (!Array.isArray(importedTutorials)) {
+          throw new Error("Invalid format: expected an array");
+        }
+
+        let imported = 0;
+        for (const tutorial of importedTutorials) {
+          if (!tutorial.title || !tutorial.category || !tutorial.content) {
+            continue;
+          }
+          
+          const { error } = await supabase.from("tutorials").insert({
+            title: tutorial.title,
+            category: tutorial.category,
+            tags: tutorial.tags || [],
+            content: tutorial.content,
+          });
+          
+          if (!error) imported++;
+        }
+
+        toast.success(`Imported ${imported} tutorials`);
+        fetchTutorials();
+      } catch (error: any) {
+        toast.error("Failed to import: " + error.message);
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   if (loading || loadingTutorials) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -111,9 +176,28 @@ const Tutorials = () => {
       <Header />
       
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Tutorials</h1>
-          <p className="text-muted-foreground">Learn tips, techniques, and best practices</p>
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Tutorials</h1>
+            <p className="text-muted-foreground">Learn tips, techniques, and best practices</p>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".json"
+              onChange={handleImport}
+              className="hidden"
+            />
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
         </div>
 
         <div className="flex gap-4 mb-6">
