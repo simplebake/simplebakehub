@@ -26,6 +26,9 @@ interface ImportPreview {
   fileName: string;
 }
 
+type ExportFormat = "json" | "csv" | "markdown";
+type DuplicateAction = "skip" | "overwrite";
+
 const Tutorials = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -41,11 +44,12 @@ const Tutorials = () => {
   // Export selection state
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [selectedForExport, setSelectedForExport] = useState<Set<string>>(new Set());
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("json");
   
   // Import confirmation state
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const [importing, setImporting] = useState(false);
-  const [skipDuplicates, setSkipDuplicates] = useState(true);
+  const [duplicateAction, setDuplicateAction] = useState<DuplicateAction>("skip");
   const [duplicateCount, setDuplicateCount] = useState(0);
 
   useEffect(() => {
@@ -142,6 +146,31 @@ const Tutorials = () => {
     }
   };
 
+  const escapeCSV = (value: string) => {
+    if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  };
+
+  const formatAsCSV = (tutorialsToExport: Array<{ title: string; category: string; tags: string[]; content: string }>) => {
+    const headers = ["title", "category", "tags", "content"];
+    const rows = tutorialsToExport.map(t => [
+      escapeCSV(t.title),
+      escapeCSV(t.category),
+      escapeCSV((t.tags || []).join("; ")),
+      escapeCSV(t.content)
+    ].join(","));
+    return [headers.join(","), ...rows].join("\n");
+  };
+
+  const formatAsMarkdown = (tutorialsToExport: Array<{ title: string; category: string; tags: string[]; content: string }>) => {
+    return tutorialsToExport.map(t => {
+      const tagsStr = (t.tags || []).length > 0 ? `**Tags:** ${t.tags.join(", ")}\n\n` : "";
+      return `# ${t.title}\n\n**Category:** ${t.category}\n\n${tagsStr}${t.content}\n\n---\n`;
+    }).join("\n");
+  };
+
   const handleExport = () => {
     if (selectedForExport.size === 0) {
       toast.error("Please select at least one tutorial to export");
@@ -152,16 +181,37 @@ const Tutorials = () => {
       .filter(t => selectedForExport.has(t.id))
       .map(({ id, ...rest }) => rest);
     
-    const blob = new Blob([JSON.stringify(tutorialsToExport, null, 2)], { type: "application/json" });
+    let content: string;
+    let mimeType: string;
+    let extension: string;
+
+    switch (exportFormat) {
+      case "csv":
+        content = formatAsCSV(tutorialsToExport);
+        mimeType = "text/csv";
+        extension = "csv";
+        break;
+      case "markdown":
+        content = formatAsMarkdown(tutorialsToExport);
+        mimeType = "text/markdown";
+        extension = "md";
+        break;
+      default:
+        content = JSON.stringify(tutorialsToExport, null, 2);
+        mimeType = "application/json";
+        extension = "json";
+    }
+    
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `tutorials-${new Date().toISOString().split("T")[0]}.json`;
+    a.download = `tutorials-${new Date().toISOString().split("T")[0]}.${extension}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success(`Exported ${tutorialsToExport.length} tutorials`);
+    toast.success(`Exported ${tutorialsToExport.length} tutorials as ${exportFormat.toUpperCase()}`);
     setExportDialogOpen(false);
   };
 
@@ -194,7 +244,7 @@ const Tutorials = () => {
           existingTitles.has(t.title.toLowerCase())
         );
         setDuplicateCount(duplicates.length);
-        setSkipDuplicates(true);
+        setDuplicateAction("skip");
 
         setImportPreview({
           tutorials: validTutorials,
@@ -216,15 +266,32 @@ const Tutorials = () => {
     
     setImporting(true);
     try {
-      const existingTitles = new Set(tutorials.map(t => t.title.toLowerCase()));
+      const existingTutorialsMap = new Map(
+        tutorials.map(t => [t.title.toLowerCase(), t.id])
+      );
       let imported = 0;
       let skipped = 0;
+      let updated = 0;
       
       for (const tutorial of importPreview.tutorials) {
-        // Skip duplicates if option is enabled
-        if (skipDuplicates && existingTitles.has(tutorial.title.toLowerCase())) {
-          skipped++;
-          continue;
+        const existingId = existingTutorialsMap.get(tutorial.title.toLowerCase());
+        const isDuplicate = !!existingId;
+        
+        if (isDuplicate) {
+          if (duplicateAction === "skip") {
+            skipped++;
+            continue;
+          } else if (duplicateAction === "overwrite") {
+            // Update existing tutorial
+            const { error } = await supabase.from("tutorials").update({
+              category: tutorial.category,
+              tags: tutorial.tags || [],
+              content: tutorial.content,
+            }).eq("id", existingId);
+            
+            if (!error) updated++;
+            continue;
+          }
         }
         
         const { error } = await supabase.from("tutorials").insert({
@@ -237,11 +304,11 @@ const Tutorials = () => {
         if (!error) imported++;
       }
 
-      if (skipped > 0) {
-        toast.success(`Imported ${imported} tutorials, skipped ${skipped} duplicates`);
-      } else {
-        toast.success(`Imported ${imported} tutorials`);
-      }
+      const messages = [];
+      if (imported > 0) messages.push(`${imported} imported`);
+      if (updated > 0) messages.push(`${updated} updated`);
+      if (skipped > 0) messages.push(`${skipped} skipped`);
+      toast.success(`Tutorials: ${messages.join(", ")}`);
       fetchTutorials();
     } catch (error: any) {
       toast.error("Failed to import: " + error.message);
@@ -371,12 +438,25 @@ const Tutorials = () => {
       <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
         <DialogContent className="max-w-lg max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Select Tutorials to Export</DialogTitle>
+            <DialogTitle>Export Tutorials</DialogTitle>
             <DialogDescription>
-              Choose which tutorials you want to include in the export file.
+              Choose tutorials and format for export.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Export Format</label>
+              <Select value={exportFormat} onValueChange={(v) => setExportFormat(v as ExportFormat)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="json">JSON (for re-importing)</SelectItem>
+                  <SelectItem value="csv">CSV (spreadsheet)</SelectItem>
+                  <SelectItem value="markdown">Markdown (readable)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex items-center space-x-2 pb-4 border-b">
               <Checkbox
                 id="select-all"
@@ -387,7 +467,7 @@ const Tutorials = () => {
                 Select All ({tutorials.length})
               </label>
             </div>
-            <div className="max-h-[300px] overflow-y-auto mt-4 space-y-3">
+            <div className="max-h-[250px] overflow-y-auto space-y-3">
               {tutorials.map((tutorial) => (
                 <div key={tutorial.id} className="flex items-start space-x-3">
                   <Checkbox
@@ -411,7 +491,7 @@ const Tutorials = () => {
             </Button>
             <Button onClick={handleExport} disabled={selectedForExport.size === 0}>
               <Download className="h-4 w-4 mr-2" />
-              Export {selectedForExport.size} Tutorial{selectedForExport.size !== 1 ? 's' : ''}
+              Export as {exportFormat.toUpperCase()}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -437,15 +517,36 @@ const Tutorials = () => {
           </AlertDialogHeader>
           
           {duplicateCount > 0 && (
-            <div className="flex items-center space-x-2 py-2">
-              <Checkbox
-                id="skip-duplicates"
-                checked={skipDuplicates}
-                onCheckedChange={(checked) => setSkipDuplicates(checked as boolean)}
-              />
-              <label htmlFor="skip-duplicates" className="text-sm cursor-pointer">
-                Skip duplicates (tutorials with matching titles)
-              </label>
+            <div className="py-2 space-y-2">
+              <label className="text-sm font-medium">Handle duplicates:</label>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="action-skip"
+                    name="duplicateAction"
+                    checked={duplicateAction === "skip"}
+                    onChange={() => setDuplicateAction("skip")}
+                    className="h-4 w-4"
+                  />
+                  <label htmlFor="action-skip" className="text-sm cursor-pointer">
+                    Skip duplicates (keep existing)
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="action-overwrite"
+                    name="duplicateAction"
+                    checked={duplicateAction === "overwrite"}
+                    onChange={() => setDuplicateAction("overwrite")}
+                    className="h-4 w-4"
+                  />
+                  <label htmlFor="action-overwrite" className="text-sm cursor-pointer">
+                    Overwrite duplicates (update existing)
+                  </label>
+                </div>
+              </div>
             </div>
           )}
           
@@ -468,9 +569,11 @@ const Tutorials = () => {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={importing}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmImport} disabled={importing}>
-              {importing ? "Importing..." : skipDuplicates && duplicateCount > 0 
+              {importing ? "Processing..." : duplicateAction === "skip" && duplicateCount > 0 
                 ? `Import ${(importPreview?.tutorials.length || 0) - duplicateCount} Tutorial${(importPreview?.tutorials.length || 0) - duplicateCount !== 1 ? 's' : ''}`
-                : "Import"}
+                : duplicateAction === "overwrite" && duplicateCount > 0
+                  ? `Import & Update ${importPreview?.tutorials.length} Tutorial${(importPreview?.tutorials.length || 0) !== 1 ? 's' : ''}`
+                  : "Import"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
