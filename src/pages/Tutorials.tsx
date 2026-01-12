@@ -45,6 +45,8 @@ const Tutorials = () => {
   // Import confirmation state
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const [importing, setImporting] = useState(false);
+  const [skipDuplicates, setSkipDuplicates] = useState(true);
+  const [duplicateCount, setDuplicateCount] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -186,6 +188,14 @@ const Tutorials = () => {
           return;
         }
 
+        // Check for duplicates
+        const existingTitles = new Set(tutorials.map(t => t.title.toLowerCase()));
+        const duplicates = validTutorials.filter(t => 
+          existingTitles.has(t.title.toLowerCase())
+        );
+        setDuplicateCount(duplicates.length);
+        setSkipDuplicates(true);
+
         setImportPreview({
           tutorials: validTutorials,
           fileName: file.name
@@ -206,8 +216,17 @@ const Tutorials = () => {
     
     setImporting(true);
     try {
+      const existingTitles = new Set(tutorials.map(t => t.title.toLowerCase()));
       let imported = 0;
+      let skipped = 0;
+      
       for (const tutorial of importPreview.tutorials) {
+        // Skip duplicates if option is enabled
+        if (skipDuplicates && existingTitles.has(tutorial.title.toLowerCase())) {
+          skipped++;
+          continue;
+        }
+        
         const { error } = await supabase.from("tutorials").insert({
           title: tutorial.title,
           category: tutorial.category,
@@ -218,7 +237,11 @@ const Tutorials = () => {
         if (!error) imported++;
       }
 
-      toast.success(`Imported ${imported} tutorials`);
+      if (skipped > 0) {
+        toast.success(`Imported ${imported} tutorials, skipped ${skipped} duplicates`);
+      } else {
+        toast.success(`Imported ${imported} tutorials`);
+      }
       fetchTutorials();
     } catch (error: any) {
       toast.error("Failed to import: " + error.message);
@@ -399,24 +422,55 @@ const Tutorials = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Import</AlertDialogTitle>
-            <AlertDialogDescription>
-              You are about to import <strong>{importPreview?.tutorials.length}</strong> tutorial{importPreview?.tutorials.length !== 1 ? 's' : ''} from <strong>{importPreview?.fileName}</strong>.
-              <br /><br />
-              This may create duplicates if tutorials with the same titles already exist. Do you want to continue?
+            <AlertDialogDescription asChild>
+              <div>
+                <p>
+                  You are about to import <strong>{importPreview?.tutorials.length}</strong> tutorial{importPreview?.tutorials.length !== 1 ? 's' : ''} from <strong>{importPreview?.fileName}</strong>.
+                </p>
+                {duplicateCount > 0 && (
+                  <p className="mt-2 text-amber-600">
+                    ⚠️ {duplicateCount} tutorial{duplicateCount !== 1 ? 's have' : ' has'} titles matching existing tutorials.
+                  </p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
+          {duplicateCount > 0 && (
+            <div className="flex items-center space-x-2 py-2">
+              <Checkbox
+                id="skip-duplicates"
+                checked={skipDuplicates}
+                onCheckedChange={(checked) => setSkipDuplicates(checked as boolean)}
+              />
+              <label htmlFor="skip-duplicates" className="text-sm cursor-pointer">
+                Skip duplicates (tutorials with matching titles)
+              </label>
+            </div>
+          )}
+          
           <div className="max-h-[200px] overflow-y-auto my-4 border rounded-md p-3">
             <p className="text-sm font-medium mb-2">Tutorials to import:</p>
             <ul className="text-sm text-muted-foreground space-y-1">
-              {importPreview?.tutorials.map((t, i) => (
-                <li key={i}>• {t.title} ({t.category})</li>
-              ))}
+              {importPreview?.tutorials.map((t, i) => {
+                const isDuplicate = tutorials.some(
+                  existing => existing.title.toLowerCase() === t.title.toLowerCase()
+                );
+                return (
+                  <li key={i} className={isDuplicate ? "text-amber-600" : ""}>
+                    • {t.title} ({t.category})
+                    {isDuplicate && <span className="text-xs ml-1">(duplicate)</span>}
+                  </li>
+                );
+              })}
             </ul>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={importing}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmImport} disabled={importing}>
-              {importing ? "Importing..." : "Import"}
+              {importing ? "Importing..." : skipDuplicates && duplicateCount > 0 
+                ? `Import ${(importPreview?.tutorials.length || 0) - duplicateCount} Tutorial${(importPreview?.tutorials.length || 0) - duplicateCount !== 1 ? 's' : ''}`
+                : "Import"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
