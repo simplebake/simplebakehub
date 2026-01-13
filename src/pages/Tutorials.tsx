@@ -26,7 +26,7 @@ interface ImportPreview {
   fileName: string;
 }
 
-type ExportFormat = "json" | "csv" | "markdown";
+type FileFormat = "json" | "csv" | "markdown";
 type DuplicateAction = "skip" | "overwrite";
 
 const Tutorials = () => {
@@ -44,7 +44,7 @@ const Tutorials = () => {
   // Export selection state
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [selectedForExport, setSelectedForExport] = useState<Set<string>>(new Set());
-  const [exportFormat, setExportFormat] = useState<ExportFormat>("json");
+  const [exportFormat, setExportFormat] = useState<FileFormat>("json");
   
   // Import confirmation state
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
@@ -215,39 +215,137 @@ const Tutorials = () => {
     setExportDialogOpen(false);
   };
 
+  const parseCSV = (content: string): Array<{ title: string; category: string; tags: string[]; content: string }> => {
+    const lines = content.split("\n");
+    if (lines.length < 2) throw new Error("CSV must have header and at least one row");
+    
+    const headers = lines[0].toLowerCase().split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+    const titleIdx = headers.indexOf("title");
+    const categoryIdx = headers.indexOf("category");
+    const tagsIdx = headers.indexOf("tags");
+    const contentIdx = headers.indexOf("content");
+    
+    if (titleIdx === -1 || categoryIdx === -1 || contentIdx === -1) {
+      throw new Error("CSV must have title, category, and content columns");
+    }
+    
+    const tutorials: Array<{ title: string; category: string; tags: string[]; content: string }> = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      // Simple CSV parsing (handles quoted fields)
+      const values: string[] = [];
+      let current = "";
+      let inQuotes = false;
+      
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        if (char === '"') {
+          if (inQuotes && line[j + 1] === '"') {
+            current += '"';
+            j++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === "," && !inQuotes) {
+          values.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+      
+      const title = values[titleIdx] || "";
+      const category = values[categoryIdx] || "";
+      const tagsStr = tagsIdx !== -1 ? values[tagsIdx] || "" : "";
+      const tutorialContent = values[contentIdx] || "";
+      
+      if (title && category && tutorialContent) {
+        tutorials.push({
+          title,
+          category,
+          tags: tagsStr ? tagsStr.split(";").map(t => t.trim()).filter(Boolean) : [],
+          content: tutorialContent
+        });
+      }
+    }
+    
+    return tutorials;
+  };
+
+  const parseMarkdown = (content: string): Array<{ title: string; category: string; tags: string[]; content: string }> => {
+    const tutorials: Array<{ title: string; category: string; tags: string[]; content: string }> = [];
+    const sections = content.split(/^---$/m).filter(s => s.trim());
+    
+    for (const section of sections) {
+      const titleMatch = section.match(/^#\s+(.+)$/m);
+      const categoryMatch = section.match(/\*\*Category:\*\*\s*(.+)$/m);
+      const tagsMatch = section.match(/\*\*Tags:\*\*\s*(.+)$/m);
+      
+      if (titleMatch && categoryMatch) {
+        const title = titleMatch[1].trim();
+        const category = categoryMatch[1].trim();
+        const tags = tagsMatch ? tagsMatch[1].split(",").map(t => t.trim()).filter(Boolean) : [];
+        
+        // Extract content (everything after metadata)
+        let tutorialContent = section
+          .replace(/^#\s+.+$/m, "")
+          .replace(/\*\*Category:\*\*\s*.+$/m, "")
+          .replace(/\*\*Tags:\*\*\s*.+$/m, "")
+          .trim();
+        
+        if (title && category && tutorialContent) {
+          tutorials.push({ title, category, tags, content: tutorialContent });
+        }
+      }
+    }
+    
+    return tutorials;
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const fileName = file.name.toLowerCase();
     const reader = new FileReader();
+    
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        const importedTutorials = JSON.parse(content);
+        let importedTutorials: Array<{ title: string; category: string; tags: string[]; content: string }>;
         
-        if (!Array.isArray(importedTutorials)) {
-          throw new Error("Invalid format: expected an array");
+        if (fileName.endsWith(".csv")) {
+          importedTutorials = parseCSV(content);
+        } else if (fileName.endsWith(".md") || fileName.endsWith(".markdown")) {
+          importedTutorials = parseMarkdown(content);
+        } else {
+          // Default to JSON
+          const parsed = JSON.parse(content);
+          if (!Array.isArray(parsed)) {
+            throw new Error("Invalid JSON format: expected an array");
+          }
+          importedTutorials = parsed.filter(t => t.title && t.category && t.content);
         }
 
-        const validTutorials = importedTutorials.filter(
-          t => t.title && t.category && t.content
-        );
-
-        if (validTutorials.length === 0) {
+        if (importedTutorials.length === 0) {
           toast.error("No valid tutorials found in file");
           return;
         }
 
         // Check for duplicates
         const existingTitles = new Set(tutorials.map(t => t.title.toLowerCase()));
-        const duplicates = validTutorials.filter(t => 
+        const duplicates = importedTutorials.filter(t => 
           existingTitles.has(t.title.toLowerCase())
         );
         setDuplicateCount(duplicates.length);
         setDuplicateAction("skip");
 
         setImportPreview({
-          tutorials: validTutorials,
+          tutorials: importedTutorials,
           fileName: file.name
         });
       } catch (error: any) {
@@ -342,7 +440,7 @@ const Tutorials = () => {
             <input
               type="file"
               ref={fileInputRef}
-              accept=".json"
+              accept=".json,.csv,.md,.markdown"
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -446,7 +544,7 @@ const Tutorials = () => {
           <div className="py-4 space-y-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Export Format</label>
-              <Select value={exportFormat} onValueChange={(v) => setExportFormat(v as ExportFormat)}>
+              <Select value={exportFormat} onValueChange={(v) => setExportFormat(v as FileFormat)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
