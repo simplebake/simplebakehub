@@ -11,7 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, Upload } from "lucide-react";
+import { Download, Upload, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Tutorial {
   id: string;
@@ -51,6 +53,11 @@ const Tutorials = () => {
   const [importing, setImporting] = useState(false);
   const [duplicateAction, setDuplicateAction] = useState<DuplicateAction>("skip");
   const [duplicateCount, setDuplicateCount] = useState(0);
+  const [expandedPreview, setExpandedPreview] = useState<number | null>(null);
+  
+  // Drag and drop state
+  const [isDragging, setIsDragging] = useState(false);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -306,11 +313,15 @@ const Tutorials = () => {
     return tutorials;
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const processFile = (file: File) => {
     const fileName = file.name.toLowerCase();
+    const validExtensions = [".json", ".csv", ".md", ".markdown"];
+    
+    if (!validExtensions.some(ext => fileName.endsWith(ext))) {
+      toast.error("Unsupported file type. Please use JSON, CSV, or Markdown files.");
+      return;
+    }
+
     const reader = new FileReader();
     
     reader.onload = (e) => {
@@ -343,6 +354,7 @@ const Tutorials = () => {
         );
         setDuplicateCount(duplicates.length);
         setDuplicateAction("skip");
+        setExpandedPreview(null);
 
         setImportPreview({
           tutorials: importedTutorials,
@@ -353,9 +365,48 @@ const Tutorials = () => {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    processFile(file);
     
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only set dragging to false if we're leaving the drop zone entirely
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      processFile(files[0]);
     }
   };
 
@@ -427,7 +478,24 @@ const Tutorials = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div 
+      ref={dropZoneRef}
+      className={`min-h-screen bg-background relative ${isDragging ? 'ring-4 ring-primary ring-inset' : ''}`}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-primary/10 z-50 flex items-center justify-center pointer-events-none">
+          <div className="bg-background border-2 border-dashed border-primary rounded-lg p-12 text-center shadow-lg">
+            <FileText className="h-16 w-16 mx-auto mb-4 text-primary" />
+            <p className="text-xl font-semibold text-primary">Drop your file here</p>
+            <p className="text-muted-foreground mt-2">Supports JSON, CSV, and Markdown</p>
+          </div>
+        </div>
+      )}
       <Header />
       
       <main className="container mx-auto px-4 py-8">
@@ -596,86 +664,116 @@ const Tutorials = () => {
       </Dialog>
 
       {/* Import Confirmation Dialog */}
-      <AlertDialog open={!!importPreview} onOpenChange={(open) => !open && setImportPreview(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Import</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div>
-                <p>
-                  You are about to import <strong>{importPreview?.tutorials.length}</strong> tutorial{importPreview?.tutorials.length !== 1 ? 's' : ''} from <strong>{importPreview?.fileName}</strong>.
-                </p>
-                {duplicateCount > 0 && (
-                  <p className="mt-2 text-amber-600">
-                    ⚠️ {duplicateCount} tutorial{duplicateCount !== 1 ? 's have' : ' has'} titles matching existing tutorials.
-                  </p>
-                )}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+      <Dialog open={!!importPreview} onOpenChange={(open) => !open && setImportPreview(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Import Preview</DialogTitle>
+            <DialogDescription>
+              Review <strong>{importPreview?.tutorials.length}</strong> tutorial{importPreview?.tutorials.length !== 1 ? 's' : ''} from <strong>{importPreview?.fileName}</strong>
+            </DialogDescription>
+          </DialogHeader>
           
           {duplicateCount > 0 && (
-            <div className="py-2 space-y-2">
-              <label className="text-sm font-medium">Handle duplicates:</label>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center space-x-2">
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+              <p className="text-amber-700 dark:text-amber-400 text-sm font-medium">
+                ⚠️ {duplicateCount} tutorial{duplicateCount !== 1 ? 's match' : ' matches'} existing titles
+              </p>
+              <div className="flex gap-4 mt-2">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="radio"
-                    id="action-skip"
                     name="duplicateAction"
                     checked={duplicateAction === "skip"}
                     onChange={() => setDuplicateAction("skip")}
                     className="h-4 w-4"
                   />
-                  <label htmlFor="action-skip" className="text-sm cursor-pointer">
-                    Skip duplicates (keep existing)
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
+                  Skip duplicates
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="radio"
-                    id="action-overwrite"
                     name="duplicateAction"
                     checked={duplicateAction === "overwrite"}
                     onChange={() => setDuplicateAction("overwrite")}
                     className="h-4 w-4"
                   />
-                  <label htmlFor="action-overwrite" className="text-sm cursor-pointer">
-                    Overwrite duplicates (update existing)
-                  </label>
-                </div>
+                  Overwrite existing
+                </label>
               </div>
             </div>
           )}
           
-          <div className="max-h-[200px] overflow-y-auto my-4 border rounded-md p-3">
-            <p className="text-sm font-medium mb-2">Tutorials to import:</p>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              {importPreview?.tutorials.map((t, i) => {
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            <div className="space-y-3 py-2">
+              {importPreview?.tutorials.map((tutorial, index) => {
                 const isDuplicate = tutorials.some(
-                  existing => existing.title.toLowerCase() === t.title.toLowerCase()
+                  existing => existing.title.toLowerCase() === tutorial.title.toLowerCase()
                 );
+                const isExpanded = expandedPreview === index;
+                
                 return (
-                  <li key={i} className={isDuplicate ? "text-amber-600" : ""}>
-                    • {t.title} ({t.category})
-                    {isDuplicate && <span className="text-xs ml-1">(duplicate)</span>}
-                  </li>
+                  <Collapsible key={index} open={isExpanded} onOpenChange={() => setExpandedPreview(isExpanded ? null : index)}>
+                    <div className={`border rounded-lg overflow-hidden ${isDuplicate ? 'border-amber-300 dark:border-amber-700' : 'border-border'}`}>
+                      <CollapsibleTrigger className="w-full">
+                        <div className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-3 text-left">
+                            <FileText className={`h-5 w-5 ${isDuplicate ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                            <div>
+                              <p className="font-medium text-sm">{tutorial.title}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <Badge variant="secondary" className="text-xs py-0">
+                                  {tutorial.category}
+                                </Badge>
+                                {isDuplicate && (
+                                  <span className="text-xs text-amber-600 dark:text-amber-400">Duplicate</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="px-3 pb-3 border-t bg-muted/30">
+                          {tutorial.tags && tutorial.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 py-2">
+                              {tutorial.tags.map((tag, tagIndex) => (
+                                <Badge key={tagIndex} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          <div className="mt-2 text-sm text-muted-foreground max-h-32 overflow-y-auto">
+                            <p className="whitespace-pre-wrap">{tutorial.content.length > 500 ? tutorial.content.slice(0, 500) + '...' : tutorial.content}</p>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
                 );
               })}
-            </ul>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={importing}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmImport} disabled={importing}>
-              {importing ? "Processing..." : duplicateAction === "skip" && duplicateCount > 0 
+            </div>
+          </ScrollArea>
+          
+          <DialogFooter className="border-t pt-4 mt-2">
+            <Button variant="outline" onClick={() => setImportPreview(null)} disabled={importing}>
+              Cancel
+            </Button>
+            <Button onClick={confirmImport} disabled={importing}>
+              {importing ? "Importing..." : duplicateAction === "skip" && duplicateCount > 0 
                 ? `Import ${(importPreview?.tutorials.length || 0) - duplicateCount} Tutorial${(importPreview?.tutorials.length || 0) - duplicateCount !== 1 ? 's' : ''}`
                 : duplicateAction === "overwrite" && duplicateCount > 0
-                  ? `Import & Update ${importPreview?.tutorials.length} Tutorial${(importPreview?.tutorials.length || 0) !== 1 ? 's' : ''}`
-                  : "Import"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                  ? `Import & Update ${importPreview?.tutorials.length}`
+                  : `Import ${importPreview?.tutorials.length} Tutorial${(importPreview?.tutorials.length || 0) !== 1 ? 's' : ''}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
