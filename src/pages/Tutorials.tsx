@@ -339,7 +339,15 @@ const Tutorials = () => {
           if (!Array.isArray(parsed)) {
             throw new Error("Invalid JSON format: expected an array");
           }
-          importedTutorials = parsed.filter(t => t.title && t.category && t.content);
+          // Support both "content" and "body" field names
+          importedTutorials = parsed
+            .map(t => ({
+              title: t.title,
+              category: t.category,
+              tags: t.tags || [],
+              content: t.content || t.body || ""
+            }))
+            .filter(t => t.title && t.category && t.content);
         }
 
         if (importedTutorials.length === 0) {
