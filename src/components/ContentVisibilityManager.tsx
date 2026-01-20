@@ -24,6 +24,7 @@ const CONTENT_TYPES: { value: ContentType; label: string; icon: React.ReactNode 
 ];
 
 const DASHBOARD_SECTIONS = [
+  { key: 'business_metrics', label: 'Business Metrics (Orders, Revenue, Margin, Issues)' },
   { key: 'learning_paths', label: 'Personalized Learning Paths' },
   { key: 'smart_tips', label: 'Smart Tips & Recommendations' },
   { key: 'achievements', label: 'Achievement Badges' },

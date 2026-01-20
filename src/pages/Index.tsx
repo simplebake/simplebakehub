@@ -5,8 +5,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, ShoppingCart, DollarSign, Percent, AlertTriangle, Megaphone, Users, ArrowRight, Clock, Package } from "lucide-react";
 import { Header } from "@/components/Header";
 import { PerformanceGoalsWidget } from "@/components/PerformanceGoalsWidget";
+import { useContentVisibility } from "@/hooks/useContentVisibility";
 
 const Index = () => {
+  const { isContentVisible, loading: visibilityLoading } = useContentVisibility();
   const navigate = useNavigate();
 
   // Placeholder data - wire to real backend
@@ -61,25 +63,27 @@ const Index = () => {
           </Button>
         </div>
 
-        {/* Metric Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {metrics.map((metric) => (
-            <Card key={metric.label} className="bg-card">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">{metric.label}</p>
-                    <p className="text-2xl font-semibold text-foreground">{metric.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{metric.trend}</p>
+        {/* Metric Cards - Admin only */}
+        {isContentVisible('dashboard_sections', undefined, 'business_metrics') && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {metrics.map((metric) => (
+              <Card key={metric.label} className="bg-card">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">{metric.label}</p>
+                      <p className="text-2xl font-semibold text-foreground">{metric.value}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{metric.trend}</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <metric.icon className="h-5 w-5 text-primary" />
+                    </div>
                   </div>
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <metric.icon className="h-5 w-5 text-primary" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Alerts & Issues */}
         <Card className="mb-8">
