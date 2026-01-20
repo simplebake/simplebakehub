@@ -13,7 +13,8 @@ export type AppPermission =
   | 'can_delete_messages'
   | 'can_manage_tutorials'
   | 'can_manage_premixes'
-  | 'can_manage_goals';
+  | 'can_manage_goals'
+  | 'can_manage_visibility';
 
 export const ALL_PERMISSIONS: { value: AppPermission; label: string; description: string }[] = [
   { value: 'can_view_analytics', label: 'View Analytics', description: 'Access analytics dashboards and reports' },
@@ -27,6 +28,7 @@ export const ALL_PERMISSIONS: { value: AppPermission; label: string; description
   { value: 'can_manage_tutorials', label: 'Manage Tutorials', description: 'Create and edit tutorial content' },
   { value: 'can_manage_premixes', label: 'Manage Premixes', description: 'Add and modify premix products' },
   { value: 'can_manage_goals', label: 'Manage Goals', description: 'Set and track performance goals' },
+  { value: 'can_manage_visibility', label: 'Manage Visibility', description: 'Control content visibility settings for users' },
 ];
 
 interface UsePermissionsReturn {

@@ -1,6 +1,6 @@
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText, MessageSquare, BookOpen, GraduationCap, Flag, Key } from "lucide-react";
+import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText, MessageSquare, BookOpen, GraduationCap, Flag, Key, Eye } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -17,6 +17,7 @@ import { IntegrationsSettings } from "@/components/IntegrationsSettings";
 import { AppSettings } from "@/components/AppSettings";
 import { PerformanceGoals } from "@/components/PerformanceGoals";
 import { PermissionsManager } from "@/components/PermissionsManager";
+import { ContentVisibilityManager } from "@/components/ContentVisibilityManager";
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -34,6 +35,7 @@ const Settings = () => {
   const [showPerformanceGoals, setShowPerformanceGoals] = useState(false);
   const [showUserNotificationPrefs, setShowUserNotificationPrefs] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
+  const [showVisibility, setShowVisibility] = useState(false);
 
   const closeAllPanels = () => {
     setShowUserRoles(false);
@@ -48,6 +50,7 @@ const Settings = () => {
     setShowPerformanceGoals(false);
     setShowUserNotificationPrefs(false);
     setShowPermissions(false);
+    setShowVisibility(false);
   };
 
   useEffect(() => {
@@ -169,6 +172,13 @@ const Settings = () => {
       isExpanded: showPermissions,
     },
     {
+      title: "Content Visibility",
+      description: "Control which content users can view and access",
+      icon: Eye,
+      onClick: () => { closeAllPanels(); setShowVisibility(true); },
+      isExpanded: showVisibility,
+    },
+    {
       title: "Performance Targets",
       description: "Set and monitor business KPIs and goals",
       icon: Target,
@@ -233,7 +243,7 @@ const Settings = () => {
   // Combine cards based on role
   const getAdminCards = () => {
     if (isAdmin) {
-      return [...adminOnlyCards.slice(0, 3), ...moderatorCards, adminOnlyCards[3], adminOnlyCards[4], ...supportCards, notificationCard];
+      return [...adminOnlyCards.slice(0, 3), ...moderatorCards, adminOnlyCards[3], adminOnlyCards[4], adminOnlyCards[5], adminOnlyCards[6], ...supportCards, notificationCard];
     }
     if (isModerator) {
       return [...moderatorCards, notificationCard];
@@ -450,6 +460,13 @@ const Settings = () => {
             {isAdmin && showPermissions && (
               <div className="mt-6">
                 <PermissionsManager />
+              </div>
+            )}
+
+            {/* Content Visibility Panel (Admin only) */}
+            {isAdmin && showVisibility && (
+              <div className="mt-6">
+                <ContentVisibilityManager />
               </div>
             )}
           </section>
