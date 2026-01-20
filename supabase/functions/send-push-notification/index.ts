@@ -17,9 +17,9 @@ interface PushNotificationRequest {
   requireInteraction?: boolean;
 }
 
-// VAPID keys - in production, store these securely
-const VAPID_SUBJECT = "mailto:support@simplebakehub.com";
-const VAPID_PUBLIC_KEY = "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U";
+// VAPID keys - stored in environment variables for easy rotation
+const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") || "mailto:support@simplebakehub.com";
+const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY") || "";
 const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") || "";
 
 serve(async (req) => {
