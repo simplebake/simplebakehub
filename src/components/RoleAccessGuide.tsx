@@ -27,6 +27,7 @@ const featureAccess: FeatureAccess[] = [
   { feature: 'Block/Unblock IPs', admin: true, moderator: false, support: false, user: false },
   { feature: 'View Security Dashboard', admin: true, moderator: false, support: false, user: false },
   { feature: 'Manage Premixes', admin: true, moderator: false, support: false, user: false },
+  { feature: 'Manage Performance Goals', admin: true, moderator: false, support: false, user: false },
 ];
 
 const AccessIcon = ({ hasAccess }: { hasAccess: boolean }) => (
