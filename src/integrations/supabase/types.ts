@@ -424,6 +424,48 @@ export type Database = {
         }
         Relationships: []
       }
+      content_visibility_settings: {
+        Row: {
+          content_id: string | null
+          content_type: string
+          created_at: string
+          created_by: string | null
+          hidden_from_users: string[] | null
+          id: string
+          is_visible: boolean
+          section_key: string | null
+          updated_at: string
+          visible_to_roles: Database["public"]["Enums"]["app_role"][] | null
+          visible_to_users: string[] | null
+        }
+        Insert: {
+          content_id?: string | null
+          content_type: string
+          created_at?: string
+          created_by?: string | null
+          hidden_from_users?: string[] | null
+          id?: string
+          is_visible?: boolean
+          section_key?: string | null
+          updated_at?: string
+          visible_to_roles?: Database["public"]["Enums"]["app_role"][] | null
+          visible_to_users?: string[] | null
+        }
+        Update: {
+          content_id?: string | null
+          content_type?: string
+          created_at?: string
+          created_by?: string | null
+          hidden_from_users?: string[] | null
+          id?: string
+          is_visible?: boolean
+          section_key?: string | null
+          updated_at?: string
+          visible_to_roles?: Database["public"]["Enums"]["app_role"][] | null
+          visible_to_users?: string[] | null
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           created_at: string | null
@@ -1114,6 +1156,7 @@ export type Database = {
         | "can_manage_tutorials"
         | "can_manage_premixes"
         | "can_manage_goals"
+        | "can_manage_visibility"
       app_role: "admin" | "user" | "moderator" | "support"
       badge_type:
         | "first_bake"
@@ -1265,6 +1308,7 @@ export const Constants = {
         "can_manage_tutorials",
         "can_manage_premixes",
         "can_manage_goals",
+        "can_manage_visibility",
       ],
       app_role: ["admin", "user", "moderator", "support"],
       badge_type: [
