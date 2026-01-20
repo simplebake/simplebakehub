@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
 
-export type ContentType = 'premixes' | 'tutorials' | 'community_bakes' | 'dashboard_sections';
+export type ContentType = 'premixes' | 'tutorials' | 'community_bakes' | 'dashboard_sections' | 'landing_page';
 
 export interface VisibilitySetting {
   id: string;
