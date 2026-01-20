@@ -799,6 +799,27 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission?: Database["public"]["Enums"]["app_permission"]
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
       tutorials: {
         Row: {
           category: string
@@ -858,6 +879,33 @@ export type Database = {
           created_at?: string
           earned_at?: string
           id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_permissions: {
+        Row: {
+          created_at: string
+          granted: boolean
+          granted_by: string | null
+          id: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted?: boolean
+          granted_by?: string | null
+          id?: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted?: boolean
+          granted_by?: string | null
+          id?: string
+          permission?: Database["public"]["Enums"]["app_permission"]
           user_id?: string
         }
         Relationships: []
@@ -1038,6 +1086,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_permission: {
+        Args: {
+          _permission: Database["public"]["Enums"]["app_permission"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1047,6 +1102,18 @@ export type Database = {
       }
     }
     Enums: {
+      app_permission:
+        | "can_view_analytics"
+        | "can_export_data"
+        | "can_manage_users"
+        | "can_manage_content"
+        | "can_view_audit_logs"
+        | "can_manage_security"
+        | "can_respond_messages"
+        | "can_delete_messages"
+        | "can_manage_tutorials"
+        | "can_manage_premixes"
+        | "can_manage_goals"
       app_role: "admin" | "user" | "moderator" | "support"
       badge_type:
         | "first_bake"
@@ -1186,6 +1253,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_permission: [
+        "can_view_analytics",
+        "can_export_data",
+        "can_manage_users",
+        "can_manage_content",
+        "can_view_audit_logs",
+        "can_manage_security",
+        "can_respond_messages",
+        "can_delete_messages",
+        "can_manage_tutorials",
+        "can_manage_premixes",
+        "can_manage_goals",
+      ],
       app_role: ["admin", "user", "moderator", "support"],
       badge_type: [
         "first_bake",

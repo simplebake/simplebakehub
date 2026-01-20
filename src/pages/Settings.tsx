@@ -1,6 +1,6 @@
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText, MessageSquare, BookOpen, GraduationCap, Flag } from "lucide-react";
+import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText, MessageSquare, BookOpen, GraduationCap, Flag, Key } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -16,6 +16,7 @@ import { ContentReportsManager } from "@/components/ContentReportsManager";
 import { IntegrationsSettings } from "@/components/IntegrationsSettings";
 import { AppSettings } from "@/components/AppSettings";
 import { PerformanceGoals } from "@/components/PerformanceGoals";
+import { PermissionsManager } from "@/components/PermissionsManager";
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -32,6 +33,7 @@ const Settings = () => {
   const [showAppSettings, setShowAppSettings] = useState(false);
   const [showPerformanceGoals, setShowPerformanceGoals] = useState(false);
   const [showUserNotificationPrefs, setShowUserNotificationPrefs] = useState(false);
+  const [showPermissions, setShowPermissions] = useState(false);
 
   const closeAllPanels = () => {
     setShowUserRoles(false);
@@ -45,6 +47,7 @@ const Settings = () => {
     setShowAppSettings(false);
     setShowPerformanceGoals(false);
     setShowUserNotificationPrefs(false);
+    setShowPermissions(false);
   };
 
   useEffect(() => {
@@ -157,6 +160,13 @@ const Settings = () => {
       icon: BookOpen,
       onClick: () => { closeAllPanels(); setShowRoleGuide(true); },
       isExpanded: showRoleGuide,
+    },
+    {
+      title: "Permissions Manager",
+      description: "Configure granular permissions for roles and users",
+      icon: Key,
+      onClick: () => { closeAllPanels(); setShowPermissions(true); },
+      isExpanded: showPermissions,
     },
     {
       title: "Performance Targets",
@@ -433,6 +443,13 @@ const Settings = () => {
             {isAdmin && showPerformanceGoals && (
               <div className="mt-6">
                 <PerformanceGoals />
+              </div>
+            )}
+
+            {/* Permissions Manager Panel (Admin only) */}
+            {isAdmin && showPermissions && (
+              <div className="mt-6">
+                <PermissionsManager />
               </div>
             )}
           </section>
