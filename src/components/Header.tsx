@@ -52,7 +52,7 @@ export const Header = () => {
   return <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="flex h-16 items-center justify-between">
-          <NavLink to="/" className="flex items-center gap-2 text-xl font-semibold text-foreground hover:text-primary transition-colors" aria-label="Simple Bake Lab home">
+          <NavLink to="/" className="flex items-center gap-2 text-xl font-semibold text-foreground hover:text-primary transition-colors" aria-label="Simple Bake Hub home">
             <ChefHat className="h-6 w-6 text-primary" aria-hidden="true" />
             <span className="hidden sm:inline">Simple Bake Hub</span>
           </NavLink>
