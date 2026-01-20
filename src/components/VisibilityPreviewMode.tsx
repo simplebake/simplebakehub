@@ -14,6 +14,7 @@ const CONTENT_TYPES: { value: ContentType; label: string; icon: React.ReactNode 
   { value: 'tutorials', label: 'Tutorials', icon: <BookOpen className="h-4 w-4" /> },
   { value: 'community_bakes', label: 'Community Bakes', icon: <Users className="h-4 w-4" /> },
   { value: 'dashboard_sections', label: 'Dashboard', icon: <LayoutGrid className="h-4 w-4" /> },
+  { value: 'landing_page', label: 'Landing Page', icon: <LayoutGrid className="h-4 w-4" /> },
 ];
 
 const DASHBOARD_SECTIONS = [
@@ -23,6 +24,15 @@ const DASHBOARD_SECTIONS = [
   { key: 'baking_history', label: 'Baking History' },
   { key: 'community_insights', label: 'Community Insights' },
   { key: 'performance_goals', label: 'Performance Goals' },
+  { key: 'recommendations', label: 'Personalized Recommendations' },
+  { key: 'recipe_analyzer', label: 'Recipe Difficulty Analyzer' },
+];
+
+const LANDING_SECTIONS = [
+  { key: 'hero', label: 'Hero Section' },
+  { key: 'features', label: 'Features Section' },
+  { key: 'benefits', label: 'Benefits Section' },
+  { key: 'cta', label: 'Call to Action' },
 ];
 
 interface PreviewUser {
@@ -49,6 +59,7 @@ export const VisibilityPreviewMode = ({ settings }: Props) => {
     tutorials: [],
     community_bakes: [],
     dashboard_sections: DASHBOARD_SECTIONS.map(s => ({ id: s.key, name: s.label })),
+    landing_page: LANDING_SECTIONS.map(s => ({ id: s.key, name: s.label })),
   });
 
   useEffect(() => {
@@ -178,10 +189,11 @@ export const VisibilityPreviewMode = ({ settings }: Props) => {
                 </h5>
                 <div className="space-y-1">
                   {contentItems[type.value].slice(0, 4).map(item => {
+                    const isSectionType = type.value === 'dashboard_sections' || type.value === 'landing_page';
                     const isVisible = isContentVisibleForPreview(
                       type.value,
-                      type.value !== 'dashboard_sections' ? item.id : undefined,
-                      type.value === 'dashboard_sections' ? item.id : undefined
+                      !isSectionType ? item.id : undefined,
+                      isSectionType ? item.id : undefined
                     );
                     
                     return (

@@ -20,6 +20,7 @@ const CONTENT_TYPES: { value: ContentType; label: string; icon: React.ReactNode 
   { value: 'tutorials', label: 'Tutorials', icon: <BookOpen className="h-4 w-4" /> },
   { value: 'community_bakes', label: 'Community Bakes', icon: <Users className="h-4 w-4" /> },
   { value: 'dashboard_sections', label: 'Dashboard Sections', icon: <LayoutGrid className="h-4 w-4" /> },
+  { value: 'landing_page', label: 'Landing Page', icon: <LayoutGrid className="h-4 w-4" /> },
 ];
 
 const DASHBOARD_SECTIONS = [
@@ -29,6 +30,15 @@ const DASHBOARD_SECTIONS = [
   { key: 'baking_history', label: 'Baking History' },
   { key: 'community_insights', label: 'Community Insights' },
   { key: 'performance_goals', label: 'Performance Goals Widget' },
+  { key: 'recommendations', label: 'Personalized Recommendations' },
+  { key: 'recipe_analyzer', label: 'Recipe Difficulty Analyzer' },
+];
+
+const LANDING_SECTIONS = [
+  { key: 'hero', label: 'Hero Section' },
+  { key: 'features', label: 'Features Section' },
+  { key: 'benefits', label: 'Benefits Section' },
+  { key: 'cta', label: 'Call to Action Section' },
 ];
 
 const ROLES = ['admin', 'moderator', 'support', 'user'];
@@ -50,6 +60,7 @@ export const ContentVisibilityManager = () => {
     tutorials: [],
     community_bakes: [],
     dashboard_sections: DASHBOARD_SECTIONS.map(s => ({ id: s.key, name: s.label })),
+    landing_page: LANDING_SECTIONS.map(s => ({ id: s.key, name: s.label })),
   });
 
   useEffect(() => {
@@ -89,7 +100,7 @@ export const ContentVisibilityManager = () => {
   const getSetting = (contentType: ContentType, itemId?: string, sectionKey?: string): VisibilitySetting | undefined => {
     return settings.find(s => {
       if (s.content_type !== contentType) return false;
-      if (contentType === 'dashboard_sections') {
+      if (contentType === 'dashboard_sections' || contentType === 'landing_page') {
         return s.section_key === sectionKey;
       }
       return s.content_id === itemId;
@@ -115,10 +126,11 @@ export const ContentVisibilityManager = () => {
         ));
       } else {
         // Create new setting (hidden by default when creating)
+        const isSectionType = contentType === 'dashboard_sections' || contentType === 'landing_page';
         const newSetting = {
           content_type: contentType,
-          content_id: contentType !== 'dashboard_sections' ? itemId : null,
-          section_key: contentType === 'dashboard_sections' ? sectionKey : null,
+          content_id: !isSectionType ? itemId : null,
+          section_key: isSectionType ? sectionKey : null,
           is_visible: false,
           visible_to_roles: [],
           visible_to_users: [],
@@ -265,10 +277,11 @@ export const ContentVisibilityManager = () => {
                   </TableHeader>
                   <TableBody>
                     {contentItems[type.value].map(item => {
+                      const isSectionType = type.value === 'dashboard_sections' || type.value === 'landing_page';
                       const setting = getSetting(
                         type.value, 
-                        type.value !== 'dashboard_sections' ? item.id : undefined,
-                        type.value === 'dashboard_sections' ? item.id : undefined
+                        !isSectionType ? item.id : undefined,
+                        isSectionType ? item.id : undefined
                       );
                       const isVisible = !setting || setting.is_visible;
                       const hasOverrides = setting && (setting.visible_to_users.length > 0 || setting.hidden_from_users.length > 0);
@@ -286,11 +299,11 @@ export const ContentVisibilityManager = () => {
                               <div className="flex justify-center items-center gap-2">
                                 <Switch
                                   checked={isVisible}
-                                  onCheckedChange={() => toggleVisibility(
-                                    type.value,
-                                    type.value !== 'dashboard_sections' ? item.id : undefined,
-                                    type.value === 'dashboard_sections' ? item.id : undefined
-                                  )}
+                                onCheckedChange={() => toggleVisibility(
+                                  type.value,
+                                  !isSectionType ? item.id : undefined,
+                                  isSectionType ? item.id : undefined
+                                )}
                                   disabled={saving}
                                 />
                                 {isVisible ? (
