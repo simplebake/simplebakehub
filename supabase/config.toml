@@ -56,3 +56,6 @@ verify_jwt = true
 
 [functions.submit-contact]
 verify_jwt = false
+
+[functions.shopify-orders]
+verify_jwt = false
