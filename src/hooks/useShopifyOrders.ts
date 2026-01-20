@@ -52,12 +52,13 @@ export function useShopifyOrders(options: UseShopifyOrdersOptions = {}) {
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('shopify-orders', {
-        body: null,
-        headers: {},
-      });
+      // Get the current session for authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('Authentication required. Please log in.');
+      }
 
-      // Build query params manually since invoke doesn't support them directly
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'twszrhkovxpvosnfkdjk';
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/shopify-orders?limit=${limit}&status=${status}`,
@@ -65,9 +66,18 @@ export function useShopifyOrders(options: UseShopifyOrdersOptions = {}) {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
           },
         }
       );
+
+      if (response.status === 401) {
+        throw new Error('Authentication required. Please log in.');
+      }
+
+      if (response.status === 403) {
+        throw new Error('Access denied. Admin, moderator, or support role required.');
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -109,6 +119,13 @@ export function useShopifyOrder(orderId: string | null) {
     setError(null);
 
     try {
+      // Get the current session for authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('Authentication required. Please log in.');
+      }
+
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'twszrhkovxpvosnfkdjk';
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/shopify-orders?order_id=${orderId}`,
@@ -116,9 +133,18 @@ export function useShopifyOrder(orderId: string | null) {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
           },
         }
       );
+
+      if (response.status === 401) {
+        throw new Error('Authentication required. Please log in.');
+      }
+
+      if (response.status === 403) {
+        throw new Error('Access denied. Admin, moderator, or support role required.');
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
