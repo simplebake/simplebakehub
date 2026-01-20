@@ -9,14 +9,12 @@ const SHOPIFY_STORE_DOMAIN = "simple-bake-2.myshopify.com";
 const SHOPIFY_API_VERSION = "2025-01";
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const accessToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
-    
     if (!accessToken) {
       throw new Error('SHOPIFY_ACCESS_TOKEN not configured');
     }
@@ -26,15 +24,9 @@ serve(async (req) => {
     const status = url.searchParams.get('status') || 'any';
     const orderId = url.searchParams.get('order_id');
 
-    let endpoint: string;
-    
-    if (orderId) {
-      // Fetch single order
-      endpoint = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/orders/${orderId}.json`;
-    } else {
-      // Fetch orders list
-      endpoint = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/orders.json?limit=${limit}&status=${status}`;
-    }
+    const endpoint = orderId
+      ? `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/orders/${orderId}.json`
+      : `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/orders.json?limit=${limit}&status=${status}`;
 
     const response = await fetch(endpoint, {
       method: 'GET',
@@ -47,32 +39,20 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Shopify API error:', response.status, errorText);
-      
-      if (response.status === 401) {
-        throw new Error('Invalid Shopify access token. Please check your Admin API credentials.');
-      }
-      if (response.status === 403) {
-        throw new Error('Access denied. Ensure your Shopify app has read_orders permission.');
-      }
-      
       throw new Error(`Shopify API error: ${response.status}`);
     }
 
     const data = await response.json();
-
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error fetching orders:', errorMessage);
+    console.error('Error:', errorMessage);
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
