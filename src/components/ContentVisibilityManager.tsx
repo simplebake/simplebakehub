@@ -6,11 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, EyeOff, Cookie, BookOpen, Users, LayoutGrid, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Eye, EyeOff, Cookie, BookOpen, Users, LayoutGrid, Loader2, Trash2, UserCog, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logAdminAction } from '@/lib/auditLogger';
 import type { ContentType, VisibilitySetting } from '@/hooks/useContentVisibility';
+import { VisibilityPreviewMode } from './VisibilityPreviewMode';
+import { UserVisibilityOverrides } from './UserVisibilityOverrides';
 
 const CONTENT_TYPES: { value: ContentType; label: string; icon: React.ReactNode }[] = [
   { value: 'premixes', label: 'Premixes & Recipes', icon: <Cookie className="h-4 w-4" /> },
@@ -40,6 +43,8 @@ export const ContentVisibilityManager = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<ContentType>('dashboard_sections');
+  const [showPreview, setShowPreview] = useState(false);
+  const [editingOverrides, setEditingOverrides] = useState<string | null>(null);
   const [contentItems, setContentItems] = useState<Record<ContentType, ContentItem[]>>({
     premixes: [],
     tutorials: [],
@@ -197,6 +202,10 @@ export const ContentVisibilityManager = () => {
     }
   };
 
+  const handleOverridesUpdate = (updatedSetting: VisibilitySetting) => {
+    setSettings(prev => prev.map(s => s.id === updatedSetting.id ? updatedSetting : s));
+  };
+
   if (loading) {
     return (
       <Card>
@@ -208,128 +217,184 @@ export const ContentVisibilityManager = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Eye className="h-5 w-5 text-primary" />
-          Content Visibility Settings
-        </CardTitle>
-        <CardDescription>
-          Control which content is visible to specific users and roles
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ContentType)}>
-          <TabsList className="mb-4 flex-wrap h-auto gap-1">
-            {CONTENT_TYPES.map(type => (
-              <TabsTrigger key={type.value} value={type.value} className="gap-2">
-                {type.icon}
-                <span className="hidden sm:inline">{type.label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-primary" />
+                Content Visibility Settings
+              </CardTitle>
+              <CardDescription>
+                Control which content is visible to specific users and roles
+              </CardDescription>
+            </div>
+            <Button
+              variant={showPreview ? "default" : "outline"}
+              onClick={() => setShowPreview(!showPreview)}
+              className="gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              {showPreview ? 'Hide Preview' : 'Preview Mode'}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ContentType)}>
+            <TabsList className="mb-4 flex-wrap h-auto gap-1">
+              {CONTENT_TYPES.map(type => (
+                <TabsTrigger key={type.value} value={type.value} className="gap-2">
+                  {type.icon}
+                  <span className="hidden sm:inline">{type.label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-          {CONTENT_TYPES.map(type => (
-            <TabsContent key={type.value} value={type.value}>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Content</TableHead>
-                    <TableHead className="text-center">Visible</TableHead>
-                    <TableHead>Restricted to Roles</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {contentItems[type.value].map(item => {
-                    const setting = getSetting(
-                      type.value, 
-                      type.value !== 'dashboard_sections' ? item.id : undefined,
-                      type.value === 'dashboard_sections' ? item.id : undefined
-                    );
-                    const isVisible = !setting || setting.is_visible;
-                    
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {type.icon}
-                            <span className="font-medium">{item.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex justify-center items-center gap-2">
-                            <Switch
-                              checked={isVisible}
-                              onCheckedChange={() => toggleVisibility(
-                                type.value,
-                                type.value !== 'dashboard_sections' ? item.id : undefined,
-                                type.value === 'dashboard_sections' ? item.id : undefined
+            {CONTENT_TYPES.map(type => (
+              <TabsContent key={type.value} value={type.value}>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Content</TableHead>
+                      <TableHead className="text-center">Visible</TableHead>
+                      <TableHead>Restricted to Roles</TableHead>
+                      <TableHead className="text-center">User Overrides</TableHead>
+                      <TableHead className="text-center">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {contentItems[type.value].map(item => {
+                      const setting = getSetting(
+                        type.value, 
+                        type.value !== 'dashboard_sections' ? item.id : undefined,
+                        type.value === 'dashboard_sections' ? item.id : undefined
+                      );
+                      const isVisible = !setting || setting.is_visible;
+                      const hasOverrides = setting && (setting.visible_to_users.length > 0 || setting.hidden_from_users.length > 0);
+                      
+                      return (
+                        <>
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {type.icon}
+                                <span className="font-medium">{item.name}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex justify-center items-center gap-2">
+                                <Switch
+                                  checked={isVisible}
+                                  onCheckedChange={() => toggleVisibility(
+                                    type.value,
+                                    type.value !== 'dashboard_sections' ? item.id : undefined,
+                                    type.value === 'dashboard_sections' ? item.id : undefined
+                                  )}
+                                  disabled={saving}
+                                />
+                                {isVisible ? (
+                                  <Eye className="h-4 w-4 text-primary" />
+                                ) : (
+                                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {setting ? (
+                                <Select
+                                  value={setting.visible_to_roles.join(',') || 'all'}
+                                  onValueChange={(value) => {
+                                    const roles = value === 'all' ? [] : value.split(',');
+                                    updateRoleRestriction(setting.id, roles);
+                                  }}
+                                  disabled={saving}
+                                >
+                                  <SelectTrigger className="w-40">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="all">All Users</SelectItem>
+                                    <SelectItem value="admin">Admins Only</SelectItem>
+                                    <SelectItem value="admin,moderator">Staff Only</SelectItem>
+                                    <SelectItem value="admin,moderator,support">Staff + Support</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Badge variant="outline" className="text-muted-foreground">
+                                  All Users (Default)
+                                </Badge>
                               )}
-                              disabled={saving}
-                            />
-                            {isVisible ? (
-                              <Eye className="h-4 w-4 text-primary" />
-                            ) : (
-                              <EyeOff className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {setting ? (
-                            <Select
-                              value={setting.visible_to_roles.join(',') || 'all'}
-                              onValueChange={(value) => {
-                                const roles = value === 'all' ? [] : value.split(',');
-                                updateRoleRestriction(setting.id, roles);
-                              }}
-                              disabled={saving}
-                            >
-                              <SelectTrigger className="w-40">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Users</SelectItem>
-                                <SelectItem value="admin">Admins Only</SelectItem>
-                                <SelectItem value="admin,moderator">Staff Only</SelectItem>
-                                <SelectItem value="admin,moderator,support">Staff + Support</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Badge variant="outline" className="text-muted-foreground">
-                              All Users (Default)
-                            </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {setting ? (
+                                <Button
+                                  size="sm"
+                                  variant={editingOverrides === setting.id ? "default" : "outline"}
+                                  onClick={() => setEditingOverrides(editingOverrides === setting.id ? null : setting.id)}
+                                  disabled={saving}
+                                  className="gap-1"
+                                >
+                                  <UserCog className="h-3 w-3" />
+                                  {hasOverrides && (
+                                    <Badge variant="secondary" className="text-xs px-1 py-0">
+                                      {(setting.visible_to_users.length || 0) + (setting.hidden_from_users.length || 0)}
+                                    </Badge>
+                                  )}
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {setting && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => deleteSetting(setting.id)}
+                                  disabled={saving}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                          {setting && editingOverrides === setting.id && (
+                            <TableRow key={`${item.id}-overrides`}>
+                              <TableCell colSpan={5} className="p-0 border-0">
+                                <div className="p-4 bg-muted/30">
+                                  <UserVisibilityOverrides
+                                    setting={setting}
+                                    onUpdate={handleOverridesUpdate}
+                                    onClose={() => setEditingOverrides(null)}
+                                  />
+                                </div>
+                              </TableCell>
+                            </TableRow>
                           )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {setting && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => deleteSetting(setting.id)}
-                              disabled={saving}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
+                        </>
+                      );
+                    })}
+                    {contentItems[type.value].length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          No {type.label.toLowerCase()} found
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
-                  {contentItems[type.value].length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        No {type.label.toLowerCase()} found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TabsContent>
-          ))}
-        </Tabs>
-      </CardContent>
-    </Card>
+                    )}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+            ))}
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Preview Mode Panel */}
+      {showPreview && (
+        <VisibilityPreviewMode settings={settings} />
+      )}
+    </div>
   );
 };
