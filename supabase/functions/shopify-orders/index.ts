@@ -77,10 +77,10 @@ serve(async (req) => {
       );
     }
 
-    // 3. Verify Shopify token is configured
-    const shopifyAccessToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+    // 3. Verify Shopify Admin token is configured (prefer dedicated admin token, fallback to connector token)
+    const shopifyAccessToken = Deno.env.get('SHOPIFY_ADMIN_TOKEN') || Deno.env.get('SHOPIFY_ACCESS_TOKEN');
     if (!shopifyAccessToken) {
-      throw new Error('SHOPIFY_ACCESS_TOKEN not configured');
+      throw new Error('SHOPIFY_ADMIN_TOKEN not configured');
     }
 
     // 4. Parse query parameters
