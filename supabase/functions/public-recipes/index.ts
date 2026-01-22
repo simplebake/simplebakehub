@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
 
@@ -17,6 +17,25 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ error: "Method not allowed" }),
       { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Validate API key
+  const apiKey = req.headers.get("x-api-key");
+  const expectedApiKey = Deno.env.get("PUBLIC_RECIPES_API_KEY");
+
+  if (!expectedApiKey) {
+    console.error("PUBLIC_RECIPES_API_KEY not configured");
+    return new Response(
+      JSON.stringify({ error: "API key not configured on server" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  if (!apiKey || apiKey !== expectedApiKey) {
+    return new Response(
+      JSON.stringify({ error: "Invalid or missing API key. Include x-api-key header." }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
