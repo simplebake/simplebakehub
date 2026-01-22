@@ -29,9 +29,31 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - No authorization header" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
+    const token = authHeader.replace("Bearer ", "");
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
+    
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Invalid token" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
     const { userId, userIds, title, body, icon, tag, url, requireInteraction }: PushNotificationRequest = await req.json();
 
     // Get target user IDs
@@ -42,6 +64,26 @@ serve(async (req) => {
         JSON.stringify({ error: "No target users specified" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
+    }
+    
+    // Check if user is allowed to send to these targets
+    // Users can only send to themselves, unless they have admin/moderator role
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+    
+    const isStaff = userRoles?.some(r => r.role === "admin" || r.role === "moderator");
+    
+    if (!isStaff) {
+      // Non-staff can only send notifications to themselves
+      const unauthorizedTargets = targetUserIds.filter(id => id !== user.id);
+      if (unauthorizedTargets.length > 0) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden - You can only send notifications to yourself" }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
     }
 
     // Fetch push subscriptions for target users
