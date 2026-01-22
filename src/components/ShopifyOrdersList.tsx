@@ -1,4 +1,6 @@
-import { useShopifyOrders, ShopifyOrder } from '@/hooks/useShopifyOrders';
+import { useState, useMemo } from 'react';
+import { useShopifyOrders, ShopifyOrder, OrderFiltersParams } from '@/hooks/useShopifyOrders';
+import { ShopifyOrdersFilters, OrderFilters, defaultFilters } from '@/components/ShopifyOrdersFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,7 +11,6 @@ import { format } from 'date-fns';
 
 interface ShopifyOrdersListProps {
   limit?: number;
-  status?: 'any' | 'open' | 'closed' | 'cancelled';
 }
 
 const getFinancialStatusBadge = (status: string) => {
@@ -137,8 +138,44 @@ const OrdersSkeleton = () => (
   </div>
 );
 
-export function ShopifyOrdersList({ limit = 50, status = 'any' }: ShopifyOrdersListProps) {
-  const { orders, isLoading, error, refetch } = useShopifyOrders({ limit, status });
+export function ShopifyOrdersList({ limit = 50 }: ShopifyOrdersListProps) {
+  const [filters, setFilters] = useState<OrderFilters>(defaultFilters);
+  const [appliedFilters, setAppliedFilters] = useState<OrderFiltersParams>({});
+
+  const { orders, isLoading, error, refetch } = useShopifyOrders({ 
+    limit, 
+    filters: appliedFilters 
+  });
+
+  const handleApplyFilters = () => {
+    const newFilters: OrderFiltersParams = {
+      status: filters.status,
+      financialStatus: filters.financialStatus,
+      fulfillmentStatus: filters.fulfillmentStatus,
+      createdAtMin: filters.dateFrom?.toISOString(),
+      createdAtMax: filters.dateTo?.toISOString(),
+    };
+    setAppliedFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    setFilters(defaultFilters);
+    setAppliedFilters({});
+  };
+
+  // Client-side filter for customer search (Shopify API doesn't support this directly)
+  const filteredOrders = useMemo(() => {
+    if (!filters.customerSearch) return orders;
+    
+    const search = filters.customerSearch.toLowerCase();
+    return orders.filter(order => {
+      const customerName = order.customer 
+        ? `${order.customer.first_name} ${order.customer.last_name}`.toLowerCase()
+        : '';
+      const email = (order.customer?.email || order.email || '').toLowerCase();
+      return customerName.includes(search) || email.includes(search);
+    });
+  }, [orders, filters.customerSearch]);
 
   if (isLoading) {
     return <OrdersSkeleton />;
@@ -182,15 +219,23 @@ export function ShopifyOrdersList({ limit = 50, status = 'any' }: ShopifyOrdersL
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {orders.length} order(s)
+          Showing {filteredOrders.length} order(s)
         </p>
-        <Button variant="outline" size="sm" onClick={refetch}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <ShopifyOrdersFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            onApply={handleApplyFilters}
+            onClear={handleClearFilters}
+          />
+          <Button variant="outline" size="sm" onClick={refetch}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {orders.map((order) => (
+        {filteredOrders.map((order) => (
           <OrderCard key={order.id} order={order} />
         ))}
       </div>
