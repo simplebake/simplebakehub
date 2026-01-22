@@ -6,12 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield, User, Crown } from 'lucide-react';
+import { Loader2, Shield, User, Crown, Package } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { AuditLogsViewer } from '@/components/AuditLogsViewer';
 import { SecurityDashboard } from '@/components/SecurityDashboard';
 import { BlockedIPsManager } from '@/components/BlockedIPsManager';
 import { SecurityAnalytics } from '@/components/SecurityAnalytics';
+import { ShopifyOrdersList } from '@/components/ShopifyOrdersList';
 import { RLSHealthDashboard } from '@/components/RLSHealthDashboard';
 import { maskEmail } from '@/lib/emailMasking';
 
@@ -182,6 +183,21 @@ const Admin = () => {
             </CardContent>
           </Card>
         </div>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Recent Shopify Orders
+            </CardTitle>
+            <CardDescription>
+              View and manage customer orders from your Shopify store
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ShopifyOrdersList limit={10} />
+          </CardContent>
+        </Card>
 
         <div className="space-y-8 mb-8">
           <RLSHealthDashboard />
