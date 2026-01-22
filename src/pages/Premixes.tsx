@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Download, Upload } from "lucide-react";
+import { Download, Upload, Link } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -348,22 +348,37 @@ const Premixes = () => {
               </Button>
               
               {premixes.length > 0 && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="gap-2">
-                      <Download className="h-4 w-4" />
-                      Export Recipes
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={exportAsCSV}>
-                      Export as CSV
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={exportAsJSON}>
-                      Export as JSON
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="gap-2">
+                        <Download className="h-4 w-4" />
+                        Export Recipes
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={exportAsCSV}>
+                        Export as CSV
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={exportAsJSON}>
+                        Export as JSON
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => {
+                      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-recipes`;
+                      navigator.clipboard.writeText(apiUrl);
+                      toast.success('API URL copied to clipboard');
+                    }}
+                  >
+                    <Link className="h-4 w-4" />
+                    Copy API URL
+                  </Button>
+                </>
               )}
             </div>
           )}
