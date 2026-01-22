@@ -88,13 +88,29 @@ serve(async (req) => {
     const limit = url.searchParams.get('limit') || '50';
     const status = url.searchParams.get('status') || 'any';
     const orderId = url.searchParams.get('order_id');
+    const financialStatus = url.searchParams.get('financial_status');
+    const fulfillmentStatus = url.searchParams.get('fulfillment_status');
+    const createdAtMin = url.searchParams.get('created_at_min');
+    const createdAtMax = url.searchParams.get('created_at_max');
 
     // Validate and sanitize inputs
     const sanitizedLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 250).toString();
 
-    const endpoint = orderId
-      ? `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/orders/${encodeURIComponent(orderId)}.json`
-      : `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/orders.json?limit=${sanitizedLimit}&status=${status}`;
+    let endpoint: string;
+    if (orderId) {
+      endpoint = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/orders/${encodeURIComponent(orderId)}.json`;
+    } else {
+      const params = new URLSearchParams();
+      params.set('limit', sanitizedLimit);
+      params.set('status', status);
+      
+      if (financialStatus) params.set('financial_status', financialStatus);
+      if (fulfillmentStatus) params.set('fulfillment_status', fulfillmentStatus);
+      if (createdAtMin) params.set('created_at_min', createdAtMin);
+      if (createdAtMax) params.set('created_at_max', createdAtMax);
+      
+      endpoint = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/orders.json?${params.toString()}`;
+    }
 
     // 5. Fetch orders from Shopify
     const response = await fetch(endpoint, {
