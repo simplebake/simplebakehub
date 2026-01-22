@@ -78,7 +78,13 @@ serve(async (req) => {
     }
 
     // 3. Verify Shopify Admin token is configured (prefer dedicated admin token, fallback to connector token)
-    const shopifyAccessToken = Deno.env.get('SHOPIFY_ADMIN_TOKEN') || Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+    const adminToken = Deno.env.get('SHOPIFY_ADMIN_TOKEN');
+    const connectorToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+    const shopifyAccessToken = adminToken || connectorToken;
+    
+    console.log('Token source:', adminToken ? 'SHOPIFY_ADMIN_TOKEN' : (connectorToken ? 'SHOPIFY_ACCESS_TOKEN' : 'NONE'));
+    console.log('Token prefix:', shopifyAccessToken ? shopifyAccessToken.substring(0, 10) + '...' : 'NO TOKEN');
+    
     if (!shopifyAccessToken) {
       throw new Error('SHOPIFY_ADMIN_TOKEN not configured');
     }
