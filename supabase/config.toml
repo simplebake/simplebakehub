@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.shopify-orders]
 verify_jwt = false
+
+[functions.public-recipes]
+verify_jwt = false
