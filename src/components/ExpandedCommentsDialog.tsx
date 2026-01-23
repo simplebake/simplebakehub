@@ -555,19 +555,24 @@ export const ExpandedCommentsDialog = ({
         </ScrollArea>
 
         {/* New comment form */}
-        <form onSubmit={handleSubmitComment} className="flex gap-2 pt-4 border-t">
-          <Input
-            placeholder="Add a comment..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className="flex-1"
-            maxLength={500}
-            disabled={submitting}
-          />
-          <Button type="submit" disabled={submitting || !newComment.trim()}>
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Post"}
-        </Button>
-      </form>
+        <div className="pt-4 border-t space-y-1">
+          <form onSubmit={handleSubmitComment} className="flex gap-2">
+            <Input
+              placeholder="Add a comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="flex-1"
+              maxLength={500}
+              disabled={submitting}
+            />
+            <Button type="submit" disabled={submitting || !newComment.trim()}>
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Post"}
+            </Button>
+          </form>
+          <p className="text-xs text-muted-foreground text-right">
+            {500 - newComment.length} characters remaining
+          </p>
+        </div>
     </DialogContent>
   </Dialog>
 
