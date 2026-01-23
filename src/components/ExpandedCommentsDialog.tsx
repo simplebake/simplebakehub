@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { MessageCircle, Reply, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { MessageCircle, Reply, ChevronDown, ChevronUp, Loader2, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Comment {
@@ -46,6 +47,9 @@ export const ExpandedCommentsDialog = ({
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchComments = async (pageNum: number, append = false) => {
     setLoading(true);
@@ -197,6 +201,31 @@ export const ExpandedCommentsDialog = ({
     });
   };
 
+  const handleDeleteComment = async () => {
+    if (!commentToDelete) return;
+
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("bake_comments")
+        .delete()
+        .eq("id", commentToDelete)
+        .eq("user_id", currentUserId);
+
+      if (error) throw error;
+
+      setDeleteConfirmOpen(false);
+      setCommentToDelete(null);
+      fetchComments(0);
+      onCommentAdded();
+      toast.success("Comment deleted!");
+    } catch (error: any) {
+      toast.error("Failed to delete comment");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -213,6 +242,7 @@ export const ExpandedCommentsDialog = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
         <DialogHeader>
@@ -258,6 +288,21 @@ export const ExpandedCommentsDialog = ({
                       <Reply className="h-3 w-3 mr-1" />
                       Reply
                     </Button>
+
+                    {comment.user_id === currentUserId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setCommentToDelete(comment.id);
+                          setDeleteConfirmOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
+                    )}
 
                     {comment.replies && comment.replies.length > 0 && (
                       <Button
@@ -316,9 +361,24 @@ export const ExpandedCommentsDialog = ({
                               {reply.comment}
                             </p>
                           </div>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {formatDate(reply.created_at)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {formatDate(reply.created_at)}
+                            </span>
+                            {reply.user_id === currentUserId && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => {
+                                  setCommentToDelete(reply.id);
+                                  setDeleteConfirmOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -363,10 +423,32 @@ export const ExpandedCommentsDialog = ({
             disabled={submitting}
           />
           <Button type="submit" disabled={submitting || !newComment.trim()}>
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Post"}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Post"}
+        </Button>
+      </form>
+    </DialogContent>
+  </Dialog>
+
+  <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Delete comment?</AlertDialogTitle>
+        <AlertDialogDescription>
+          This action cannot be undone. This will permanently delete your comment.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+        <AlertDialogAction
+          onClick={handleDeleteComment}
+          disabled={deleting}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        >
+          {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+</>
+);
 };
