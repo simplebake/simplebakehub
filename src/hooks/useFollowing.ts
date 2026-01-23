@@ -133,7 +133,7 @@ export function useFollowingFeed() {
 
       const followingIds = followingData.map(f => f.following_id);
 
-      // Fetch bakes from followed users
+      // Fetch bakes from followed users using public_profiles view (excludes email)
       const { data: bakes, error } = await supabase
         .from("bake_shares")
         .select(`
@@ -144,7 +144,7 @@ export function useFollowingFeed() {
           created_at,
           user_id,
           premix:premixes(name, difficulty),
-          profile:profiles(id, name, avatar_url)
+          profile:public_profiles(id, name, avatar_url)
         `)
         .in("user_id", followingIds)
         .eq("is_visible", true)

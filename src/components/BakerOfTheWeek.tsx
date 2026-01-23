@@ -76,9 +76,9 @@ export function BakerOfTheWeek() {
         return;
       }
 
-      // Fetch profile of top baker
+      // Fetch profile of top baker using public_profiles view (excludes email)
       const { data: profile, error: profileError } = await supabase
-        .from("profiles")
+        .from("public_profiles")
         .select("id, name, avatar_url, bio")
         .eq("id", topUserId)
         .single();

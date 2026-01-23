@@ -66,9 +66,9 @@ const PublicProfile = () => {
 
   const fetchProfile = async () => {
     try {
-      // Fetch profile
+      // Fetch profile from public_profiles view (excludes email for security)
       const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
+        .from("public_profiles")
         .select("id, name, country, avatar_url, cover_image_url, bio, is_public, favorite_bread_type, baking_since")
         .eq("id", userId)
         .maybeSingle();

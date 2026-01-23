@@ -108,6 +108,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bake_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bake_likes: {
@@ -142,6 +149,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bake_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -193,6 +207,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bake_shares_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1125,6 +1146,48 @@ export type Database = {
       }
     }
     Views: {
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          baking_since: string | null
+          bio: string | null
+          country: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          favorite_bread_type: string | null
+          id: string | null
+          is_public: boolean | null
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          baking_since?: string | null
+          bio?: string | null
+          country?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          favorite_bread_type?: string | null
+          id?: string | null
+          is_public?: boolean | null
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          baking_since?: string | null
+          bio?: string | null
+          country?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          favorite_bread_type?: string | null
+          id?: string | null
+          is_public?: boolean | null
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       rate_limit_violations: {
         Row: {
           endpoint: string | null
