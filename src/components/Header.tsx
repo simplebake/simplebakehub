@@ -6,7 +6,17 @@ import { logAuthEvent } from "@/lib/auditLogger";
 import { useNavigate } from "react-router-dom";
 import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie, Users, Search, Bell } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
+const NotificationBadge = ({ count }: { count: number }) => {
+  if (count === 0) return null;
+  
+  return (
+    <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+};
 const publicNavItems = [
   {
     label: "Home",
@@ -67,14 +77,10 @@ const adminNavItems = [
   }
 ];
 export const Header = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const {
-    isSupport,
-    isAdmin
-  } = useUserRole();
+  const { isSupport, isAdmin } = useUserRole();
+  const { data: unreadCount = 0 } = useUnreadNotifications();
   const handleLogout = async () => {
     const userId = user?.id;
     await supabase.auth.signOut();
@@ -93,10 +99,19 @@ export const Header = () => {
 
           <nav className="flex items-center gap-1 sm:gap-2">
             {user ? <>
-                {publicNavItems.map(item => <NavLink key={item.path} to={item.path} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" activeClassName="text-foreground bg-muted" aria-label={item.ariaLabel}>
+                {publicNavItems.map(item => (
+                  <NavLink 
+                    key={item.path} 
+                    to={item.path} 
+                    className="relative flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" 
+                    activeClassName="text-foreground bg-muted" 
+                    aria-label={item.ariaLabel}
+                  >
                     <item.icon className="h-4 w-4" />
                     <span className="hidden md:inline">{item.label}</span>
-                  </NavLink>)}
+                    {item.path === "/notifications" && <NotificationBadge count={unreadCount} />}
+                  </NavLink>
+                ))}
                 {isAdmin && adminNavItems.map(item => <NavLink key={item.path} to={item.path} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" activeClassName="text-foreground bg-muted" aria-label={item.ariaLabel}>
                     <item.icon className="h-4 w-4" />
                     <span className="hidden md:inline">{item.label}</span>
