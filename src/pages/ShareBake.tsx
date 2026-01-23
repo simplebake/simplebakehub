@@ -1,5 +1,5 @@
 import { useAuth } from "@/lib/supabase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -368,7 +368,12 @@ const ShareBake = () => {
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4 mb-4">
                           <div className="flex-1">
-                            <h3 className="font-semibold">{share.profiles?.name}</h3>
+                            <Link 
+                              to={`/baker/${share.user_id}`}
+                              className="font-semibold hover:text-primary transition-colors"
+                            >
+                              {share.profiles?.name}
+                            </Link>
                             <p className="text-sm text-muted-foreground">
                               {share.premixes?.name} • {"⭐".repeat(share.rating)}
                             </p>
