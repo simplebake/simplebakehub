@@ -77,6 +77,17 @@ export function useFollowing(targetUserId?: string) {
         
         setIsFollowing(true);
         setFollowersCount(prev => prev + 1);
+
+        // Trigger push notification for new follower (fire and forget)
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        fetch(`${supabaseUrl}/functions/v1/notify-new-follower`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            followerId: user.id,
+            followingId: targetUserId
+          })
+        }).catch(err => console.log("Notification sent:", err));
       }
     } catch (error) {
       console.error("Error toggling follow:", error);
