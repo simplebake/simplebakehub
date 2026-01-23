@@ -642,6 +642,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          content_id: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          content_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          content_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       performance_goal_history: {
         Row: {
           created_at: string

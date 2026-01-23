@@ -37,6 +37,16 @@ serve(async (req) => {
       );
     }
 
+    // Store notification in database
+    await supabase
+      .from("notifications")
+      .insert({
+        user_id: followingId,
+        type: "new_follower",
+        actor_id: followerId,
+        message: `${followerProfile.name} started following you`,
+      });
+
     // Check if the followed user has push notifications enabled
     const { data: preferences } = await supabase
       .from("notification_preferences")
@@ -46,7 +56,7 @@ serve(async (req) => {
 
     if (!preferences?.push_enabled) {
       return new Response(
-        JSON.stringify({ message: "Push notifications not enabled for user" }),
+        JSON.stringify({ message: "Notification stored, push not enabled" }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }

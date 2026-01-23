@@ -8,10 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useFollowing } from "@/hooks/useFollowing";
-import { Loader2, MapPin, Calendar, Heart, Award, ChefHat, Lock, ArrowLeft, UserPlus, UserMinus, Users } from "lucide-react";
+import { SocialShareButtons } from "@/components/SocialShareButtons";
+import { Loader2, MapPin, Calendar, Heart, Award, ChefHat, Lock, ArrowLeft, UserPlus, UserMinus, Users, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import { AchievementBadges } from "@/components/AchievementBadges";
-
 interface PublicProfile {
   id: string;
   name: string;
@@ -283,11 +283,23 @@ const PublicProfile = () => {
             </div>
           </div>
 
-          {/* Bio */}
-          {profile.bio && (
-            <p className="mt-4 text-muted-foreground max-w-2xl">{profile.bio}</p>
-          )}
+        {/* Bio */}
+        {profile.bio && (
+          <p className="mt-4 text-muted-foreground max-w-2xl">{profile.bio}</p>
+        )}
+
+        {/* Social Sharing */}
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Share2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Share this profile</span>
+          </div>
+          <SocialShareButtons 
+            profileUrl={window.location.href} 
+            bakerName={profile.name} 
+          />
         </div>
+      </div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
