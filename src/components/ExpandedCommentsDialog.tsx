@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { MessageCircle, Reply, ChevronDown, ChevronUp, Loader2, Trash2 } from "lucide-react";
+import { MessageCircle, Reply, ChevronDown, ChevronUp, Loader2, Trash2, Pencil, X, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Comment {
@@ -50,6 +50,9 @@ export const ExpandedCommentsDialog = ({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const fetchComments = async (pageNum: number, append = false) => {
     setLoading(true);
@@ -226,6 +229,40 @@ export const ExpandedCommentsDialog = ({
     }
   };
 
+  const startEditing = (commentId: string, currentText: string) => {
+    setEditingCommentId(commentId);
+    setEditText(currentText);
+  };
+
+  const cancelEditing = () => {
+    setEditingCommentId(null);
+    setEditText("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingCommentId || !editText.trim()) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("bake_comments")
+        .update({ comment: editText.trim() })
+        .eq("id", editingCommentId)
+        .eq("user_id", currentUserId);
+
+      if (error) throw error;
+
+      setEditingCommentId(null);
+      setEditText("");
+      fetchComments(0);
+      toast.success("Comment updated!");
+    } catch (error: any) {
+      toast.error("Failed to update comment");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -266,60 +303,103 @@ export const ExpandedCommentsDialog = ({
                       >
                         {comment.profiles?.name || "Unknown"}
                       </Link>
-                      <p className="text-sm text-foreground mt-1 break-words">
-                        {comment.comment}
-                      </p>
+                      {editingCommentId === comment.id ? (
+                        <div className="mt-1 flex gap-2">
+                          <Input
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            className="flex-1 h-8 text-sm"
+                            maxLength={500}
+                            disabled={saving}
+                            autoFocus
+                          />
+                          <Button
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={handleSaveEdit}
+                            disabled={saving || !editText.trim()}
+                          >
+                            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 px-2"
+                            onClick={cancelEditing}
+                            disabled={saving}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-foreground mt-1 break-words">
+                          {comment.comment}
+                        </p>
+                      )}
                     </div>
                     <span className="text-xs text-muted-foreground whitespace-nowrap">
                       {formatDate(comment.created_at)}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 mt-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-xs"
-                      onClick={() => {
-                        setReplyingTo(replyingTo === comment.id ? null : comment.id);
-                        setReplyText("");
-                      }}
-                    >
-                      <Reply className="h-3 w-3 mr-1" />
-                      Reply
-                    </Button>
-
-                    {comment.user_id === currentUserId && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => {
-                          setCommentToDelete(comment.id);
-                          setDeleteConfirmOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Delete
-                      </Button>
-                    )}
-
-                    {comment.replies && comment.replies.length > 0 && (
+                  {editingCommentId !== comment.id && (
+                    <div className="flex items-center gap-2 mt-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-7 px-2 text-xs"
-                        onClick={() => toggleReplies(comment.id)}
+                        onClick={() => {
+                          setReplyingTo(replyingTo === comment.id ? null : comment.id);
+                          setReplyText("");
+                        }}
                       >
-                        {expandedReplies.has(comment.id) ? (
-                          <ChevronUp className="h-3 w-3 mr-1" />
-                        ) : (
-                          <ChevronDown className="h-3 w-3 mr-1" />
-                        )}
-                        {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}
+                        <Reply className="h-3 w-3 mr-1" />
+                        Reply
                       </Button>
-                    )}
-                  </div>
+
+                      {comment.user_id === currentUserId && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => startEditing(comment.id, comment.comment)}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                              setCommentToDelete(comment.id);
+                              setDeleteConfirmOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Delete
+                          </Button>
+                        </>
+                      )}
+
+                      {comment.replies && comment.replies.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => toggleReplies(comment.id)}
+                        >
+                          {expandedReplies.has(comment.id) ? (
+                            <ChevronUp className="h-3 w-3 mr-1" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3 mr-1" />
+                          )}
+                          {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Reply input */}
@@ -357,26 +437,66 @@ export const ExpandedCommentsDialog = ({
                             >
                               {reply.profiles?.name || "Unknown"}
                             </Link>
-                            <p className="text-sm text-foreground mt-0.5 break-words">
-                              {reply.comment}
-                            </p>
+                            {editingCommentId === reply.id ? (
+                              <div className="mt-0.5 flex gap-2">
+                                <Input
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  className="flex-1 h-7 text-sm"
+                                  maxLength={500}
+                                  disabled={saving}
+                                  autoFocus
+                                />
+                                <Button
+                                  size="sm"
+                                  className="h-7 px-2"
+                                  onClick={handleSaveEdit}
+                                  disabled={saving || !editText.trim()}
+                                >
+                                  {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2"
+                                  onClick={cancelEditing}
+                                  disabled={saving}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-foreground mt-0.5 break-words">
+                                {reply.comment}
+                              </p>
+                            )}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             <span className="text-xs text-muted-foreground whitespace-nowrap">
                               {formatDate(reply.created_at)}
                             </span>
-                            {reply.user_id === currentUserId && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-5 w-5 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => {
-                                  setCommentToDelete(reply.id);
-                                  setDeleteConfirmOpen(true);
-                                }}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                            {reply.user_id === currentUserId && editingCommentId !== reply.id && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-5 w-5 p-0"
+                                  onClick={() => startEditing(reply.id, reply.comment)}
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-5 w-5 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => {
+                                    setCommentToDelete(reply.id);
+                                    setDeleteConfirmOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </div>
