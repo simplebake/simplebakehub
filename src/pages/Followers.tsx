@@ -43,22 +43,24 @@ const Followers = () => {
 
     try {
       // Fetch followers (people who follow the current user)
+      // Use public_profiles view for security (excludes email)
       const { data: followersData, error: followersError } = await supabase
         .from("followers")
         .select(`
           follower_id,
-          profiles:follower_id(id, name, avatar_url, bio)
+          profiles:public_profiles!followers_follower_id_fkey(id, name, avatar_url, bio)
         `)
         .eq("following_id", user.id);
 
       if (followersError) throw followersError;
 
       // Fetch following (people the current user follows)
+      // Use public_profiles view for security (excludes email)
       const { data: followingData, error: followingError } = await supabase
         .from("followers")
         .select(`
           following_id,
-          profiles:following_id(id, name, avatar_url, bio)
+          profiles:public_profiles!followers_following_id_fkey(id, name, avatar_url, bio)
         `)
         .eq("follower_id", user.id);
 
