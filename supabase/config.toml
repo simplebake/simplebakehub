@@ -71,3 +71,9 @@ verify_jwt = false
 
 [functions.send-push-notification]
 verify_jwt = true
+
+[functions.notify-like]
+verify_jwt = false
+
+[functions.notify-comment]
+verify_jwt = false

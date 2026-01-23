@@ -34,7 +34,7 @@ interface BakeShare {
     name: string;
   };
   bake_likes: { id: string; user_id: string }[];
-  bake_comments: { id: string; comment: string; profiles: { name: string } }[];
+  bake_comments: { id: string; comment: string; user_id: string; profiles: { name: string } }[];
 }
 
 const shareSchema = z.object({
@@ -86,7 +86,7 @@ const ShareBake = () => {
           profiles (name),
           premixes (name),
           bake_likes (id, user_id),
-          bake_comments (id, comment, profiles (name))
+          bake_comments (id, comment, user_id, profiles (name))
         `)
         .eq("is_visible", true)
         .order("created_at", { ascending: false });
@@ -227,7 +227,7 @@ const ShareBake = () => {
     }
   };
 
-  const handleLike = async (bakeShareId: string, isLiked: boolean) => {
+  const handleLike = async (bakeShareId: string, isLiked: boolean, bakeOwnerId: string) => {
     if (!user) return;
 
     try {
@@ -248,11 +248,57 @@ const ShareBake = () => {
           });
 
         if (error) throw error;
+
+        // Trigger notification for like (fire and forget)
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        fetch(`${supabaseUrl}/functions/v1/notify-like`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            likerId: user.id,
+            bakeShareId,
+            bakeOwnerId,
+          })
+        }).catch(err => console.log("Like notification:", err));
       }
 
       fetchData();
     } catch (error: any) {
       toast.error("Failed to update like");
+    }
+  };
+
+  const handleComment = async (bakeShareId: string, bakeOwnerId: string, comment: string) => {
+    if (!user || !comment.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("bake_comments")
+        .insert({
+          bake_share_id: bakeShareId,
+          user_id: user.id,
+          comment: comment.trim(),
+        });
+
+      if (error) throw error;
+
+      // Trigger notification for comment (fire and forget)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      fetch(`${supabaseUrl}/functions/v1/notify-comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          commenterId: user.id,
+          bakeShareId,
+          bakeOwnerId,
+          commentPreview: comment.trim(),
+        })
+      }).catch(err => console.log("Comment notification:", err));
+
+      toast.success("Comment added!");
+      fetchData();
+    } catch (error: any) {
+      toast.error("Failed to add comment");
     }
   };
 
@@ -410,11 +456,11 @@ const ShareBake = () => {
                           <p className="text-sm mb-4">{share.description}</p>
                         )}
 
-                        <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-4 text-sm mb-4">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleLike(share.id, isLiked)}
+                            onClick={() => handleLike(share.id, isLiked, share.user_id)}
                             className={isLiked ? "text-red-500" : ""}
                           >
                             <Heart className={`h-4 w-4 mr-1 ${isLiked ? "fill-current" : ""}`} />
@@ -436,6 +482,47 @@ const ShareBake = () => {
                             />
                           )}
                         </div>
+
+                        {/* Comments section */}
+                        {share.bake_comments && share.bake_comments.length > 0 && (
+                          <div className="border-t border-border pt-4 mb-4 space-y-2">
+                            {share.bake_comments.slice(0, 3).map((comment) => (
+                              <div key={comment.id} className="text-sm">
+                                <span className="font-medium">{comment.profiles?.name}: </span>
+                                <span className="text-muted-foreground">{comment.comment}</span>
+                              </div>
+                            ))}
+                            {share.bake_comments.length > 3 && (
+                              <p className="text-xs text-muted-foreground">
+                                + {share.bake_comments.length - 3} more comments
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Add comment form */}
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            const form = e.currentTarget;
+                            const input = form.elements.namedItem("comment") as HTMLInputElement;
+                            if (input.value.trim()) {
+                              handleComment(share.id, share.user_id, input.value);
+                              input.value = "";
+                            }
+                          }}
+                          className="flex gap-2"
+                        >
+                          <Input
+                            name="comment"
+                            placeholder="Add a comment..."
+                            className="flex-1"
+                            maxLength={500}
+                          />
+                          <Button type="submit" size="sm" variant="secondary">
+                            Post
+                          </Button>
+                        </form>
                       </CardContent>
                     </Card>
                   );
