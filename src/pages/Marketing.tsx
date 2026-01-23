@@ -12,6 +12,7 @@ import { Megaphone, Plus, Lightbulb, TrendingUp, Mail, Users, MousePointerClick,
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useUserRole } from "@/hooks/useUserRole";
 import { BakingTrendsChart } from "@/components/analytics/BakingTrendsChart";
 import { SuccessRatingChart } from "@/components/analytics/SuccessRatingChart";
 import { PopularPremixesChart } from "@/components/analytics/PopularPremixesChart";
@@ -40,6 +41,7 @@ interface Campaign {
 
 const Marketing = () => {
   const { user, loading } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [contentTab, setContentTab] = useState("ideas");
@@ -71,7 +73,7 @@ const Marketing = () => {
       if (error) throw error;
       return data as ContentItem[];
     },
-    enabled: !!user,
+    enabled: !!user && isAdmin,
   });
 
   // Fetch campaigns from database
@@ -85,7 +87,7 @@ const Marketing = () => {
       if (error) throw error;
       return data as Campaign[];
     },
-    enabled: !!user,
+    enabled: !!user && isAdmin,
   });
 
   // Mutations
@@ -133,11 +135,16 @@ const Marketing = () => {
     },
   });
 
+  // Redirect non-admin users
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
+    if (!loading && !roleLoading) {
+      if (!user) {
+        navigate("/auth");
+      } else if (!isAdmin) {
+        navigate("/");
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, isAdmin, roleLoading, navigate]);
 
   const handleAddContentIdea = async () => {
     if (!newContentTitle.trim() || !newContentChannel || !newContentNextAction.trim()) {
@@ -213,7 +220,7 @@ const Marketing = () => {
     }
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -221,7 +228,8 @@ const Marketing = () => {
     );
   }
 
-  if (!user) return null;
+  if (!user || !isAdmin) return null;
+
 
   // Filter content by status
   const contentDrafts = contentIdeas.filter(item => item.status === 'draft');
