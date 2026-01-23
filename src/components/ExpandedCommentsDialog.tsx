@@ -14,6 +14,7 @@ interface Comment {
   comment: string;
   user_id: string;
   created_at: string;
+  updated_at: string;
   parent_comment_id: string | null;
   profiles: { name: string } | null;
   replies?: Comment[];
@@ -63,7 +64,7 @@ export const ExpandedCommentsDialog = ({
       // Fetch top-level comments
       const { data, error } = await supabase
         .from("bake_comments")
-        .select("id, comment, user_id, created_at, parent_comment_id, profiles(name)")
+        .select("id, comment, user_id, created_at, updated_at, parent_comment_id, profiles(name)")
         .eq("bake_share_id", bakeShareId)
         .is("parent_comment_id", null)
         .order("created_at", { ascending: false })
@@ -75,7 +76,7 @@ export const ExpandedCommentsDialog = ({
         (data || []).map(async (comment) => {
           const { data: replies } = await supabase
             .from("bake_comments")
-            .select("id, comment, user_id, created_at, parent_comment_id, profiles(name)")
+            .select("id, comment, user_id, created_at, updated_at, parent_comment_id, profiles(name)")
             .eq("parent_comment_id", comment.id)
             .order("created_at", { ascending: true });
 
@@ -278,6 +279,13 @@ export const ExpandedCommentsDialog = ({
     return date.toLocaleDateString();
   };
 
+  const isEdited = (createdAt: string, updatedAt: string) => {
+    const created = new Date(createdAt).getTime();
+    const updated = new Date(updatedAt).getTime();
+    // Consider edited if updated_at is more than 1 second after created_at
+    return updated - created > 1000;
+  };
+
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -337,9 +345,16 @@ export const ExpandedCommentsDialog = ({
                         </p>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {formatDate(comment.created_at)}
-                    </span>
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDate(comment.created_at)}
+                      </span>
+                      {isEdited(comment.created_at, comment.updated_at) && (
+                        <span className="text-xs text-muted-foreground/70 italic">
+                          (edited)
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {editingCommentId !== comment.id && (
@@ -471,12 +486,19 @@ export const ExpandedCommentsDialog = ({
                               </p>
                             )}
                           </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              {formatDate(reply.created_at)}
-                            </span>
+                          <div className="flex items-start gap-2">
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                {formatDate(reply.created_at)}
+                              </span>
+                              {isEdited(reply.created_at, reply.updated_at) && (
+                                <span className="text-xs text-muted-foreground/70 italic">
+                                  (edited)
+                                </span>
+                              )}
+                            </div>
                             {reply.user_id === currentUserId && editingCommentId !== reply.id && (
-                              <>
+                              <div className="flex items-center gap-1">
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -496,7 +518,7 @@ export const ExpandedCommentsDialog = ({
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
-                              </>
+                              </div>
                             )}
                           </div>
                         </div>
