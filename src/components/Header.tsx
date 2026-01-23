@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/auditLogger";
 import { useNavigate } from "react-router-dom";
-import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie, Users } from "lucide-react";
+import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie, Users, Search, Bell } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const publicNavItems = [
@@ -31,6 +31,18 @@ const publicNavItems = [
     path: "/followers",
     icon: Users,
     ariaLabel: "Your followers and following"
+  },
+  {
+    label: "Discover",
+    path: "/discover",
+    icon: Search,
+    ariaLabel: "Discover new bakers to follow"
+  },
+  {
+    label: "Notifications",
+    path: "/notifications",
+    icon: Bell,
+    ariaLabel: "View your notifications"
   },
   {
     label: "Settings",

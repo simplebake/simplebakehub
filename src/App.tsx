@@ -26,6 +26,8 @@ const MakeSetupGuide = lazy(() => import("./pages/MakeSetupGuide"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Followers = lazy(() => import("./pages/Followers"));
+const DiscoverBakers = lazy(() => import("./pages/DiscoverBakers"));
+const Notifications = lazy(() => import("./pages/Notifications"));
 
 const queryClient = new QueryClient();
 
@@ -82,8 +84,10 @@ const App = () => {
                 <Route path="/settings/make-setup" element={<MakeSetupGuide />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/baker/:userId" element={<PublicProfile />} />
-                <Route path="/followers" element={<Followers />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="/followers" element={<Followers />} />
+              <Route path="/discover" element={<DiscoverBakers />} />
+              <Route path="/notifications" element={<Notifications />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

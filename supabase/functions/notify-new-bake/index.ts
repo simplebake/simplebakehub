@@ -53,12 +53,30 @@ serve(async (req) => {
 
     const followerIds = followers.map(f => f.follower_id);
 
+    // Store notifications in database for all followers
+    const notificationRecords = followerIds.map(followerId => ({
+      user_id: followerId,
+      type: "new_bake",
+      actor_id: bakerId,
+      content_id: bakeId,
+      message: `${bakerProfile.name} shared a new ${premixName || 'bake'}`,
+    }));
+
+    await supabase.from("notifications").insert(notificationRecords);
+
     // Get followers who have push enabled
     const { data: preferences } = await supabase
       .from("notification_preferences")
       .select("user_id")
       .in("user_id", followerIds)
       .eq("push_enabled", true);
+
+    if (!preferences || preferences.length === 0) {
+      return new Response(
+        JSON.stringify({ message: "Notifications stored, no push subscribers" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     if (!preferences || preferences.length === 0) {
       return new Response(
