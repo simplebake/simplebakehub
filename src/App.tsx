@@ -13,6 +13,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Profile = lazy(() => import("./pages/Profile"));
+const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Premixes = lazy(() => import("./pages/Premixes"));
 const GuidedBake = lazy(() => import("./pages/GuidedBake"));
@@ -79,6 +80,7 @@ const App = () => {
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/settings/make-setup" element={<MakeSetupGuide />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/baker/:userId" element={<PublicProfile />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

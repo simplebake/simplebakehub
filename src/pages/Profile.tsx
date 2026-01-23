@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Settings, History, TrendingUp } from "lucide-react";
+import { Loader2, User, Settings, History, Palette } from "lucide-react";
 import { BakingHistorySection } from "@/components/profile/BakingHistorySection";
 import { BakingPreferencesSection } from "@/components/profile/BakingPreferencesSection";
+import { ProfileCustomization } from "@/components/profile/ProfileCustomization";
 
 const Profile = () => {
   const { user, loading } = useAuth();
@@ -116,10 +117,14 @@ const Profile = () => {
         </div>
 
         <Tabs defaultValue="account" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[800px]">
             <TabsTrigger value="account" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Account
+            </TabsTrigger>
+            <TabsTrigger value="customize" className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Customize
             </TabsTrigger>
             <TabsTrigger value="preferences" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -190,6 +195,21 @@ const Profile = () => {
                 </Button>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="customize">
+            <ProfileCustomization
+              userId={user.id}
+              profile={{
+                avatar_url: profile?.avatar_url || null,
+                cover_image_url: profile?.cover_image_url || null,
+                bio: profile?.bio || null,
+                is_public: profile?.is_public ?? true,
+                favorite_bread_type: profile?.favorite_bread_type || null,
+                baking_since: profile?.baking_since || null,
+              }}
+              onUpdate={fetchProfile}
+            />
           </TabsContent>
 
           <TabsContent value="preferences">

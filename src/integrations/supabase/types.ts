@@ -759,26 +759,44 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
+          baking_since: string | null
+          bio: string | null
           country: string | null
+          cover_image_url: string | null
           created_at: string
           email: string
+          favorite_bread_type: string | null
           id: string
+          is_public: boolean
           name: string
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
+          baking_since?: string | null
+          bio?: string | null
           country?: string | null
+          cover_image_url?: string | null
           created_at?: string
           email: string
+          favorite_bread_type?: string | null
           id: string
+          is_public?: boolean
           name: string
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
+          baking_since?: string | null
+          bio?: string | null
           country?: string | null
+          cover_image_url?: string | null
           created_at?: string
           email?: string
+          favorite_bread_type?: string | null
           id?: string
+          is_public?: boolean
           name?: string
           updated_at?: string
         }
