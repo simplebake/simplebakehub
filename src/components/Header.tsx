@@ -6,32 +6,42 @@ import { logAuthEvent } from "@/lib/auditLogger";
 import { useNavigate } from "react-router-dom";
 import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
-const navItems = [{
-  label: "Home",
-  path: "/",
-  icon: Home,
-  ariaLabel: "Home overview"
-}, {
-  label: "Guided Bakes",
-  path: "/premixes",
-  icon: Cookie,
-  ariaLabel: "Guided baking premixes"
-}, {
-  label: "Marketing & Customers",
-  path: "/marketing",
-  icon: Megaphone,
-  ariaLabel: "Marketing and customer tools"
-}, {
-  label: "Settings",
-  path: "/settings",
-  icon: Cog,
-  ariaLabel: "Settings and admin"
-}, {
-  label: "Contact",
-  path: "/contact",
-  icon: MessageSquare,
-  ariaLabel: "Send feedback or get help"
-}];
+
+const publicNavItems = [
+  {
+    label: "Home",
+    path: "/",
+    icon: Home,
+    ariaLabel: "Home overview"
+  },
+  {
+    label: "Guided Bakes",
+    path: "/premixes",
+    icon: Cookie,
+    ariaLabel: "Guided baking premixes"
+  },
+  {
+    label: "Settings",
+    path: "/settings",
+    icon: Cog,
+    ariaLabel: "Settings and admin"
+  },
+  {
+    label: "Contact",
+    path: "/contact",
+    icon: MessageSquare,
+    ariaLabel: "Send feedback or get help"
+  }
+];
+
+const adminNavItems = [
+  {
+    label: "Marketing & Customers",
+    path: "/marketing",
+    icon: Megaphone,
+    ariaLabel: "Marketing and customer tools"
+  }
+];
 export const Header = () => {
   const {
     user
@@ -59,7 +69,11 @@ export const Header = () => {
 
           <nav className="flex items-center gap-1 sm:gap-2">
             {user ? <>
-                {navItems.map(item => <NavLink key={item.path} to={item.path} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" activeClassName="text-foreground bg-muted" aria-label={item.ariaLabel}>
+                {publicNavItems.map(item => <NavLink key={item.path} to={item.path} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" activeClassName="text-foreground bg-muted" aria-label={item.ariaLabel}>
+                    <item.icon className="h-4 w-4" />
+                    <span className="hidden md:inline">{item.label}</span>
+                  </NavLink>)}
+                {isAdmin && adminNavItems.map(item => <NavLink key={item.path} to={item.path} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" activeClassName="text-foreground bg-muted" aria-label={item.ariaLabel}>
                     <item.icon className="h-4 w-4" />
                     <span className="hidden md:inline">{item.label}</span>
                   </NavLink>)}
