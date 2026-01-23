@@ -13,10 +13,17 @@ import { toast } from "sonner";
 import { Heart, MessageCircle, Upload, Flag } from "lucide-react";
 import { z } from "zod";
 import { ReportContentDialog } from "@/components/ReportContentDialog";
-
+import { ExpandedCommentsDialog } from "@/components/ExpandedCommentsDialog";
 interface Premix {
   id: string;
   name: string;
+}
+
+interface BakeComment {
+  id: string;
+  comment: string;
+  user_id: string;
+  profiles: { name: string } | null;
 }
 
 interface BakeShare {
@@ -29,12 +36,12 @@ interface BakeShare {
   created_at: string;
   profiles: {
     name: string;
-  };
+  } | null;
   premixes: {
     name: string;
-  };
+  } | null;
   bake_likes: { id: string; user_id: string }[];
-  bake_comments: { id: string; comment: string; user_id: string; profiles: { name: string } }[];
+  bake_comments: BakeComment[];
 }
 
 const shareSchema = z.object({
@@ -46,6 +53,59 @@ const shareSchema = z.object({
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_IMAGE_DIMENSION = 4096; // Max width/height
+
+// Helper component for expandable comments button
+const ExpandedCommentsButton = ({
+  share,
+  userId,
+  onCommentAdded,
+  asLink = false,
+}: {
+  share: BakeShare;
+  userId: string;
+  onCommentAdded: () => void;
+  asLink?: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
+
+  if (asLink) {
+    return (
+      <>
+        <button
+          onClick={() => setOpen(true)}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          View all {share.bake_comments?.length || 0} comments
+        </button>
+        <ExpandedCommentsDialog
+          open={open}
+          onOpenChange={setOpen}
+          bakeShareId={share.id}
+          bakeOwnerId={share.user_id}
+          currentUserId={userId}
+          onCommentAdded={onCommentAdded}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+        <MessageCircle className="h-4 w-4 mr-1" />
+        {share.bake_comments?.length || 0}
+      </Button>
+      <ExpandedCommentsDialog
+        open={open}
+        onOpenChange={setOpen}
+        bakeShareId={share.id}
+        bakeOwnerId={share.user_id}
+        currentUserId={userId}
+        onCommentAdded={onCommentAdded}
+      />
+    </>
+  );
+};
 
 const ShareBake = () => {
   const { user, loading } = useAuth();
@@ -466,10 +526,11 @@ const ShareBake = () => {
                             <Heart className={`h-4 w-4 mr-1 ${isLiked ? "fill-current" : ""}`} />
                             {share.bake_likes?.length || 0}
                           </Button>
-                          <Button variant="ghost" size="sm">
-                            <MessageCircle className="h-4 w-4 mr-1" />
-                            {share.bake_comments?.length || 0}
-                          </Button>
+                          <ExpandedCommentsButton
+                            share={share}
+                            userId={user.id}
+                            onCommentAdded={fetchData}
+                          />
                           {share.user_id !== user.id && (
                             <ReportContentDialog
                               contentType="bake_share"
@@ -483,19 +544,27 @@ const ShareBake = () => {
                           )}
                         </div>
 
-                        {/* Comments section */}
+                        {/* Comments preview */}
                         {share.bake_comments && share.bake_comments.length > 0 && (
                           <div className="border-t border-border pt-4 mb-4 space-y-2">
-                            {share.bake_comments.slice(0, 3).map((comment) => (
+                            {share.bake_comments.slice(0, 2).map((comment) => (
                               <div key={comment.id} className="text-sm">
-                                <span className="font-medium">{comment.profiles?.name}: </span>
+                                <Link 
+                                  to={`/baker/${comment.user_id}`}
+                                  className="font-medium hover:text-primary transition-colors"
+                                >
+                                  {comment.profiles?.name}:
+                                </Link>{" "}
                                 <span className="text-muted-foreground">{comment.comment}</span>
                               </div>
                             ))}
-                            {share.bake_comments.length > 3 && (
-                              <p className="text-xs text-muted-foreground">
-                                + {share.bake_comments.length - 3} more comments
-                              </p>
+                            {share.bake_comments.length > 2 && (
+                              <ExpandedCommentsButton
+                                share={share}
+                                userId={user.id}
+                                onCommentAdded={fetchData}
+                                asLink
+                              />
                             )}
                           </div>
                         )}
