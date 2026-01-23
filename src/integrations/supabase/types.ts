@@ -74,6 +74,7 @@ export type Database = {
           comment: string
           created_at: string
           id: string
+          parent_comment_id: string | null
           updated_at: string
           user_id: string
         }
@@ -82,6 +83,7 @@ export type Database = {
           comment: string
           created_at?: string
           id?: string
+          parent_comment_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -90,6 +92,7 @@ export type Database = {
           comment?: string
           created_at?: string
           id?: string
+          parent_comment_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -99,6 +102,13 @@ export type Database = {
             columns: ["bake_share_id"]
             isOneToOne: false
             referencedRelation: "bake_shares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bake_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "bake_comments"
             referencedColumns: ["id"]
           },
           {
