@@ -5,10 +5,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, ShoppingCart, DollarSign, Percent, AlertTriangle, Megaphone, Users, ArrowRight, Clock, Package } from "lucide-react";
 import { Header } from "@/components/Header";
 import { PerformanceGoalsWidget } from "@/components/PerformanceGoalsWidget";
+import { BakerOfTheWeek } from "@/components/BakerOfTheWeek";
+import { FollowingFeed } from "@/components/FollowingFeed";
 import { useContentVisibility } from "@/hooks/useContentVisibility";
+import { useAuth } from "@/lib/supabase";
 
 const Index = () => {
   const { isContentVisible, loading: visibilityLoading } = useContentVisibility();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   // Placeholder data - wire to real backend
@@ -160,6 +164,14 @@ const Index = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Baker of the Week & Following Feed */}
+        {user && (
+          <div className="grid lg:grid-cols-2 gap-6 mb-8">
+            <BakerOfTheWeek />
+            <FollowingFeed />
+          </div>
+        )}
 
         {/* Performance Goals Widget - Admin Only */}
         <div className="mb-8">

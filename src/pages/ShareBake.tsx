@@ -182,7 +182,7 @@ const ShareBake = () => {
         .getPublicUrl(fileName);
 
       // Create bake share
-      const { error: insertError } = await supabase
+      const { data: insertedBake, error: insertError } = await supabase
         .from("bake_shares")
         .insert({
           user_id: user.id,
@@ -190,9 +190,26 @@ const ShareBake = () => {
           image_url: publicUrl,
           description,
           rating,
-        });
+        })
+        .select("id")
+        .single();
 
       if (insertError) throw insertError;
+
+      // Get premix name for notification
+      const selectedPremix = premixes.find(p => p.id === premix_id);
+
+      // Trigger push notification to followers (fire and forget)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      fetch(`${supabaseUrl}/functions/v1/notify-new-bake`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bakerId: user.id,
+          bakeId: insertedBake?.id,
+          premixName: selectedPremix?.name || "a new bake"
+        })
+      }).catch(err => console.log("Notification sent:", err));
 
       toast.success("Bake shared successfully!");
       setSelectedFile(null);

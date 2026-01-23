@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/auditLogger";
 import { useNavigate } from "react-router-dom";
-import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie } from "lucide-react";
+import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie, Users } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const publicNavItems = [
@@ -19,6 +19,18 @@ const publicNavItems = [
     path: "/premixes",
     icon: Cookie,
     ariaLabel: "Guided baking premixes"
+  },
+  {
+    label: "Community",
+    path: "/share",
+    icon: ChefHat,
+    ariaLabel: "Community bakes feed"
+  },
+  {
+    label: "Connections",
+    path: "/followers",
+    icon: Users,
+    ariaLabel: "Your followers and following"
   },
   {
     label: "Settings",

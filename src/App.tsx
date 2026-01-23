@@ -4,11 +4,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthContext, useAuthState, useAuth } from "@/lib/supabase";
-import { AdminRoute } from "@/components/AdminRoute";
+import { AuthContext, useAuth, useAuthState } from "@/lib/supabase";
 import { LandingPage } from "@/components/LandingPage";
+import { AdminRoute } from "@/components/AdminRoute";
 
-// Lazy load all pages to reduce initial bundle size
+// Lazy load all pages for better performance
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -22,9 +22,10 @@ const TutorialsManagement = lazy(() => import("./pages/TutorialsManagement"));
 const ShareBake = lazy(() => import("./pages/ShareBake"));
 const Marketing = lazy(() => import("./pages/Marketing"));
 const Settings = lazy(() => import("./pages/Settings"));
-const Contact = lazy(() => import("./pages/Contact"));
 const MakeSetupGuide = lazy(() => import("./pages/MakeSetupGuide"));
+const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Followers = lazy(() => import("./pages/Followers"));
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ const App = () => {
                 <Route path="/settings/make-setup" element={<MakeSetupGuide />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/baker/:userId" element={<PublicProfile />} />
+                <Route path="/followers" element={<Followers />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
