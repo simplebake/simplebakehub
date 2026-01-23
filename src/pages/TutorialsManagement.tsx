@@ -7,7 +7,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 const TutorialsManagement = () => {
   const { user, loading } = useAuth();
-  const { isAdmin, isSupport, isStaff } = useUserRole();
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -17,11 +17,11 @@ const TutorialsManagement = () => {
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    // Redirect non-staff users
-    if (!loading && user && !isAdmin && !isSupport) {
+    // Redirect non-admin users
+    if (!loading && user && !isAdmin) {
       navigate("/tutorials");
     }
-  }, [user, loading, isAdmin, isSupport, navigate]);
+  }, [user, loading, isAdmin, navigate]);
 
   if (loading) {
     return (
@@ -31,7 +31,7 @@ const TutorialsManagement = () => {
     );
   }
 
-  if (!user || (!isAdmin && !isSupport)) return null;
+  if (!user || !isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-background">
