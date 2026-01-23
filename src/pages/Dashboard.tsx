@@ -11,6 +11,7 @@ import { CommunityInsights } from "@/components/CommunityInsights";
 import { RecipeDifficultyAnalyzer } from "@/components/RecipeDifficultyAnalyzer";
 import { PersonalizedLearningPaths } from "@/components/PersonalizedLearningPaths";
 import { AchievementBadges } from "@/components/AchievementBadges";
+import { FollowingFeed } from "@/components/FollowingFeed";
 import { useContentVisibility } from "@/hooks/useContentVisibility";
 
 interface Tutorial {
@@ -118,6 +119,11 @@ const Dashboard = () => {
             <AchievementBadges />
           </div>
         )}
+
+        {/* Following Feed */}
+        <div className="mt-8">
+          <FollowingFeed />
+        </div>
 
         {/* AI-Powered Features */}
         <div className="mt-8 grid lg:grid-cols-2 gap-8">

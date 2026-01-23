@@ -5,8 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MapPin, Calendar, Heart, Award, ChefHat, Lock, ArrowLeft } from "lucide-react";
+import { useFollowing } from "@/hooks/useFollowing";
+import { Loader2, MapPin, Calendar, Heart, Award, ChefHat, Lock, ArrowLeft, UserPlus, UserMinus, Users } from "lucide-react";
 import { format } from "date-fns";
 import { AchievementBadges } from "@/components/AchievementBadges";
 
@@ -45,12 +47,16 @@ const PublicProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { isFollowing, followersCount, followingCount, toggleFollow, loading: followLoading } = useFollowing(userId);
   
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [bakes, setBakes] = useState<BakeShare[]>([]);
   const [stats, setStats] = useState<ProfileStats>({ totalBakes: 0, totalLikes: 0, achievementsCount: 0 });
   const [loading, setLoading] = useState(true);
   const [isPrivate, setIsPrivate] = useState(false);
+  
+  const isOwnProfile = user?.id === userId;
 
   useEffect(() => {
     if (userId) {
@@ -214,21 +220,61 @@ const PublicProfile = () => {
 
             {/* Name and Info */}
             <div className="flex-1 pb-2">
-              <h1 className="text-3xl font-bold">{profile.name}</h1>
-              <div className="flex flex-wrap items-center gap-4 text-muted-foreground mt-1">
-                {profile.country && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {profile.country}
-                  </span>
-                )}
-                {profile.baking_since && (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    Baking since {format(new Date(profile.baking_since), "MMM yyyy")}
-                  </span>
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold">{profile.name}</h1>
+                  <div className="flex flex-wrap items-center gap-4 text-muted-foreground mt-1">
+                    {profile.country && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {profile.country}
+                      </span>
+                    )}
+                    {profile.baking_since && (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        Baking since {format(new Date(profile.baking_since), "MMM yyyy")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Follow Button */}
+                {user && !isOwnProfile && (
+                  <Button
+                    variant={isFollowing ? "outline" : "default"}
+                    onClick={toggleFollow}
+                    disabled={followLoading}
+                    className="flex items-center gap-2"
+                  >
+                    {isFollowing ? (
+                      <>
+                        <UserMinus className="h-4 w-4" />
+                        Unfollow
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4" />
+                        Follow
+                      </>
+                    )}
+                  </Button>
                 )}
               </div>
+              
+              {/* Followers/Following counts */}
+              <div className="flex items-center gap-4 mt-2 text-sm">
+                <span className="flex items-center gap-1">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <strong>{followersCount}</strong>
+                  <span className="text-muted-foreground">followers</span>
+                </span>
+                <span>
+                  <strong>{followingCount}</strong>
+                  <span className="text-muted-foreground ml-1">following</span>
+                </span>
+              </div>
+              
               {profile.favorite_bread_type && (
                 <Badge variant="secondary" className="mt-2">
                   Loves: {profile.favorite_bread_type}
