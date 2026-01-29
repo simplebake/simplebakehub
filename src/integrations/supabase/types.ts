@@ -1189,6 +1189,42 @@ export type Database = {
       }
     }
     Views: {
+      customer_messages_safe: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          email: string | null
+          id: string | null
+          message: string | null
+          status: string | null
+          subject: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          email?: never
+          id?: string | null
+          message?: string | null
+          status?: string | null
+          subject?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          email?: never
+          id?: string | null
+          message?: string | null
+          status?: string | null
+          subject?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
@@ -1228,6 +1264,30 @@ export type Database = {
           is_public?: boolean | null
           name?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      push_subscriptions_safe: {
+        Row: {
+          created_at: string | null
+          endpoint: string | null
+          id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint?: string | null
+          id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string | null
+          id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
