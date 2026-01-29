@@ -12,6 +12,7 @@ import { AuditLogsViewer } from '@/components/AuditLogsViewer';
 import { SecurityDashboard } from '@/components/SecurityDashboard';
 import { BlockedIPsManager } from '@/components/BlockedIPsManager';
 import { SecurityAnalytics } from '@/components/SecurityAnalytics';
+import { CustomerMessagesManager } from '@/components/CustomerMessagesManager';
 
 import { RLSHealthDashboard } from '@/components/RLSHealthDashboard';
 import { maskEmail } from '@/lib/emailMasking';
@@ -186,6 +187,17 @@ const Admin = () => {
 
 
         <div className="space-y-8 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Customer Messages</CardTitle>
+              <CardDescription>
+                View and manage customer feedback and support requests
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CustomerMessagesManager />
+            </CardContent>
+          </Card>
           <RLSHealthDashboard />
           <SecurityAnalytics />
           <SecurityDashboard />
