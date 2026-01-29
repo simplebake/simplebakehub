@@ -141,12 +141,13 @@ export function IntegrationsSettings() {
     });
   };
 
-  // Fetch webhook config from database
+  // Fetch webhook config from database (using safe view that masks secret)
   const { data: webhookConfig, isLoading: configLoading } = useQuery({
     queryKey: ["webhook-config"],
     queryFn: async () => {
+      // Use the safe view that doesn't expose the actual secret key
       const { data, error } = await supabase
-        .from("webhook_configs")
+        .from("webhook_configs_safe")
         .select("*")
         .maybeSingle();
       if (error) throw error;
@@ -161,7 +162,7 @@ export function IntegrationsSettings() {
         ...prev,
         webhooks: {
           ...prev.webhooks,
-          apiKey: webhookConfig.secret_key || "",
+          apiKey: webhookConfig.secret_key_masked || "••••••••", // Masked for security
           webhookUrl: webhookConfig.outgoing_url || "",
           enabled: webhookConfig.is_enabled,
           subscribedEvents: webhookConfig.subscribed_events || [],
@@ -185,48 +186,53 @@ export function IntegrationsSettings() {
   });
 
 
-  // Save webhook config mutation
+  // Save webhook config mutation (excluding secret_key - use regenerate for secrets)
   const saveWebhookConfigMutation = useMutation({
     mutationFn: async (config: {
       outgoing_url: string;
-      secret_key: string;
       subscribed_events: string[];
       is_enabled: boolean;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Check if config exists
+      // Check if config exists using safe view
       const { data: existing } = await supabase
-        .from("webhook_configs")
+        .from("webhook_configs_safe")
         .select("id")
         .eq("user_id", user.id)
         .maybeSingle();
 
       if (existing) {
-        // Update existing
+        // Update existing (don't touch secret_key - use regenerate RPC for that)
         const { error } = await supabase
           .from("webhook_configs")
           .update({
             outgoing_url: config.outgoing_url,
-            secret_key: config.secret_key,
             subscribed_events: config.subscribed_events,
             is_enabled: config.is_enabled,
           })
           .eq("id", existing.id);
         if (error) throw error;
       } else {
-        // Insert new
-        const { error } = await supabase
+        // Create new config with placeholder secret, then regenerate
+        const { data: newConfig, error: insertError } = await supabase
           .from("webhook_configs")
           .insert({
             user_id: user.id,
             outgoing_url: config.outgoing_url,
-            secret_key: config.secret_key,
+            secret_key: 'placeholder', // Will be replaced by regenerate
             subscribed_events: config.subscribed_events,
             is_enabled: config.is_enabled,
-          });
-        if (error) throw error;
+          })
+          .select('id')
+          .single();
+        if (insertError) throw insertError;
+        
+        // Regenerate to get a secure random secret
+        const { error: regenError } = await supabase
+          .rpc('regenerate_webhook_secret', { _config_id: newConfig.id });
+        if (regenError) throw regenError;
       }
     },
     onSuccess: () => {
@@ -301,7 +307,6 @@ export function IntegrationsSettings() {
       setIsSaving(true);
       await saveWebhookConfigMutation.mutateAsync({
         outgoing_url: settings.webhookUrl || "",
-        secret_key: settings.apiKey,
         subscribed_events: settings.subscribedEvents || [],
         is_enabled: settings.enabled,
       });

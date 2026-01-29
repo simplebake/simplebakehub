@@ -1241,6 +1241,45 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_configs_safe: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          is_enabled: boolean | null
+          outgoing_url: string | null
+          retry_count: number | null
+          secret_key_masked: string | null
+          subscribed_events: string[] | null
+          timeout_seconds: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          is_enabled?: boolean | null
+          outgoing_url?: string | null
+          retry_count?: number | null
+          secret_key_masked?: never
+          subscribed_events?: string[] | null
+          timeout_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          is_enabled?: boolean | null
+          outgoing_url?: string | null
+          retry_count?: number | null
+          secret_key_masked?: never
+          subscribed_events?: string[] | null
+          timeout_seconds?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_expired_blocks: { Args: never; Returns: undefined }
@@ -1285,6 +1324,14 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      regenerate_webhook_secret: {
+        Args: { _config_id: string }
+        Returns: string
+      }
+      verify_webhook_secret: {
+        Args: { _config_id: string; _provided_secret: string }
         Returns: boolean
       }
     }

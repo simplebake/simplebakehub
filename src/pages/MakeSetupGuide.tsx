@@ -30,21 +30,26 @@ const MakeSetupGuide = () => {
   
   const incomingWebhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/incoming-webhook`;
 
-  // Fetch existing webhook config
+  // Fetch existing webhook config (using safe view that masks secret)
   const { data: savedConfig, isLoading: configLoading } = useQuery({
     queryKey: ["webhook-config-saved"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
       
+      // Use the safe view that doesn't expose the actual secret key
       const { data, error } = await supabase
-        .from("webhook_configs")
-        .select("secret_key, updated_at, created_at")
+        .from("webhook_configs_safe")
+        .select("secret_key_masked, updated_at, created_at")
         .eq("user_id", user.id)
         .maybeSingle();
       
       if (error) throw error;
-      return data;
+      return data ? { 
+        hasSecret: data.secret_key_masked === '••••••••',
+        updated_at: data.updated_at, 
+        created_at: data.created_at 
+      } : null;
     },
   });
 
@@ -185,7 +190,8 @@ const MakeSetupGuide = () => {
   };
 
   const generateMakeConfig = () => {
-    const secretKey = savedConfig?.secret_key || generatedKey || "YOUR_WEBHOOK_SECRET_HERE";
+    // Only show the actual key if it was just generated; otherwise show placeholder for security
+    const secretKey = generatedKey || (savedConfig?.hasSecret ? "YOUR_SAVED_SECRET_KEY" : "YOUR_WEBHOOK_SECRET_HERE");
     
     const config = `
 ═══════════════════════════════════════════════════════════
@@ -255,8 +261,6 @@ Headers:
   };
 
   const saveKeyToConfig = async () => {
-    if (!generatedKey) return;
-    
     setIsSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -268,35 +272,47 @@ Headers:
 
       // Check if user already has a webhook config
       const { data: existingConfig } = await supabase
-        .from('webhook_configs')
+        .from('webhook_configs_safe')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (existingConfig) {
-        // Update existing config
-        const { error } = await supabase
-          .from('webhook_configs')
-          .update({ secret_key: generatedKey, updated_at: new Date().toISOString() })
-          .eq('id', existingConfig.id);
+        // Use the secure RPC function to regenerate the secret
+        const { data: newSecret, error } = await supabase
+          .rpc('regenerate_webhook_secret', { _config_id: existingConfig.id });
 
         if (error) throw error;
+        
+        // Show the new secret to the user (only shown once)
+        setGeneratedKey(newSecret);
         queryClient.invalidateQueries({ queryKey: ["webhook-config-saved"] });
-        toast.success("Webhook configuration updated with new private key!");
+        toast.success("New webhook secret generated! Copy it now - it won't be shown again.");
       } else {
-        // Create new config
-        const { error } = await supabase
+        // Create new config with a generated secret
+        // First create the config with a placeholder, then regenerate
+        const { data: newConfig, error: insertError } = await supabase
           .from('webhook_configs')
           .insert({
             user_id: user.id,
-            secret_key: generatedKey,
+            secret_key: 'placeholder', // Will be replaced immediately
             is_enabled: true,
             subscribed_events: ['test.webhook', 'order.created', 'bake.completed']
-          });
+          })
+          .select('id')
+          .single();
 
-        if (error) throw error;
+        if (insertError) throw insertError;
+        
+        // Now regenerate to get a secure random secret
+        const { data: newSecret, error: regenError } = await supabase
+          .rpc('regenerate_webhook_secret', { _config_id: newConfig.id });
+
+        if (regenError) throw regenError;
+        
+        setGeneratedKey(newSecret);
         queryClient.invalidateQueries({ queryKey: ["webhook-config-saved"] });
-        toast.success("Webhook configuration saved with private key!");
+        toast.success("Webhook secret generated! Copy it now - it won't be shown again.");
       }
     } catch (error) {
       console.error('Error saving webhook config:', error);
@@ -371,12 +387,12 @@ Headers:
   const [isGeneratingSignature, setIsGeneratingSignature] = useState(false);
   
   const generateDebugSignature = async () => {
-    const secretKey = savedConfig?.secret_key || generatedKey;
-    
-    if (!secretKey) {
-      toast.error("Please generate and save a private key first");
+    // Can only generate debug signatures with a freshly generated key (security: saved keys are hidden)
+    if (!generatedKey) {
+      toast.error("Please regenerate your secret key to use this feature. For security, saved keys are not accessible.");
       return;
     }
+    const secretKey = generatedKey;
 
     if (!debugPayload.trim()) {
       toast.error("Please enter a payload to sign");
@@ -418,12 +434,12 @@ Headers:
   };
 
   const testSignatureValidation = async () => {
-    const secretKey = savedConfig?.secret_key || generatedKey;
-    
-    if (!secretKey) {
-      toast.error("Please generate and save a private key first");
+    // Can only test signatures with a freshly generated key (security: saved keys are hidden)
+    if (!generatedKey) {
+      toast.error("Please regenerate your secret key to use this feature. For security, saved keys are not accessible.");
       return;
     }
+    const secretKey = generatedKey;
 
     setIsTestingSignature(true);
     setSignatureTestResult(null);
@@ -706,16 +722,11 @@ Headers:
                     </div>
                     <div className="flex items-center gap-2">
                       <code className="text-xs font-mono text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
-                        {savedConfig.secret_key.substring(0, 8)}...{savedConfig.secret_key.substring(savedConfig.secret_key.length - 8)}
+                        ••••••••••••••••••••••••
                       </code>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-6 px-2 text-green-700 hover:text-green-800 hover:bg-green-100 dark:text-green-300 dark:hover:bg-green-900/30"
-                        onClick={() => copyToClipboard(savedConfig.secret_key, "Saved Key")}
-                      >
-                        {copied === "Saved Key" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                      </Button>
+                      <Badge variant="outline" className="text-[10px] border-green-300 text-green-700">
+                        Hidden for security
+                      </Badge>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
                       <Clock className="h-3 w-3" />
@@ -893,7 +904,7 @@ Headers:
 
               <Button 
                 onClick={testSignatureValidation} 
-                disabled={isTestingSignature || (!savedConfig?.secret_key && !generatedKey)}
+                disabled={isTestingSignature || !generatedKey}
                 variant="secondary"
                 className="gap-2"
               >
@@ -910,9 +921,11 @@ Headers:
                 )}
               </Button>
 
-              {!savedConfig?.secret_key && !generatedKey && (
+              {!generatedKey && (
                 <p className="text-xs text-muted-foreground">
-                  Generate and save a private key above to test signature validation.
+                  {savedConfig?.hasSecret 
+                    ? "Regenerate your secret key to test signature validation (saved keys are hidden for security)."
+                    : "Generate and save a private key above to test signature validation."}
                 </p>
               )}
 
@@ -1193,7 +1206,7 @@ Headers:
             {/* Generate Button */}
             <Button 
               onClick={generateDebugSignature}
-              disabled={isGeneratingSignature || (!savedConfig?.secret_key && !generatedKey)}
+              disabled={isGeneratingSignature || !generatedKey}
               className="gap-2"
             >
               {isGeneratingSignature ? (
@@ -1209,9 +1222,11 @@ Headers:
               )}
             </Button>
 
-            {!savedConfig?.secret_key && !generatedKey && (
+            {!generatedKey && (
               <p className="text-sm text-amber-600 dark:text-amber-400">
-                Please generate and save a private key first (Step 1 above)
+                {savedConfig?.hasSecret 
+                  ? "Regenerate your secret key to use this feature (saved keys are hidden for security)"
+                  : "Please generate and save a private key first (Step 1 above)"}
               </p>
             )}
 
@@ -1260,11 +1275,11 @@ Headers:
             )}
 
             {/* Current Key Being Used */}
-            {(savedConfig?.secret_key || generatedKey) && (
+            {generatedKey && (
               <div className="p-3 rounded-lg border bg-muted/30 text-sm">
                 <span className="text-muted-foreground">Using key: </span>
                 <code className="font-mono">
-                  {(savedConfig?.secret_key || generatedKey || '').substring(0, 8)}...{(savedConfig?.secret_key || generatedKey || '').slice(-8)}
+                  {generatedKey.substring(0, 8)}...{generatedKey.slice(-8)}
                 </code>
               </div>
             )}
@@ -1392,20 +1407,24 @@ Headers:
                       </label>
                       <div className="flex items-center gap-2">
                         <div className="flex-1 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-md px-3 py-2 text-sm font-mono break-all">
-                          {savedConfig?.secret_key || generatedKey || "YOUR_WEBHOOK_SECRET_HERE"}
+                          {generatedKey || (savedConfig?.hasSecret ? "••••••••••••••••••••••••" : "YOUR_WEBHOOK_SECRET_HERE")}
                         </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => copyToClipboard(savedConfig?.secret_key || generatedKey || "YOUR_WEBHOOK_SECRET_HERE", "Sign Key")}
-                        >
-                          {copied === "Sign Key" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                        </Button>
+                        {generatedKey && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => copyToClipboard(generatedKey, "Sign Key")}
+                          >
+                            {copied === "Sign Key" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                          </Button>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {savedConfig?.secret_key || generatedKey 
-                          ? "✓ Paste your saved private key (shown above)" 
-                          : "Generate and save a private key in the section above first"}
+                        {generatedKey 
+                          ? "✓ Copy this key for your Make.com Encryptor module" 
+                          : savedConfig?.hasSecret
+                            ? "Regenerate your key above to copy it (saved keys are hidden for security)"
+                            : "Generate and save a private key in the section above first"}
                       </p>
                     </div>
 
