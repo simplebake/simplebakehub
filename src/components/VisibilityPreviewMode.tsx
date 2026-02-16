@@ -38,7 +38,6 @@ const LANDING_SECTIONS = [
 interface PreviewUser {
   id: string;
   name: string;
-  email: string;
 }
 
 interface ContentItem {
@@ -68,7 +67,7 @@ export const VisibilityPreviewMode = ({ settings }: Props) => {
 
   const fetchData = async () => {
     const [usersRes, premixesRes, tutorialsRes] = await Promise.all([
-      supabase.from('profiles').select('id, name, email').limit(50),
+      supabase.from('public_profiles').select('id, name').limit(50),
       supabase.from('premixes').select('id, name'),
       supabase.from('tutorials').select('id, title'),
     ]);
