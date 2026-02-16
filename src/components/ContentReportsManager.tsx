@@ -30,7 +30,7 @@ interface ContentReport {
 }
 
 interface ReportWithDetails extends ContentReport {
-  reporter_profile?: { name: string; email: string };
+  reporter_profile?: { name: string };
   reviewer_profile?: { name: string } | null;
 }
 
@@ -77,8 +77,8 @@ export function ContentReportsManager() {
       const allUserIds = [...new Set([...reporterIds, ...reviewerIds])];
 
       const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, name, email")
+        .from("public_profiles")
+        .select("id, name")
         .in("id", allUserIds);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);

@@ -35,7 +35,7 @@ export const CustomerMessagesManager = () => {
     queryKey: ["customer-messages", filterStatus],
     queryFn: async () => {
       let query = supabase
-        .from("customer_messages")
+        .from("customer_messages_safe")
         .select("*")
         .order("created_at", { ascending: false });
 
