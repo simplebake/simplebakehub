@@ -573,6 +573,7 @@ export type Database = {
           updated_at: string
           user_id: string
           water_amount_g: number
+          water_unit: string
         }
         Insert: {
           created_at?: string
@@ -589,6 +590,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           water_amount_g?: number
+          water_unit?: string
         }
         Update: {
           created_at?: string
@@ -605,6 +607,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           water_amount_g?: number
+          water_unit?: string
         }
         Relationships: []
       }

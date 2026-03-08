@@ -1,0 +1,1 @@
+ALTER TABLE public.feeding_logs ADD COLUMN water_unit text NOT NULL DEFAULT 'g';
