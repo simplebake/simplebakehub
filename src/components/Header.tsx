@@ -79,6 +79,12 @@ const publicNavItems = [
     ariaLabel: "AI sourdough assistant"
   },
   {
+    label: "Tutorials",
+    path: "/tutorials",
+    icon: GraduationCap,
+    ariaLabel: "Browse baking tutorials"
+  },
+  {
     label: "Settings",
     path: "/settings",
     icon: Cog,
