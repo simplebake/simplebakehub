@@ -1,130 +1,124 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Play, Pause, RotateCcw, Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Play, Pause, RotateCcw, Bell } from "lucide-react";
+
+function requestNotificationPermission() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+function sendNotification(title: string, body: string) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(title, { body, icon: "/favicon.ico" });
+  }
+}
 
 interface BakeTimerProps {
-  defaultMinutes?: number;
-  label?: string;
+  durationMinutes: number;
+  label: string;
   onComplete?: () => void;
 }
 
-export const BakeTimer = ({ defaultMinutes = 25, label = "Bake Timer", onComplete }: BakeTimerProps) => {
-  const [totalSeconds, setTotalSeconds] = useState(defaultMinutes * 60);
-  const [remaining, setRemaining] = useState(defaultMinutes * 60);
+const BakeTimer = ({ durationMinutes, label, onComplete }: BakeTimerProps) => {
+  const totalSeconds = durationMinutes * 60;
+  const [remaining, setRemaining] = useState(totalSeconds);
   const [running, setRunning] = useState(false);
-  const [inputMinutes, setInputMinutes] = useState(String(defaultMinutes));
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const [notifyEnabled, setNotifyEnabled] = useState(
+    () => "Notification" in window && Notification.permission === "granted"
+  );
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const toggleNotify = () => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      setNotifyEnabled((v) => !v);
+    } else {
+      Notification.requestPermission().then((p) => {
+        setNotifyEnabled(p === "granted");
+      });
+    }
   };
-
-  const progress = totalSeconds > 0 ? ((totalSeconds - remaining) / totalSeconds) * 100 : 0;
-
-  const start = useCallback(() => setRunning(true), []);
-  const pause = useCallback(() => setRunning(false), []);
-
-  const reset = useCallback(() => {
-    setRunning(false);
-    const mins = Math.max(1, parseInt(inputMinutes) || defaultMinutes);
-    setTotalSeconds(mins * 60);
-    setRemaining(mins * 60);
-  }, [inputMinutes, defaultMinutes]);
 
   useEffect(() => {
-    if (!running) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      return;
+    if (running && remaining > 0) {
+      intervalRef.current = setInterval(() => {
+        setRemaining((r) => {
+          if (r <= 1) {
+            setRunning(false);
+            onComplete?.();
+            if (notifyEnabled) {
+              sendNotification("Timer Complete! ⏰", `${label} is done. Time to check your bread!`);
+            }
+            return 0;
+          }
+          return r - 1;
+        });
+      }, 1000);
     }
-    intervalRef.current = setInterval(() => {
-      setRemaining((prev) => {
-        if (prev <= 1) {
-          setRunning(false);
-          onComplete?.();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(intervalRef.current);
-  }, [running, onComplete]);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [running, remaining, onComplete, notifyEnabled, label]);
 
-  const handleSetTime = () => {
-    const mins = Math.max(1, parseInt(inputMinutes) || defaultMinutes);
-    setInputMinutes(String(mins));
-    setTotalSeconds(mins * 60);
-    setRemaining(mins * 60);
-    setRunning(false);
-  };
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const pct = ((totalSeconds - remaining) / totalSeconds) * 100;
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Bell className="h-5 w-5 text-accent" />
-          {label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Circular progress */}
-        <div className="flex justify-center">
-          <div className="relative h-36 w-36">
-            <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="44" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
-              <circle
-                cx="50" cy="50" r="44"
-                fill="none"
-                stroke={remaining === 0 ? "hsl(var(--success))" : "hsl(var(--primary))"}
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 44}`}
-                strokeDashoffset={`${2 * Math.PI * 44 * (1 - progress / 100)}`}
-                className="transition-all duration-1000"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-mono font-bold text-foreground">{formatTime(remaining)}</span>
-              {remaining === 0 && <span className="text-xs font-medium text-success">Done!</span>}
-            </div>
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-foreground">{label}</p>
+
+      <div className="flex items-center justify-center">
+        <div className="relative h-36 w-36">
+          <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
+            <circle
+              cx="50" cy="50" r="44"
+              fill="none"
+              stroke="hsl(var(--primary))"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={`${2 * Math.PI * 44}`}
+              strokeDashoffset={`${2 * Math.PI * 44 * (1 - pct / 100)}`}
+              className="transition-all duration-1000"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-2xl font-mono font-bold text-foreground">
+              {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+            </span>
           </div>
         </div>
+      </div>
 
-        {/* Controls */}
-        <div className="flex items-center justify-center gap-2">
-          {!running ? (
-            <Button size="sm" onClick={start} disabled={remaining === 0}>
-              <Play className="mr-1 h-4 w-4" /> Start
-            </Button>
-          ) : (
-            <Button size="sm" variant="secondary" onClick={pause}>
-              <Pause className="mr-1 h-4 w-4" /> Pause
-            </Button>
-          )}
-          <Button size="sm" variant="outline" onClick={reset}>
-            <RotateCcw className="mr-1 h-4 w-4" /> Reset
-          </Button>
-        </div>
+      <div className="flex items-center justify-center gap-2">
+        <Button
+          size="sm"
+          onClick={() => {
+            setRunning(!running);
+            if (!running) requestNotificationPermission();
+          }}
+          className="gap-1.5"
+        >
+          {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          {running ? "Pause" : "Start"}
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => { setRunning(false); setRemaining(totalSeconds); }}>
+          <RotateCcw className="h-4 w-4" />
+        </Button>
+        <Button size="sm" variant="ghost" onClick={toggleNotify}>
+          {notifyEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+        </Button>
+      </div>
 
-        {/* Set time */}
-        <div className="flex items-center gap-2">
-          <Input
-            type="number"
-            min={1}
-            value={inputMinutes}
-            onChange={(e) => setInputMinutes(e.target.value)}
-            className="w-20 text-center"
-            disabled={running}
-          />
-          <span className="text-sm text-muted-foreground">min</span>
-          <Button size="sm" variant="ghost" onClick={handleSetTime} disabled={running}>
-            Set
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      {remaining === 0 && (
+        <p className="text-center text-sm font-medium text-primary">
+          ✓ Time's up!
+        </p>
+      )}
+    </div>
   );
 };
+
+export default BakeTimer;
