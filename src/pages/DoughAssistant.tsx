@@ -65,6 +65,7 @@ const DoughAssistant = () => {
                   className="w-full rounded-xl border border-border bg-card p-5 text-left hover:shadow-lg active:scale-[0.98] transition-all"
                 >
                   <span className="font-semibold text-foreground">{r.name}</span>
+                  {r.subtitle && <p className="text-sm text-foreground/70 mt-0.5">{r.subtitle}</p>}
                   <p className="text-sm text-muted-foreground mt-1">{r.description}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {r.difficulty} · {r.prepTime} · {r.bakeTime}
