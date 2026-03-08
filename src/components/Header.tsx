@@ -62,19 +62,19 @@ const publicNavItems = [
   },
   {
     label: "Starter Check",
-    path: "/starter-checker",
+    path: "/starter",
     icon: FlaskConical,
     ariaLabel: "Check starter health"
   },
   {
     label: "Dough Calc",
-    path: "/dough-assistant",
+    path: "/dough",
     icon: Calculator,
     ariaLabel: "Dough calculator"
   },
   {
     label: "Starter AI",
-    path: "/starter-ai",
+    path: "/starter-guide",
     icon: Bot,
     ariaLabel: "AI sourdough assistant"
   },
