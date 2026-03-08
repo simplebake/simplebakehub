@@ -19,9 +19,40 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
+    // Verify JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    const authenticatedUserId = claimsData.claims.sub;
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { followerId, followingId }: NotifyNewFollowerRequest = await req.json();
+
+    // Ensure the caller is the follower
+    if (authenticatedUserId !== followerId) {
+      return new Response(JSON.stringify({ error: "Forbidden: identity mismatch" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     // Get follower's profile name
     const { data: followerProfile } = await supabase
@@ -38,14 +69,12 @@ serve(async (req) => {
     }
 
     // Store notification in database
-    await supabase
-      .from("notifications")
-      .insert({
-        user_id: followingId,
-        type: "new_follower",
-        actor_id: followerId,
-        message: `${followerProfile.name} started following you`,
-      });
+    await supabase.from("notifications").insert({
+      user_id: followingId,
+      type: "new_follower",
+      actor_id: followerId,
+      message: `${followerProfile.name} started following you`,
+    });
 
     // Check if the followed user has push notifications enabled
     const { data: preferences } = await supabase
@@ -97,7 +126,6 @@ serve(async (req) => {
           });
 
           if (!response.ok && (response.status === 404 || response.status === 410)) {
-            // Remove invalid subscription
             await supabase
               .from("push_subscriptions")
               .delete()

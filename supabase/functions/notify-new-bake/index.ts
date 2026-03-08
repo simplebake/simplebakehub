@@ -20,9 +20,40 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
+    // Verify JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    const authenticatedUserId = claimsData.claims.sub;
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { bakerId, bakeId, premixName }: NotifyNewBakeRequest = await req.json();
+
+    // Ensure the caller is the baker
+    if (authenticatedUserId !== bakerId) {
+      return new Response(JSON.stringify({ error: "Forbidden: identity mismatch" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     // Get baker's profile name
     const { data: bakerProfile } = await supabase
@@ -78,13 +109,6 @@ serve(async (req) => {
       );
     }
 
-    if (!preferences || preferences.length === 0) {
-      return new Response(
-        JSON.stringify({ message: "No followers with push enabled" }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
     const usersWithPush = preferences.map(p => p.user_id);
 
     // Fetch push subscriptions for these users
@@ -123,7 +147,6 @@ serve(async (req) => {
           });
 
           if (!response.ok && (response.status === 404 || response.status === 410)) {
-            // Remove invalid subscription
             await supabase
               .from("push_subscriptions")
               .delete()
