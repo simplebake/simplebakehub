@@ -80,9 +80,13 @@ export function useFollowing(targetUserId?: string) {
 
         // Trigger push notification for new follower (fire and forget)
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const { data: { session } } = await supabase.auth.getSession();
         fetch(`${supabaseUrl}/functions/v1/notify-new-follower`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token}`,
+          },
           body: JSON.stringify({
             followerId: user.id,
             followingId: targetUserId

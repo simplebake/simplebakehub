@@ -130,9 +130,13 @@ export const ExpandedCommentsDialog = ({
 
       // Trigger notification
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const { data: { session: commentSession } } = await supabase.auth.getSession();
       fetch(`${supabaseUrl}/functions/v1/notify-comment`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${commentSession?.access_token}`,
+        },
         body: JSON.stringify({
           commenterId: currentUserId,
           bakeShareId,
@@ -169,9 +173,13 @@ export const ExpandedCommentsDialog = ({
       // Notify the parent comment author if different from current user
       if (parentUserId !== currentUserId) {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const { data: { session: replySession } } = await supabase.auth.getSession();
         fetch(`${supabaseUrl}/functions/v1/notify-comment`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${replySession?.access_token}`,
+          },
           body: JSON.stringify({
             commenterId: currentUserId,
             bakeShareId,

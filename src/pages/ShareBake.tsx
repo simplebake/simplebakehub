@@ -261,9 +261,13 @@ const ShareBake = () => {
 
       // Trigger push notification to followers (fire and forget)
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const { data: { session: bakeSession } } = await supabase.auth.getSession();
       fetch(`${supabaseUrl}/functions/v1/notify-new-bake`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${bakeSession?.access_token}`,
+        },
         body: JSON.stringify({
           bakerId: user.id,
           bakeId: insertedBake?.id,
@@ -311,9 +315,13 @@ const ShareBake = () => {
 
         // Trigger notification for like (fire and forget)
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const { data: { session: likeSession } } = await supabase.auth.getSession();
         fetch(`${supabaseUrl}/functions/v1/notify-like`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${likeSession?.access_token}`,
+          },
           body: JSON.stringify({
             likerId: user.id,
             bakeShareId,
@@ -344,9 +352,13 @@ const ShareBake = () => {
 
       // Trigger notification for comment (fire and forget)
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const { data: { session: commentSession } } = await supabase.auth.getSession();
       fetch(`${supabaseUrl}/functions/v1/notify-comment`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${commentSession?.access_token}`,
+        },
         body: JSON.stringify({
           commenterId: user.id,
           bakeShareId,
