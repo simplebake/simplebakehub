@@ -65,6 +65,7 @@ const DoughAssistant = () => {
                   className="w-full rounded-xl border border-border bg-card p-5 text-left hover:shadow-lg active:scale-[0.98] transition-all"
                 >
                   <span className="font-semibold text-foreground">{r.name}</span>
+                  {r.subtitle && <p className="text-sm text-foreground/70 mt-0.5">{r.subtitle}</p>}
                   <p className="text-sm text-muted-foreground mt-1">{r.description}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {r.difficulty} · {r.prepTime} · {r.bakeTime}
@@ -142,8 +143,33 @@ const DoughAssistant = () => {
         {/* Current step */}
         {step && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Step {currentStep + 1}</h2>
-            <p className="text-sm text-muted-foreground">{step}</p>
+            <h2 className="text-lg font-semibold text-foreground">{step.title}</h2>
+            <p className="text-sm text-muted-foreground">{step.description}</p>
+
+            {step.lookFor && (
+              <InfoCallout variant="tip" title="What to look for">
+                {step.lookFor}
+              </InfoCallout>
+            )}
+
+            {step.timerMinutes && step.timerLabel && (
+              <BakeTimer durationMinutes={step.timerMinutes} label={step.timerLabel} />
+            )}
+
+            {step.troubleshoot && step.troubleshoot.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground">Troubleshooting</h3>
+                {step.troubleshoot.map((t) => (
+                  <details key={t.q} className="rounded-xl border border-border bg-card p-3">
+                    <summary className="flex cursor-pointer items-center justify-between text-sm font-medium text-foreground">
+                      {t.q}
+                      <span className="text-muted-foreground">+</span>
+                    </summary>
+                    <p className="mt-2 text-sm text-muted-foreground">{t.a}</p>
+                  </details>
+                ))}
+              </div>
+            )}
 
             <div className="flex gap-2 pt-2">
               {currentStep > 0 && (
