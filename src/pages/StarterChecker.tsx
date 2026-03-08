@@ -185,7 +185,7 @@ const StarterChecker = () => {
             </div>
 
             {result === "ready" && (
-              <Button className="w-full" onClick={() => navigate("/dough-assistant")}>
+              <Button className="w-full" onClick={() => navigate("/dough")}>
                 Let's make dough →
               </Button>
             )}
