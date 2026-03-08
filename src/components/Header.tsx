@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/auditLogger";
 import { useNavigate } from "react-router-dom";
-import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie, Users, Search, Bell, FlaskConical, Calculator, Bot, ClipboardList } from "lucide-react";
+import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie, Users, Search, Bell, FlaskConical, Calculator, Bot, ClipboardList, GraduationCap } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
@@ -77,6 +77,12 @@ const publicNavItems = [
     path: "/starter-guide",
     icon: Bot,
     ariaLabel: "AI sourdough assistant"
+  },
+  {
+    label: "Tutorials",
+    path: "/tutorials",
+    icon: GraduationCap,
+    ariaLabel: "Browse baking tutorials"
   },
   {
     label: "Settings",
