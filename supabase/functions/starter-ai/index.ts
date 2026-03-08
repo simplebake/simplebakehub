@@ -6,52 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
-  try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const body = await req.json();
-
-    if (typeof body !== "object" || body === null) {
-      return new Response(JSON.stringify({ error: "Invalid request body" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { step, context } = body;
-
-    if (typeof step !== "string" || step.trim().length === 0 || step.length > 300) {
-      return new Response(
-        JSON.stringify({ error: "Invalid 'step': must be a non-empty string up to 300 characters" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (context !== undefined && context !== null) {
-      if (typeof context !== "string" || context.length > 500) {
-        return new Response(
-          JSON.stringify({ error: "Invalid 'context': must be a string up to 500 characters" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
-
-    const sanitizedStep = step.trim().slice(0, 300);
-    const sanitizedContext = typeof context === "string" ? context.trim().slice(0, 500) : "";
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
-    const systemPrompt = `You are a friendly, expert sourdough baker assistant for Simple Bake — a company that sells gluten-free sourdough bread premix kits with dried starter powder.
+const systemPrompt = `You are a friendly, expert sourdough baker assistant for Simple Bake — a company that sells gluten-free sourdough bread premix kits with dried starter powder.
 
 The customer has received a Simple Bake kit containing a bread premix pouch and a dried sourdough starter powder pouch. Your job is to guide them through activating their starter and baking with it.
 
@@ -74,10 +29,52 @@ Always give temperatures in Celsius (with Fahrenheit in parentheses for referenc
 Keep responses concise (2-4 sentences), warm, and encouraging. Use plain language suitable for beginners.
 If the user describes a problem, diagnose it and give a specific actionable fix.`;
 
-    const userMessage = `The user is at this step of the starter care process: "${sanitizedStep}".
-Additional context from the user: "${sanitizedContext || 'none provided'}"
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-Give a helpful, specific tip for this stage. Be practical and reassuring.`;
+  try {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body = await req.json();
+    if (typeof body !== "object" || body === null) {
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { messages } = body;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Invalid 'messages': must be a non-empty array" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate and sanitize messages
+    const sanitizedMessages = messages
+      .filter((m: any) => m && typeof m.role === "string" && typeof m.content === "string")
+      .map((m: any) => ({
+        role: m.role === "assistant" ? "assistant" : "user",
+        content: m.content.trim().slice(0, 1000),
+      }));
+
+    if (sanitizedMessages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No valid messages provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -89,9 +86,9 @@ Give a helpful, specific tip for this stage. Be practical and reassuring.`;
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
+          ...sanitizedMessages,
         ],
-        stream: false,
+        stream: true,
       }),
     });
 
@@ -114,11 +111,9 @@ Give a helpful, specific tip for this stage. Be practical and reassuring.`;
       throw new Error(`AI gateway error [${status}]`);
     }
 
-    const data = await response.json();
-    const tip = data.choices?.[0]?.message?.content || "Keep feeding consistently and be patient — your starter will get there!";
-
-    return new Response(JSON.stringify({ tip }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // Stream the SSE response directly back to the client
+    return new Response(response.body, {
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
     console.error("starter-ai error:", e);
