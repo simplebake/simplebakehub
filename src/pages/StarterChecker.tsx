@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { InfoCallout } from "@/components/InfoCallout";
-import { ProgressStepper } from "@/components/ProgressStepper";
+import ProgressStepper from "@/components/ProgressStepper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -102,8 +102,8 @@ const StarterChecker = () => {
         </div>
 
         <ProgressStepper
-          steps={questions.map((q) => ({ label: q.label }))}
-          currentStep={showResult ? questions.length : currentStep}
+          current={showResult ? questions.length : currentStep + 1}
+          total={questions.length}
         />
 
         {!showResult ? (
