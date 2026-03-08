@@ -1,123 +1,199 @@
 import { useState } from "react";
-import { Header } from "@/components/Header";
+import { useNavigate } from "react-router-dom";
+import AppHeader from "@/components/AppHeader";
+import ProgressStepper from "@/components/ProgressStepper";
 import { InfoCallout } from "@/components/InfoCallout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import BakeTimer from "@/components/BakeTimer";
+import { NotesField } from "@/components/NotesField";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calculator, Droplets, Thermometer } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { RotateCcw, ChevronRight, ChevronLeft, Check } from "lucide-react";
+import { recipes } from "@/data/recipes";
 
 const DoughAssistant = () => {
-  const [flourWeight, setFlourWeight] = useState("300");
-  const [hydration, setHydration] = useState("75");
-  const [starterPct, setStarterPct] = useState("20");
-  const [saltPct, setSaltPct] = useState("2");
-  const [flourType, setFlourType] = useState("rice");
-  const [temperature, setTemperature] = useState("24");
+  const navigate = useNavigate();
+  const [selectedId, setSelectedId] = useLocalStorage<string | null>("dough-recipe-id", null);
+  const [currentStep, setCurrentStep] = useLocalStorage<number>("dough-step", 0);
+  const [completedSteps, setCompletedSteps] = useLocalStorage<number[]>("dough-completed", []);
+  const [notesValue, setNotesValue] = useState("");
 
-  const flour = parseFloat(flourWeight) || 0;
-  const water = flour * ((parseFloat(hydration) || 75) / 100);
-  const starter = flour * ((parseFloat(starterPct) || 20) / 100);
-  const salt = flour * ((parseFloat(saltPct) || 2) / 100);
-  const totalWeight = flour + water + starter + salt;
+  const recipe = recipes.find((r) => r.id === selectedId) ?? null;
+  const steps = recipe?.steps ?? [];
+  const step = steps[currentStep];
 
-  const temp = parseFloat(temperature) || 24;
-  const estimatedBulkHours = temp >= 28 ? "3-5" : temp >= 24 ? "5-8" : temp >= 20 ? "8-12" : "12-18";
-
-  const flourAdjustments: Record<string, string> = {
-    rice: "Rice flour absorbs less water. Start at 70-75% hydration.",
-    sorghum: "Sorghum can handle 75-80% hydration. Adds a mild sweetness.",
-    buckwheat: "Buckwheat is dense — blend with rice flour (50/50) for lighter crumb.",
-    millet: "Millet flour works well at 70-75% hydration. Mild flavour.",
-    teff: "Teff is very absorbent. You may need 80-85% hydration.",
-    oat: "Oat flour adds moisture — reduce hydration by 5% from your usual.",
+  const selectRecipe = (id: string) => {
+    setSelectedId(id);
+    setCurrentStep(0);
+    setCompletedSteps([]);
   };
+
+  const markComplete = () => {
+    if (!completedSteps.includes(currentStep)) {
+      setCompletedSteps([...completedSteps, currentStep]);
+    }
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const reset = () => {
+    setSelectedId(null);
+    setCurrentStep(0);
+    setCompletedSteps([]);
+  };
+
+  // Recipe selection screen
+  if (!recipe) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-xl px-4 py-6 space-y-6">
+          <AppHeader title="Dough Assistant" />
+
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">Choose your recipe</h2>
+
+            <p className="text-sm text-muted-foreground">
+              Select a recipe and we'll guide you through each step.
+            </p>
+
+            <div className="space-y-3">
+              {recipes.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => selectRecipe(r.id)}
+                  className="w-full rounded-xl border border-border bg-card p-5 text-left hover:shadow-lg active:scale-[0.98] transition-all"
+                >
+                  <span className="font-semibold text-foreground">{r.name}</span>
+                  <p className="text-sm text-muted-foreground mt-1">{r.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {r.difficulty} · {r.prepTime} · {r.bakeTime}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            <InfoCallout variant="tip" title="Getting Started">
+              Make sure your starter is bubbly and active before you begin!
+            </InfoCallout>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const allDone = currentStep === steps.length - 1 && completedSteps.includes(currentStep);
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container mx-auto max-w-2xl px-4 py-8 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Calculator className="h-6 w-6 text-primary" /> Dough Calculator
-          </h1>
-          <p className="text-muted-foreground">Calculate hydration, ingredients, and get gluten-free flour tips.</p>
+      <div className="container mx-auto max-w-xl px-4 py-6 space-y-6">
+        <AppHeader title={recipe.name} />
+
+        <ProgressStepper current={completedSteps.length} total={steps.length} />
+
+        {/* Ingredients & Tips */}
+        <details className="rounded-xl border border-border bg-card p-4">
+          <summary className="flex cursor-pointer items-center justify-between text-sm font-medium text-foreground">
+            📋 Ingredients & Tips
+            <span className="text-muted-foreground">+</span>
+          </summary>
+          <div className="mt-3 space-y-4">
+            <div>
+              <h4 className="text-sm font-semibold text-foreground mb-2">Ingredients</h4>
+              <ul className="space-y-1">
+                {recipe.ingredients.map((ing, i) => (
+                  <li key={i} className="text-sm text-muted-foreground">• {ing}</li>
+                ))}
+              </ul>
+            </div>
+            {recipe.tips.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-2">Tips</h4>
+                <ul className="space-y-1">
+                  {recipe.tips.map((tip, i) => (
+                    <li key={i} className="text-sm text-muted-foreground">• {tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </details>
+
+        {/* Step indicator dots */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {steps.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentStep(i)}
+              className={cn(
+                "shrink-0 w-8 h-8 rounded-full text-xs font-bold flex items-center justify-center transition-all",
+                i === currentStep
+                  ? "bg-primary text-primary-foreground"
+                  : completedSteps.includes(i)
+                  ? "bg-success/20 text-success"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {completedSteps.includes(i) ? <Check className="h-4 w-4" /> : i + 1}
+            </button>
+          ))}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Ingredients</CardTitle>
-            <CardDescription>Enter your flour weight and desired percentages (baker's math).</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Flour Type</Label>
-                <Select value={flourType} onValueChange={setFlourType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rice">Rice Flour</SelectItem>
-                    <SelectItem value="sorghum">Sorghum Flour</SelectItem>
-                    <SelectItem value="buckwheat">Buckwheat Flour</SelectItem>
-                    <SelectItem value="millet">Millet Flour</SelectItem>
-                    <SelectItem value="teff">Teff Flour</SelectItem>
-                    <SelectItem value="oat">Oat Flour</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Flour Weight (g)</Label>
-                <Input type="number" value={flourWeight} onChange={(e) => setFlourWeight(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1"><Droplets className="h-3.5 w-3.5" /> Hydration (%)</Label>
-                <Input type="number" value={hydration} onChange={(e) => setHydration(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Starter (%)</Label>
-                <Input type="number" value={starterPct} onChange={(e) => setStarterPct(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Salt (%)</Label>
-                <Input type="number" value={saltPct} onChange={(e) => setSaltPct(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1"><Thermometer className="h-3.5 w-3.5" /> Room Temp (°C)</Label>
-                <Input type="number" value={temperature} onChange={(e) => setTemperature(e.target.value)} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Current step */}
+        {step && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">Step {currentStep + 1}</h2>
+            <p className="text-sm text-muted-foreground">{step}</p>
 
-        {/* Results */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recipe Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: "Flour", value: `${flour.toFixed(0)}g` },
-                { label: "Water", value: `${water.toFixed(0)}g` },
-                { label: "Starter", value: `${starter.toFixed(0)}g` },
-                { label: "Salt", value: `${salt.toFixed(1)}g` },
-                { label: "Total Dough", value: `${totalWeight.toFixed(0)}g` },
-                { label: "Est. Bulk Ferment", value: `${estimatedBulkHours} hours` },
-              ].map((item) => (
-                <div key={item.label} className="rounded-lg border p-3 text-center">
-                  <p className="text-xs text-muted-foreground">{item.label}</p>
-                  <p className="text-lg font-semibold text-foreground">{item.value}</p>
-                </div>
-              ))}
+            <div className="flex gap-2 pt-2">
+              {currentStep > 0 && (
+                <Button variant="outline" onClick={() => setCurrentStep(currentStep - 1)} className="gap-1">
+                  <ChevronLeft className="h-4 w-4" /> Back
+                </Button>
+              )}
+              <Button onClick={markComplete} className="gap-1">
+                {currentStep < steps.length - 1 ? (
+                  <>Done — Next <ChevronRight className="h-4 w-4" /></>
+                ) : (
+                  <>Mark Complete <Check className="h-4 w-4" /></>
+                )}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        )}
 
-        <InfoCallout variant="tip" title={`${flourType.charAt(0).toUpperCase() + flourType.slice(1)} Flour Tip`}>
-          {flourAdjustments[flourType]}
-        </InfoCallout>
-      </main>
+        {/* Completion message */}
+        {allDone && (
+          <div className="pt-2">
+            <div className="rounded-xl border border-success/40 bg-success/15 p-5 space-y-2">
+              <h2 className="text-lg font-bold text-foreground">🍞 You did it!</h2>
+              <p className="text-sm text-muted-foreground">
+                Your {recipe.name.toLowerCase()} is done. Enjoy every bite!
+              </p>
+            </div>
+          </div>
+        )}
+
+        <NotesField
+          value={notesValue}
+          onChange={setNotesValue}
+          label="Your Notes"
+          placeholder="Jot down observations about this bake…"
+        />
+
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={reset}>
+            <RotateCcw className="mr-2 h-4 w-4" /> Choose Another Recipe
+          </Button>
+          <Button variant="ghost" onClick={() => navigate("/")} className="text-sm">
+            Home
+          </Button>
+        </div>
+
+        <p className="text-xs text-muted-foreground text-center">
+          General baking guidance only. Results vary by environment and ingredients.
+        </p>
+      </div>
     </div>
   );
 };
