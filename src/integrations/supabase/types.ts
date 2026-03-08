@@ -557,6 +557,57 @@ export type Database = {
         }
         Relationships: []
       }
+      feeding_logs: {
+        Row: {
+          created_at: string
+          fed_at: string
+          flour_amount_g: number
+          flour_type: string
+          humidity_percent: number | null
+          id: string
+          notes: string | null
+          peak_hours: number | null
+          rise_percentage: number | null
+          starter_name: string
+          temperature_celsius: number | null
+          updated_at: string
+          user_id: string
+          water_amount_g: number
+        }
+        Insert: {
+          created_at?: string
+          fed_at?: string
+          flour_amount_g?: number
+          flour_type?: string
+          humidity_percent?: number | null
+          id?: string
+          notes?: string | null
+          peak_hours?: number | null
+          rise_percentage?: number | null
+          starter_name?: string
+          temperature_celsius?: number | null
+          updated_at?: string
+          user_id: string
+          water_amount_g?: number
+        }
+        Update: {
+          created_at?: string
+          fed_at?: string
+          flour_amount_g?: number
+          flour_type?: string
+          humidity_percent?: number | null
+          id?: string
+          notes?: string | null
+          peak_hours?: number | null
+          rise_percentage?: number | null
+          starter_name?: string
+          temperature_celsius?: number | null
+          updated_at?: string
+          user_id?: string
+          water_amount_g?: number
+        }
+        Relationships: []
+      }
       followers: {
         Row: {
           created_at: string
