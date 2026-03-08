@@ -93,8 +93,11 @@ const App = () => {
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/feeding-log" element={<FeedingLog />} />
               <Route path="/starter-checker" element={<StarterChecker />} />
+              <Route path="/starter" element={<StarterChecker />} />
               <Route path="/dough-assistant" element={<DoughAssistant />} />
+              <Route path="/dough" element={<DoughAssistant />} />
               <Route path="/starter-ai" element={<StarterAI />} />
+              <Route path="/starter-guide" element={<StarterAI />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
