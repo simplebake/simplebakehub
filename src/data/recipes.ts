@@ -1,3 +1,8 @@
+export interface RecipeIngredient {
+  name: string;
+  amount: string;
+}
+
 export interface RecipeStep {
   title: string;
   description: string;
@@ -10,415 +15,463 @@ export interface RecipeStep {
 export interface Recipe {
   id: string;
   name: string;
-  subtitle?: string;
-  category: string;
-  difficulty: "easy" | "medium" | "hard";
-  prepTime: string;
-  bakeTime: string;
-  description: string;
-  ingredients: string[];
-  equipment?: string[];
-  allergens?: string;
+  subtitle: string;
+  premix: string;
+  starterType: string;
+  ingredients: RecipeIngredient[];
+  equipment: string[];
   steps: RecipeStep[];
-  tips: string[];
-  tags: string[];
+  allergens?: string;
 }
 
 export const recipes: Recipe[] = [
   {
-    id: "gf-sourdough-loaf",
-    name: "Classic Gluten-Free Sourdough Loaf",
-    subtitle: "Crisp crust, open crumb — the signature bake",
-    category: "Bread",
-    difficulty: "medium",
-    prepTime: "30 min + 4-8h ferment",
-    bakeTime: "45-55 min",
-    description: "A beautifully risen gluten-free sourdough with a crisp crust and open crumb.",
+    id: "quinoa",
+    name: "Quinoa Sourdough Bread",
+    subtitle: "Loaf tin bread with olive oil",
+    premix: "Simple Bake Gluten-Free Quinoa Bread Premix (361g)",
+    starterType: "Brown Rice Sourdough Starter Powder (Quinoa Bread)",
     ingredients: [
-      "200g rice flour",
-      "100g tapioca starch",
-      "50g potato starch",
-      "200g active GF sourdough starter",
-      "250ml warm water",
-      "10g psyllium husk",
-      "8g salt",
-      "15ml olive oil",
-      "10g sugar or honey",
+      { name: "Quinoa Bread Premix", amount: "1 pouch (361g)" },
+      { name: "Water (for bread)", amount: "265g" },
+      { name: "Olive oil", amount: "28g" },
+      { name: "Active sourdough starter", amount: "100g" },
     ],
-    equipment: ["Large mixing bowl", "Loaf tin", "Dutch oven or steam tray", "Scoring blade", "Wire cooling rack"],
+    equipment: [
+      "2 mixing bowls",
+      "Kitchen scale",
+      "Damp tea towel",
+      "Loaf baking tin",
+      "Greaseproof paper or butter for tin",
+      "Cooling rack",
+    ],
     steps: [
       {
-        title: "Make the psyllium gel",
-        description: "Mix psyllium husk with warm water and let gel for 5 minutes. It should become thick and jelly-like.",
-        timerMinutes: 5,
-        timerLabel: "Psyllium gel",
-        lookFor: "A thick, jelly-like consistency — not watery.",
+        title: "Make Your Bread Dough",
+        description: "Empty the quinoa bread premix into a large mixing bowl. Add 265g water, 28g olive oil, and 100g active sourdough starter. Mix thoroughly until all ingredients are well incorporated. Cover with a damp tea towel and leave for 1 hour.",
+        timerMinutes: 60,
+        timerLabel: "Initial rest (1 hour)",
+        lookFor: "A well-combined, moist dough with no dry patches.",
       },
       {
-        title: "Combine dry ingredients",
-        description: "Combine rice flour, tapioca starch, potato starch, salt, and sugar in a large bowl. Whisk to distribute evenly.",
-      },
-      {
-        title: "Mix the dough",
-        description: "Add active starter, psyllium gel, and olive oil to the dry ingredients. Mix until smooth and well combined.",
-        lookFor: "A thick, smooth batter with no dry pockets. It will be wetter than wheat dough — that's normal!",
+        title: "Knead & Shape",
+        description: "Lightly dust the worktop with GF flour and wet your hands. Remove dough from bowl and knead on worktop until it feels dough-like and holds its shape. Line your loaf baking tin with greaseproof paper or grease it with butter. Place the dough in the tin and cover with a damp tea towel.",
+        lookFor: "A smooth dough that holds its shape in the tin.",
         troubleshoot: [
-          { q: "Dough is too thick to mix?", a: "Add a tablespoon of warm water at a time until it's a thick but mixable batter." },
-          { q: "Dough is very runny?", a: "The psyllium may not have gelled fully. Let it sit 2 more minutes before mixing again." },
+          { q: "Dough too sticky?", a: "Use wet hands and more GF flour for dusting." },
         ],
       },
       {
-        title: "Transfer to tin",
-        description: "Oil a loaf tin generously. Transfer the dough and smooth the top with wet fingers or the back of a spoon.",
+        title: "Overnight Rise (Recommended)",
+        description: "Cover the dough with a damp tea towel or cling film. Refrigerate overnight for better flavour development. If baking the same day, leave at room temperature for 4–6 hours or more.",
+        lookFor: "The dough should have risen noticeably in the tin.",
       },
       {
-        title: "Bulk ferment",
-        description: "Cover the tin and ferment at 25-28°C for 4-8 hours until risen by 50-75%. Warmer temperatures mean shorter ferment times.",
-        lookFor: "The dough should have risen noticeably (50-75%) and have visible bubbles on the surface and sides.",
+        title: "Prepare for Baking",
+        description: "Remove bread from the fridge and let it rise for 1–2 hours at room temperature. Preheat oven to 190°C.",
+        timerMinutes: 90,
+        timerLabel: "Room temp rise (~1.5 hours)",
+      },
+      {
+        title: "Bake Your Bread",
+        description: "Place the bread in the preheated oven at 190°C. Bake for 35–40 minutes. Check after 35 minutes — the crust should look nice and golden. May need an extra 5–10 minutes for perfect doneness. Bread is ready when the crust is golden and hard.",
+        timerMinutes: 40,
+        timerLabel: "Bake time (~40 min)",
+        lookFor: "A golden, hard crust.",
         troubleshoot: [
-          { q: "No rise after 4 hours?", a: "Move to a warmer spot (25-28°C). Cold kitchens slow fermentation significantly." },
-          { q: "Dough has risen and started to collapse?", a: "It's over-proofed. Bake immediately — it may still turn out well!" },
+          { q: "Crust browning too quickly?", a: "Cover with foil for the last 10–15 minutes." },
         ],
       },
       {
-        title: "Preheat oven",
-        description: "Preheat oven to 220°C (428°F) with a Dutch oven or steam tray inside. Let it heat for at least 20 minutes.",
-        timerMinutes: 20,
-        timerLabel: "Oven preheat",
-      },
-      {
-        title: "Score the loaf",
-        description: "Use a sharp blade or lame to score the top of the loaf. A single slash down the centre works well for GF loaves.",
-        lookFor: "Clean, confident cuts about 1cm deep. Don't hesitate — quick slashes work best.",
-      },
-      {
-        title: "Bake covered",
-        description: "Place the loaf in the preheated Dutch oven (or oven with steam tray). Bake covered for 30 minutes.",
-        timerMinutes: 30,
-        timerLabel: "Covered bake",
-        lookFor: "Steam should be visible when you open the lid. The loaf should have started to colour.",
-      },
-      {
-        title: "Bake uncovered",
-        description: "Remove the lid and bake for 15-25 minutes more until deep golden brown. The crust should feel firm when tapped.",
-        timerMinutes: 20,
-        timerLabel: "Uncovered bake",
-        lookFor: "Deep golden colour and a hollow sound when the base is tapped.",
-        troubleshoot: [
-          { q: "Top is browning too fast?", a: "Tent loosely with foil for the remaining time." },
-          { q: "Crust is pale after 20 minutes?", a: "Give it another 5-10 minutes. GF loaves can take longer to colour." },
-        ],
-      },
-      {
-        title: "Cool completely",
-        description: "Remove from the tin and cool on a wire rack for at least 2 hours before slicing. GF bread needs this time to set its structure.",
-        timerMinutes: 120,
-        timerLabel: "Cooling",
-        lookFor: "The loaf should feel firm and cool to the touch. Cutting too early results in a gummy crumb.",
-        troubleshoot: [
-          { q: "The crumb is gummy inside?", a: "It likely needed more cooling time, or the internal temp didn't reach 96°C (205°F)." },
-        ],
+        title: "Cooling (Important!)",
+        description: "Remove from the oven when golden with a crust. Let it cool completely on a cooling rack before cutting. This is crucial — you must wait for the bread to cool down properly. Proper cooling ensures the best texture and prevents gumminess.",
+        timerMinutes: 60,
+        timerLabel: "Cooling (1 hour minimum)",
+        lookFor: "The bread should sound hollow when tapped on the bottom.",
       },
     ],
-    tips: [
-      "A warmer ferment (28°C) gives faster rise but milder flavour.",
-      "Don't skip the psyllium – it's the gluten replacement for structure.",
-      "The loaf will feel soft when hot but firms up as it cools.",
-    ],
-    tags: ["sourdough", "loaf", "classic", "gluten-free"],
   },
   {
-    id: "gf-sourdough-pizza",
-    name: "Gluten-Free Sourdough Pizza Base",
-    subtitle: "Crispy, chewy bases from your starter",
-    category: "Flatbread",
-    difficulty: "easy",
-    prepTime: "20 min + 2-4h ferment",
-    bakeTime: "12-15 min",
-    description: "Crispy, chewy pizza bases using your gluten-free sourdough starter.",
+    id: "buckwheat",
+    name: "Buckwheat Sourdough Bread",
+    subtitle: "Rustic round loaf",
+    premix: "Simple Bake Buckwheat Bread Premix (278g)",
+    starterType: "Chickpea Sourdough Starter Powder",
+    allergens: "Contains: Almonds",
     ingredients: [
-      "150g rice flour",
-      "50g tapioca starch",
-      "100g active GF sourdough starter",
-      "120ml warm water",
-      "5g psyllium husk",
-      "5g salt",
-      "15ml olive oil",
+      { name: "Buckwheat Bread Premix", amount: "1 pouch (278g)" },
+      { name: "Water (for bread)", amount: "300g" },
+      { name: "Oil (olive or neutral)", amount: "15g" },
+      { name: "Active sourdough starter", amount: "110g" },
     ],
-    equipment: ["Pizza stone or inverted baking tray", "Rolling pin", "Parchment paper"],
+    equipment: [
+      "2 mixing bowls",
+      "Kitchen scale",
+      "Damp tea towel",
+      "Baking tray",
+      "Sharp knife or bread lame",
+      "Cooling rack",
+    ],
     steps: [
       {
-        title: "Make the psyllium gel",
-        description: "Mix psyllium husk with water and let sit for 3 minutes until gelled.",
-        timerMinutes: 3,
-        timerLabel: "Psyllium gel",
+        title: "Make Your Bread Dough",
+        description: "Empty the buckwheat bread premix into a large mixing bowl. Add 300g water, 15g oil, and 110g active sourdough starter. Mix thoroughly until all ingredients are well incorporated. Cover with a damp tea towel and leave for 1 hour.",
+        timerMinutes: 60,
+        timerLabel: "Initial rest (1 hour)",
+        lookFor: "A well-combined, moist dough.",
       },
       {
-        title: "Combine dry ingredients",
-        description: "Combine flour, starch, and salt in a bowl.",
-      },
-      {
-        title: "Mix the dough",
-        description: "Add starter, psyllium gel, and olive oil. Mix to a soft dough.",
-        lookFor: "A soft, slightly sticky dough that holds together. Not as wet as bread dough.",
-      },
-      {
-        title: "Ferment",
-        description: "Divide into 2 portions, cover, and ferment 2-4 hours at room temperature.",
-        lookFor: "Dough should be slightly puffier with some bubbles visible.",
+        title: "Knead & Shape",
+        description: "Lightly dust the worktop with GF flour and wet your hands. Remove the dough from the bowl and knead it on the worktop until it feels dough-like and holds its shape. Shape into a nice round ball and coat with GF flour. Place in a small bowl lined with GF flour. Cover with a damp tea towel for 4 hours (longer if cooler weather).",
+        timerMinutes: 240,
+        timerLabel: "Proof (4 hours)",
+        lookFor: "The dough should visibly rise in the container.",
         troubleshoot: [
-          { q: "Dough is very sticky?", a: "Dust your hands and surface with rice flour when shaping." },
+          { q: "Dough too sticky?", a: "Use wet hands and more GF flour for dusting." },
         ],
       },
       {
-        title: "Preheat oven",
-        description: "Preheat oven to 250°C (482°F) with a pizza stone or inverted baking tray inside.",
-        timerMinutes: 20,
-        timerLabel: "Oven preheat",
+        title: "Overnight Rise (Recommended)",
+        description: "Cover the dough with a damp tea towel or cling film. Refrigerate overnight for better flavour development. If baking the same day, leave at room temperature for an additional hour.",
+        lookFor: "A slightly puffier dough with better flavour after cold fermentation.",
       },
       {
-        title: "Shape the bases",
-        description: "Roll or press each portion onto parchment paper to desired thickness. Thinner = crispier.",
+        title: "Prepare for Baking",
+        description: "Remove from fridge and coat with GF flour. Leave for 1–2 hours before baking. Preheat oven to 250°C with baking tray inside.",
+        timerMinutes: 90,
+        timerLabel: "Room temp rise (~1.5 hours)",
       },
       {
-        title: "Par-bake",
-        description: "Par-bake the bases for 5 minutes. This prevents a soggy middle once toppings are added.",
-        timerMinutes: 5,
-        timerLabel: "Par-bake",
-        lookFor: "The surface should be set and slightly dry, but not browned yet.",
-      },
-      {
-        title: "Add toppings and finish",
-        description: "Add your favourite toppings and bake for 7-10 minutes more until golden and bubbling.",
-        timerMinutes: 8,
-        timerLabel: "Final bake",
-        lookFor: "Golden edges, bubbling cheese, crispy base.",
-      },
-    ],
-    tips: [
-      "Wetter dough = chewier base. Drier = crispier.",
-      "Par-baking prevents a soggy middle.",
-      "Works great on a BBQ pizza stone too!",
-    ],
-    tags: ["pizza", "flatbread", "quick", "gluten-free"],
-  },
-  {
-    id: "gf-sourdough-pancakes",
-    name: "Sourdough Discard Pancakes",
-    subtitle: "Zero-waste fluffy pancakes",
-    category: "Breakfast",
-    difficulty: "easy",
-    prepTime: "10 min",
-    bakeTime: "15 min",
-    description: "Fluffy pancakes using sourdough discard — zero waste and delicious.",
-    ingredients: [
-      "200g sourdough discard",
-      "1 egg",
-      "30g sugar",
-      "60ml milk (any)",
-      "30g melted butter or oil",
-      "3g baking powder",
-      "Pinch of salt",
-    ],
-    equipment: ["Non-stick pan", "Spatula", "Mixing bowl"],
-    steps: [
-      {
-        title: "Mix wet ingredients",
-        description: "Whisk together discard, egg, sugar, milk, and melted butter in a bowl.",
-      },
-      {
-        title: "Add dry ingredients",
-        description: "Add baking powder and salt, stir gently until just combined. Don't overmix — lumps are fine!",
-        lookFor: "A thick, pourable batter with a few small lumps. Overmixing makes pancakes tough.",
-      },
-      {
-        title: "Heat the pan",
-        description: "Heat a non-stick pan over medium heat with a little butter or oil.",
-        lookFor: "A drop of water should sizzle and evaporate when the pan is ready.",
-      },
-      {
-        title: "Cook the pancakes",
-        description: "Pour ~60ml batter per pancake. Cook until bubbles form on the surface, then flip.",
-        timerMinutes: 3,
-        timerLabel: "First side",
-        lookFor: "Bubbles forming across the surface and edges looking set.",
-      },
-      {
-        title: "Flip and finish",
-        description: "Flip and cook 1-2 minutes more until golden on both sides.",
-        timerMinutes: 2,
-        timerLabel: "Second side",
-      },
-      {
-        title: "Serve",
-        description: "Serve with fresh fruit, maple syrup, or honey. Enjoy warm!",
-      },
-    ],
-    tips: [
-      "Don't overmix — lumps are fine and keep pancakes fluffy.",
-      "Discard straight from the fridge works perfectly.",
-      "Add blueberries or chocolate chips to the batter for variety.",
-    ],
-    tags: ["pancakes", "breakfast", "discard", "easy", "gluten-free"],
-  },
-  {
-    id: "gf-sourdough-focaccia",
-    name: "Gluten-Free Sourdough Focaccia",
-    subtitle: "Olive oil-rich with crispy top",
-    category: "Bread",
-    difficulty: "medium",
-    prepTime: "20 min + 3-6h ferment",
-    bakeTime: "25-30 min",
-    description: "Olive oil-rich focaccia with a crispy top and soft, airy interior.",
-    ingredients: [
-      "200g rice flour",
-      "80g tapioca starch",
-      "40g potato starch",
-      "180g active GF sourdough starter",
-      "220ml warm water",
-      "10g psyllium husk",
-      "8g salt",
-      "60ml extra virgin olive oil (divided)",
-      "Flaky salt, rosemary, cherry tomatoes for topping",
-    ],
-    equipment: ["20x30cm baking tin", "Mixing bowl"],
-    steps: [
-      {
-        title: "Make the psyllium gel",
-        description: "Mix psyllium husk with warm water, let gel 5 minutes.",
-        timerMinutes: 5,
-        timerLabel: "Psyllium gel",
-      },
-      {
-        title: "Combine dry ingredients",
-        description: "Combine flours, starch, and salt in a bowl.",
-      },
-      {
-        title: "Mix the dough",
-        description: "Add starter, psyllium gel, and 30ml olive oil. Mix well until smooth.",
-        lookFor: "A very wet, batter-like dough — this is normal for focaccia!",
-      },
-      {
-        title: "Transfer to tin",
-        description: "Pour remaining olive oil into a 20x30cm baking tin, then spread dough evenly. Don't be shy with the oil!",
-      },
-      {
-        title: "Ferment",
-        description: "Cover and ferment 3-6 hours until puffy and jiggly when you shake the tin.",
-        lookFor: "The dough should jiggle like a waterbed and have visible bubbles throughout.",
+        title: "Bake Your Bread",
+        description: "Remove the preheated tray and place the dough on it. Score the top with a sharp knife or bread lame. Spray bread with water to create steam. Bake 10 minutes at 250°C, then reduce to 225°C and bake 35–40 minutes. Check after 35 minutes — crust should be golden and hard. May need an extra 5–10 minutes.",
+        timerMinutes: 50,
+        timerLabel: "Bake time (~50 min)",
+        lookFor: "A golden, hard crust.",
         troubleshoot: [
-          { q: "Not puffy after 4 hours?", a: "Move to a warmer spot. GF focaccia needs warmth to get that airy texture." },
+          { q: "Crust too dark?", a: "Cover with foil for the last 10–15 minutes." },
         ],
       },
       {
-        title: "Preheat and dimple",
-        description: "Preheat oven to 220°C (428°F). Dimple the surface generously with oiled fingers.",
-        timerMinutes: 15,
-        timerLabel: "Oven preheat",
-        lookFor: "Deep dimples that pool with olive oil — this creates the signature texture.",
+        title: "Cooling (Important!)",
+        description: "Remove from the oven when golden with a hard crust. Place on a cooling rack. Cool COMPLETELY before cutting — this is crucial! Resist the temptation. Proper cooling ensures perfect texture.",
+        timerMinutes: 60,
+        timerLabel: "Cooling (1 hour minimum)",
+        lookFor: "Hollow sound when tapped on the bottom.",
+      },
+    ],
+  },
+  {
+    id: "chickpea",
+    name: "Chickpea Sourdough Bread",
+    subtitle: "Rustic round loaf",
+    premix: "Simple Bake Chickpea Bread Premix (343g)",
+    starterType: "Chickpea Sourdough Starter Powder",
+    allergens: "Contains: Almonds",
+    ingredients: [
+      { name: "Chickpea Bread Premix", amount: "1 pouch (343g)" },
+      { name: "Water (for bread)", amount: "320g" },
+      { name: "Oil (olive or neutral)", amount: "15g" },
+      { name: "Active sourdough starter", amount: "110g" },
+    ],
+    equipment: [
+      "2 mixing bowls",
+      "Kitchen scale",
+      "Damp tea towel",
+      "Baking tray",
+      "Sharp knife or bread lame",
+      "Cooling rack",
+    ],
+    steps: [
+      {
+        title: "Make Your Bread Dough",
+        description: "Empty the chickpea bread premix into a large mixing bowl. Add 320g water, 15g oil, and 110g active sourdough starter. Mix thoroughly until all ingredients are well incorporated. Cover with a damp tea towel and leave for 1 hour.",
+        timerMinutes: 60,
+        timerLabel: "Initial rest (1 hour)",
+        lookFor: "A well-combined, moist dough.",
       },
       {
-        title: "Add toppings",
-        description: "Press rosemary sprigs, cherry tomato halves, and flaky salt into the dimples.",
-      },
-      {
-        title: "Bake",
-        description: "Bake 25-30 minutes until golden and crisp on top.",
-        timerMinutes: 27,
-        timerLabel: "Bake",
-        lookFor: "Deep golden colour with crispy, oil-fried edges.",
+        title: "Knead & Shape",
+        description: "Lightly dust the worktop with GF flour and wet your hands. Remove the dough from the bowl and knead it on the worktop until it feels dough-like and holds its shape. Shape into a nice round ball and coat with GF flour. Place in a small bowl lined with GF flour. Cover with a damp tea towel for 4 hours (longer if cooler weather).",
+        timerMinutes: 240,
+        timerLabel: "Proof (4 hours)",
+        lookFor: "The dough should visibly rise in the container.",
         troubleshoot: [
-          { q: "Edges are crispy but middle is soft?", a: "That's actually perfect for focaccia! The middle should be soft and airy." },
+          { q: "Dough too sticky?", a: "Use wet hands and more GF flour for dusting." },
         ],
       },
       {
-        title: "Cool and serve",
-        description: "Let cool 10 minutes in the tin before cutting for cleaner slices.",
-        timerMinutes: 10,
-        timerLabel: "Cooling",
+        title: "Overnight Rise (Recommended)",
+        description: "Cover the dough with a damp tea towel or cling film. Refrigerate overnight for better flavour development. If baking the same day, leave at room temperature for an additional hour.",
+        lookFor: "A slightly puffier dough after cold fermentation.",
+      },
+      {
+        title: "Prepare for Baking",
+        description: "Remove from fridge and coat with GF flour. Leave for 1–2 hours before baking. Preheat the oven to 250°C with the baking tray inside.",
+        timerMinutes: 90,
+        timerLabel: "Room temp rise (~1.5 hours)",
+      },
+      {
+        title: "Bake Your Bread",
+        description: "Remove the preheated tray and place the dough on it. Score the top with a sharp knife or bread lame. Spray bread with water to create steam. Bake 10 minutes at 250°C, then reduce to 225°C and bake 35–40 minutes. Check after 35 minutes — crust should be golden and hard. May need an extra 5–10 minutes.",
+        timerMinutes: 50,
+        timerLabel: "Bake time (~50 min)",
+        lookFor: "A golden, hard crust.",
+        troubleshoot: [
+          { q: "Crust too dark?", a: "Cover with foil for the last 10–15 minutes." },
+        ],
+      },
+      {
+        title: "Cooling (Important!)",
+        description: "Remove from the oven when golden with a hard crust. Place on a cooling rack. Cool COMPLETELY before cutting — this is crucial! Proper cooling ensures perfect texture.",
+        timerMinutes: 60,
+        timerLabel: "Cooling (1 hour minimum)",
+        lookFor: "Hollow sound when tapped on the bottom.",
       },
     ],
-    tips: [
-      "Don't be shy with the olive oil — it creates the signature crust.",
-      "The dough will be very wet; that's normal for focaccia.",
-      "Let it cool 10 minutes before cutting for cleaner slices.",
-    ],
-    tags: ["focaccia", "bread", "olive oil", "herbs", "gluten-free"],
   },
   {
-    id: "gf-sourdough-crackers",
-    name: "Seeded Sourdough Crackers",
-    subtitle: "Crunchy snacks from your discard",
-    category: "Snacks",
-    difficulty: "easy",
-    prepTime: "15 min",
-    bakeTime: "20-25 min",
-    description: "Crunchy, savoury crackers made with sourdough discard and seeds.",
+    id: "oat",
+    name: "Oat Sourdough Bread",
+    subtitle: "Rustic round loaf",
+    premix: "Simple Bake Oat Bread Premix (303g)",
+    starterType: "Brown Rice Sourdough Starter Powder",
+    allergens: "Contains: Oats",
     ingredients: [
-      "150g sourdough discard",
-      "30g rice flour",
-      "30ml olive oil",
-      "3g salt",
-      "Mixed seeds (sesame, flax, sunflower)",
-      "Dried herbs (optional)",
+      { name: "Oat Bread Premix", amount: "1 pouch (303g)" },
+      { name: "Water (for bread)", amount: "300g" },
+      { name: "Oil (olive or neutral)", amount: "15g" },
+      { name: "Active sourdough starter", amount: "110g" },
     ],
-    equipment: ["Rolling pin", "Parchment paper", "Baking tray"],
+    equipment: [
+      "2 mixing bowls",
+      "Kitchen scale",
+      "Damp tea towel",
+      "Baking tray",
+      "Sharp knife or bread lame",
+      "Cooling rack",
+    ],
     steps: [
       {
-        title: "Preheat oven",
-        description: "Preheat oven to 180°C (356°F).",
+        title: "Make Your Bread Dough",
+        description: "Empty the oat bread premix into a large mixing bowl. Add 300g water, 15g oil, and 110g active sourdough starter. Mix thoroughly until all ingredients are well incorporated. Cover with a damp tea towel and leave for 1 hour.",
+        timerMinutes: 60,
+        timerLabel: "Initial rest (1 hour)",
+        lookFor: "A well-combined, moist dough.",
       },
       {
-        title: "Mix the dough",
-        description: "Mix discard, flour, olive oil, salt, and herbs until smooth.",
-        lookFor: "A smooth, spreadable dough — not too thick, not too runny.",
+        title: "Knead & Shape",
+        description: "Lightly dust the worktop with GF flour and wet your hands. Remove the dough from the bowl and knead it on the worktop until it feels dough-like and holds its shape. Shape into a nice round ball and coat with GF flour. Place in a small bowl lined with GF flour. Cover with a damp tea towel for 4 hours (longer if cooler weather).",
+        timerMinutes: 240,
+        timerLabel: "Proof (4 hours)",
+        lookFor: "The dough should visibly rise in the container.",
+        troubleshoot: [
+          { q: "Dough too sticky?", a: "Use wet hands and more GF flour for dusting." },
+        ],
       },
       {
-        title: "Roll thin",
-        description: "Roll very thin between two sheets of parchment paper. The thinner you roll, the crunchier they'll be.",
-        lookFor: "Almost translucent thinness is ideal. Uneven spots will burn while thick spots stay chewy.",
+        title: "Overnight Rise (Recommended)",
+        description: "Cover the dough with a damp tea towel or cling film. Refrigerate overnight for better flavour development. If baking the same day, leave at room temperature for an additional hour.",
+        lookFor: "A slightly puffier dough after cold fermentation.",
       },
       {
-        title: "Add seeds and score",
-        description: "Remove top parchment, sprinkle with seeds and press gently. Score into cracker-sized pieces with a knife or pizza cutter.",
+        title: "Prepare for Baking",
+        description: "Remove from fridge and coat with GF flour. Leave for 1–2 hours before baking. Preheat the oven to 250°C with the baking tray inside.",
+        timerMinutes: 90,
+        timerLabel: "Room temp rise (~1.5 hours)",
       },
       {
-        title: "Bake",
-        description: "Bake 20-25 minutes until golden and crisp. Watch carefully near the end — they go from perfect to burnt quickly.",
+        title: "Bake Your Bread",
+        description: "Remove the preheated tray and place the dough on it. Score the top with a sharp knife or bread lame. Spray bread with water to create steam. Bake for 10 minutes at 250°C, then reduce to 225°C and bake 35–40 minutes. Check after 35 minutes — crust should be golden and hard. May need an extra 5–10 minutes.",
+        timerMinutes: 50,
+        timerLabel: "Bake time (~50 min)",
+        lookFor: "A golden, hard crust.",
+        troubleshoot: [
+          { q: "Crust too dark?", a: "Cover with foil for the last 10–15 minutes." },
+        ],
+      },
+      {
+        title: "Cooling (Important!)",
+        description: "Remove from the oven when golden with a hard crust. Place on a cooling rack. Cool COMPLETELY before cutting — this is crucial! Proper cooling ensures perfect texture.",
+        timerMinutes: 60,
+        timerLabel: "Cooling (1 hour minimum)",
+        lookFor: "Hollow sound when tapped on the bottom.",
+      },
+    ],
+  },
+  {
+    id: "amaranth",
+    name: "Amaranth Sourdough Bread",
+    subtitle: "Rustic round loaf",
+    premix: "Simple Bake Amaranth Bread Premix (343g)",
+    starterType: "Amaranth Sourdough Starter Powder",
+    allergens: "Contains: Almonds",
+    ingredients: [
+      { name: "Amaranth Bread Premix", amount: "1 pouch (343g)" },
+      { name: "Water (for bread)", amount: "320g" },
+      { name: "Oil (olive or neutral)", amount: "15g" },
+      { name: "Active sourdough starter", amount: "110g" },
+    ],
+    equipment: [
+      "2 mixing bowls",
+      "Kitchen scale",
+      "Damp tea towel",
+      "Baking tray",
+      "Sharp knife or bread lame",
+      "Cooling rack",
+    ],
+    steps: [
+      {
+        title: "Make Your Bread Dough",
+        description: "Empty the amaranth bread premix into a large mixing bowl. Add 320g water, 15g oil, and 110g active sourdough starter. Mix thoroughly until all ingredients are well incorporated. Cover with a damp tea towel and leave for 1 hour.",
+        timerMinutes: 60,
+        timerLabel: "Initial rest (1 hour)",
+        lookFor: "A well-combined, moist dough.",
+      },
+      {
+        title: "Knead & Shape",
+        description: "Lightly dust the worktop with GF flour and wet your hands. Remove the dough from the bowl and knead it on the worktop until it feels dough-like and holds its shape. Shape into a nice round ball and coat with GF flour. Place in a small bowl lined with GF flour. Cover with a damp tea towel for 4 hours (longer if cooler weather).",
+        timerMinutes: 240,
+        timerLabel: "Proof (4 hours)",
+        lookFor: "The dough should visibly rise in the container.",
+        troubleshoot: [
+          { q: "Dough too sticky?", a: "Use wet hands and more GF flour for dusting." },
+        ],
+      },
+      {
+        title: "Overnight Rise (Recommended)",
+        description: "Cover the dough with a damp tea towel or cling film. Refrigerate overnight for better flavour development. If baking the same day, leave at room temperature for an additional hour.",
+        lookFor: "A slightly puffier dough after cold fermentation.",
+      },
+      {
+        title: "Prepare for Baking",
+        description: "Remove from fridge and coat with GF flour. Leave for 1–2 hours before baking. Preheat the oven to 250°C with the baking tray inside.",
+        timerMinutes: 90,
+        timerLabel: "Room temp rise (~1.5 hours)",
+      },
+      {
+        title: "Bake Your Bread",
+        description: "Remove the preheated tray and place the dough on it. Score the top with a sharp knife or bread lame. Spray bread with water to create steam. Bake 10 minutes at 250°C, then reduce to 225°C and bake 35–40 minutes. Check after 35 minutes — crust should be golden and hard. May need an extra 5–10 minutes.",
+        timerMinutes: 50,
+        timerLabel: "Bake time (~50 min)",
+        lookFor: "A golden, hard crust.",
+        troubleshoot: [
+          { q: "Crust too dark?", a: "Cover with foil for the last 10–15 minutes." },
+        ],
+      },
+      {
+        title: "Cooling (Important!)",
+        description: "Remove from the oven when golden with a hard crust. Place on a cooling rack. Cool COMPLETELY before cutting — this is crucial! Proper cooling ensures perfect texture.",
+        timerMinutes: 60,
+        timerLabel: "Cooling (1 hour minimum)",
+        lookFor: "Hollow sound when tapped on the bottom.",
+      },
+    ],
+  },
+  {
+    id: "cornbread",
+    name: "Sourdough Cornbread",
+    subtitle: "Quick batter-style bread",
+    premix: "Simple Bake Gluten-Free Sourdough Cornbread Premix (297g)",
+    starterType: "Brown Rice Sourdough Starter Powder (Cornbread)",
+    ingredients: [
+      { name: "Cornbread Premix", amount: "1 pouch (297g)" },
+      { name: "Whole milk (room temp)", amount: "200g" },
+      { name: "Avocado or neutral oil", amount: "¼ cup (60ml)" },
+      { name: "Large egg", amount: "1" },
+      { name: "Active sourdough starter", amount: "264g" },
+    ],
+    equipment: [
+      "2 mixing bowls",
+      "Kitchen scale",
+      "20×20 cm square baking tin",
+      "Butter or greaseproof paper for tin",
+    ],
+    steps: [
+      {
+        title: "Prepare Your Baking Tin",
+        description: "Preheat your oven to 180°C (fan oven) or 200°C (regular oven). Grease your 20×20 cm square baking tin with butter or line it with greaseproof paper.",
+      },
+      {
+        title: "Make Your Cornbread Batter",
+        description: "In a large bowl, mix together the milk, oil, and egg until well combined. Add the cornbread premix to the bowl. Add 264g of your active sourdough starter. Mix until everything is incorporated and you have a smooth batter.",
+        lookFor: "A smooth, pourable batter with no lumps.",
+        troubleshoot: [
+          { q: "Batter too thick?", a: "Add a splash more milk." },
+        ],
+      },
+      {
+        title: "Bake Your Cornbread",
+        description: "Pour the batter into your prepared baking tin. Ensure the top is smooth and the batter spreads evenly. Bake at 180°C for 20–24 minutes until done. Test with a toothpick — it should come out clean when inserted in the centre.",
         timerMinutes: 22,
-        timerLabel: "Bake",
-        lookFor: "Even golden colour across all pieces. Remove any that brown faster at the edges.",
+        timerLabel: "Bake time (~22 min)",
+        lookFor: "Golden top, toothpick comes out clean.",
         troubleshoot: [
-          { q: "Edges burning before middle is done?", a: "Remove the crispy edge pieces and return the rest to the oven." },
+          { q: "Top browning too quickly?", a: "Cover with foil for the last 5–10 minutes." },
+          { q: "Cornbread not rising?", a: "Check that the starter is active and the oven temperature is correct." },
         ],
       },
       {
-        title: "Cool and break apart",
-        description: "Let cool completely on the tray, then break apart along score lines. They crisp up more as they cool.",
-        lookFor: "Crackers should snap cleanly. If they bend, they need more time in the oven.",
+        title: "Serving",
+        description: "You can eat it warm straight from the oven, or at room temperature. Perfect as a side dish or on its own. Store covered at room temperature for 2–3 days.",
       },
     ],
-    tips: [
-      "The thinner you roll, the crunchier they'll be.",
-      "Experiment with everything bagel seasoning or za'atar.",
-      "Store in an airtight container for up to a week.",
+  },
+  {
+    id: "gingerbread",
+    name: "Sourdough Gingerbread",
+    subtitle: "Spiced sweet loaf",
+    premix: "Simple Bake Spiced Oat Flour Blend (with mixed spices & baking powder)",
+    starterType: "Dried Sourdough Starter Mix",
+    allergens: "Contains: Oats",
+    ingredients: [
+      { name: "Spiced Oat Flour Blend (Pouch 1)", amount: "1 pouch" },
+      { name: "Sugar & Vanilla Blend (Pouch 2)", amount: "1 pouch" },
+      { name: "Large eggs", amount: "2" },
+      { name: "Milk (or non-dairy)", amount: "60ml (¼ cup)" },
+      { name: "Oil or melted butter", amount: "60ml (¼ cup)" },
+      { name: "Active sourdough starter", amount: "from Pouch 3" },
+      { name: "Optional add-ins", amount: "50g nuts, raisins, dates, or stem ginger" },
     ],
-    tags: ["crackers", "snacks", "discard", "seeds", "gluten-free"],
+    equipment: [
+      "Mixing bowl",
+      "Kitchen scale",
+      "Loaf tin",
+      "Greaseproof paper or butter",
+    ],
+    steps: [
+      {
+        title: "Mix Wet Ingredients",
+        description: "In a large bowl, whisk together the eggs, milk, and oil or melted butter until well combined.",
+      },
+      {
+        title: "Combine All Ingredients",
+        description: "Add the Spiced Oat Flour Blend (Pouch 1) and the Sugar & Vanilla Blend (Pouch 2) to the wet ingredients. Add your active sourdough starter. Mix until just combined — don't overmix. Fold in any optional add-ins (nuts, raisins, dates, or chopped stem ginger).",
+        lookFor: "A thick, smooth batter. Don't overmix once flour is added.",
+      },
+      {
+        title: "First Rise",
+        description: "Pour batter into a greased or lined loaf tin. Cover and let rise in a warm spot until noticeably puffy — usually 45–90 minutes.",
+        timerMinutes: 60,
+        timerLabel: "First rise (~60 min)",
+        lookFor: "The batter should be noticeably puffy and slightly risen.",
+      },
+      {
+        title: "Bake",
+        description: "Preheat oven to 175°C. Bake for 45–60 minutes, or until a skewer inserted into the centre comes out clean. Tent with foil if browning too fast.",
+        timerMinutes: 55,
+        timerLabel: "Bake time (~55 min)",
+        lookFor: "Skewer comes out clean, golden top.",
+        troubleshoot: [
+          { q: "Browning too fast?", a: "Tent with foil and continue baking." },
+          { q: "Still gooey in the middle?", a: "The gingerbread can take longer than regular cakes — be patient and keep testing with a skewer." },
+        ],
+      },
+      {
+        title: "Cool",
+        description: "Cool 10–15 minutes in the tin, then transfer to a cooling rack. Let it cool completely before slicing for the best texture.",
+        timerMinutes: 15,
+        timerLabel: "Cool in tin (15 min)",
+      },
+    ],
   },
 ];
-
-export const getRecipeById = (id: string): Recipe | undefined =>
-  recipes.find((r) => r.id === id);
-
-export const getRecipesByCategory = (category: string): Recipe[] =>
-  recipes.filter((r) => r.category.toLowerCase() === category.toLowerCase());
-
-export const searchRecipes = (query: string): Recipe[] => {
-  const q = query.toLowerCase();
-  return recipes.filter(
-    (r) =>
-      r.name.toLowerCase().includes(q) ||
-      r.tags.some((t) => t.includes(q)) ||
-      r.description.toLowerCase().includes(q)
-  );
-};

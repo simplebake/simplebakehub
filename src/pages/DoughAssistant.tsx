@@ -8,7 +8,7 @@ import { NotesField } from "@/components/NotesField";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { RotateCcw, ChevronRight, ChevronLeft, Check } from "lucide-react";
+import { RotateCcw, ChevronRight, ChevronLeft, Check, AlertTriangle } from "lucide-react";
 import { recipes } from "@/data/recipes";
 
 const DoughAssistant = () => {
@@ -65,11 +65,15 @@ const DoughAssistant = () => {
                   className="w-full rounded-xl border border-border bg-card p-5 text-left hover:shadow-lg active:scale-[0.98] transition-all"
                 >
                   <span className="font-semibold text-foreground">{r.name}</span>
-                  {r.subtitle && <p className="text-sm text-foreground/70 mt-0.5">{r.subtitle}</p>}
-                  <p className="text-sm text-muted-foreground mt-1">{r.description}</p>
+                  <p className="text-sm text-foreground/70 mt-0.5">{r.subtitle}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {r.difficulty} · {r.prepTime} · {r.bakeTime}
+                    {r.premix} · {r.steps.length} steps
                   </p>
+                  {r.allergens && (
+                    <p className="text-xs text-warning flex items-center gap-1 mt-1">
+                      <AlertTriangle className="h-3 w-3" /> {r.allergens}
+                    </p>
+                  )}
                 </button>
               ))}
             </div>
@@ -92,10 +96,10 @@ const DoughAssistant = () => {
 
         <ProgressStepper current={completedSteps.length} total={steps.length} />
 
-        {/* Ingredients & Tips */}
+        {/* Ingredients & Equipment */}
         <details className="rounded-xl border border-border bg-card p-4">
           <summary className="flex cursor-pointer items-center justify-between text-sm font-medium text-foreground">
-            📋 Ingredients & Tips
+            📋 Ingredients & Equipment
             <span className="text-muted-foreground">+</span>
           </summary>
           <div className="mt-3 space-y-4">
@@ -103,19 +107,26 @@ const DoughAssistant = () => {
               <h4 className="text-sm font-semibold text-foreground mb-2">Ingredients</h4>
               <ul className="space-y-1">
                 {recipe.ingredients.map((ing, i) => (
-                  <li key={i} className="text-sm text-muted-foreground">• {ing}</li>
+                  <li key={i} className="text-sm text-muted-foreground">
+                    • <span className="text-foreground">{ing.amount}</span> {ing.name}
+                  </li>
                 ))}
               </ul>
             </div>
-            {recipe.tips.length > 0 && (
+            {recipe.equipment.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold text-foreground mb-2">Tips</h4>
+                <h4 className="text-sm font-semibold text-foreground mb-2">Equipment</h4>
                 <ul className="space-y-1">
-                  {recipe.tips.map((tip, i) => (
-                    <li key={i} className="text-sm text-muted-foreground">• {tip}</li>
+                  {recipe.equipment.map((item, i) => (
+                    <li key={i} className="text-sm text-muted-foreground">• {item}</li>
                   ))}
                 </ul>
               </div>
+            )}
+            {recipe.allergens && (
+              <p className="text-xs text-warning flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> {recipe.allergens}
+              </p>
             )}
           </div>
         </details>
