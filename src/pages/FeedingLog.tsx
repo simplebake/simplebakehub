@@ -24,6 +24,7 @@ const FeedingLog = () => {
   const [flourType, setFlourType] = useState("Rice Flour");
   const [flourAmount, setFlourAmount] = useState("50");
   const [waterAmount, setWaterAmount] = useState("50");
+  const [waterUnit, setWaterUnit] = useState("g");
   const [temperature, setTemperature] = useState("");
   const [humidity, setHumidity] = useState("");
   const [risePercentage, setRisePercentage] = useState("");
@@ -53,6 +54,7 @@ const FeedingLog = () => {
         flour_type: flourType,
         flour_amount_g: parseFloat(flourAmount) || 50,
         water_amount_g: parseFloat(waterAmount) || 50,
+        water_unit: waterUnit,
         temperature_celsius: temperature ? parseFloat(temperature) : null,
         humidity_percent: humidity ? parseInt(humidity) : null,
         rise_percentage: risePercentage ? parseFloat(risePercentage) : null,
@@ -142,8 +144,17 @@ const FeedingLog = () => {
                 <Input type="number" value={flourAmount} onChange={(e) => setFlourAmount(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-1"><Droplets className="h-3.5 w-3.5" /> Water (g)</Label>
-                <Input type="number" value={waterAmount} onChange={(e) => setWaterAmount(e.target.value)} />
+                <Label className="flex items-center gap-1"><Droplets className="h-3.5 w-3.5" /> Water</Label>
+                <div className="flex gap-2">
+                  <Input type="number" value={waterAmount} onChange={(e) => setWaterAmount(e.target.value)} className="flex-1" />
+                  <Select value={waterUnit} onValueChange={setWaterUnit}>
+                    <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="g">g</SelectItem>
+                      <SelectItem value="ml">ml</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-1"><Thermometer className="h-3.5 w-3.5" /> Temp (°C)</Label>
@@ -207,7 +218,7 @@ const FeedingLog = () => {
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {log.flour_type} · {log.flour_amount_g}g flour · {log.water_amount_g}g water
+                        {log.flour_type} · {log.flour_amount_g}g flour · {log.water_amount_g}{log.water_unit || 'g'} water
                         {log.temperature_celsius && ` · ${log.temperature_celsius}°C`}
                         {log.rise_percentage && ` · ${log.rise_percentage}% rise`}
                         {log.peak_hours && ` · ${log.peak_hours}h peak`}
