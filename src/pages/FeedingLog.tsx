@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/supabase";
 import { Header } from "@/components/Header";
-import { FeedingChart } from "@/components/FeedingChart";
+import FeedingChart from "@/components/FeedingChart";
 import { NotesField } from "@/components/NotesField";
 import { InfoCallout } from "@/components/InfoCallout";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, Droplets, Thermometer, TrendingUp, Clock } from "lucide-react";
-import { format } from "date-fns";
+import { format, formatISO } from "date-fns";
 
 const FLOUR_TYPES = ["Rice Flour", "Sorghum Flour", "Buckwheat Flour", "Millet Flour", "Oat Flour", "Teff Flour", "Tapioca Starch", "Custom Blend"];
 
@@ -170,7 +170,20 @@ const FeedingLog = () => {
         </Card>
 
         {/* Chart */}
-        <FeedingChart data={logs as any[]} />
+        <FeedingChart
+          entries={(logs as any[]).map((log: any) => {
+            const dt = new Date(log.fed_at);
+            return {
+              id: log.id,
+              date: formatISO(dt, { representation: "date" }),
+              time: format(dt, "HH:mm"),
+              flourAmount: Number(log.flour_amount_g),
+              waterAmount: Number(log.water_amount_g),
+              temperature: Number(log.temperature_celsius ?? 0),
+              notes: log.notes ?? "",
+            };
+          })}
+        />
 
         {/* History */}
         <Card>
