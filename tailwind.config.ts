@@ -72,6 +72,11 @@ export default {
         },
         cream: "hsl(var(--cream))",
         "warm-brown": "hsl(var(--warm-brown))",
+        "warm-glow": "hsl(var(--warm-glow))",
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
