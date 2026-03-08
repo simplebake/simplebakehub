@@ -1,0 +1,2 @@
+-- Restrict content_visibility_settings SELECT to admins and users with can_manage_visibility permission only
+DROP POLICY IF EXISTS "Authenticated users can view visibility settings" ON public.content_visibility_settings;
