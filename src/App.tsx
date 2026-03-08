@@ -28,6 +28,10 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Followers = lazy(() => import("./pages/Followers"));
 const DiscoverBakers = lazy(() => import("./pages/DiscoverBakers"));
 const Notifications = lazy(() => import("./pages/Notifications"));
+const FeedingLog = lazy(() => import("./pages/FeedingLog"));
+const StarterChecker = lazy(() => import("./pages/StarterChecker"));
+const DoughAssistant = lazy(() => import("./pages/DoughAssistant"));
+const StarterAI = lazy(() => import("./pages/StarterAI"));
 
 const queryClient = new QueryClient();
 
@@ -87,6 +91,10 @@ const App = () => {
               <Route path="/followers" element={<Followers />} />
               <Route path="/discover" element={<DiscoverBakers />} />
               <Route path="/notifications" element={<Notifications />} />
+              <Route path="/feeding-log" element={<FeedingLog />} />
+              <Route path="/starter-checker" element={<StarterChecker />} />
+              <Route path="/dough-assistant" element={<DoughAssistant />} />
+              <Route path="/starter-ai" element={<StarterAI />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

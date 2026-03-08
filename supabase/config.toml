@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.notify-comment]
 verify_jwt = false
+
+[functions.starter-ai]
+verify_jwt = false

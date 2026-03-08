@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/auditLogger";
 import { useNavigate } from "react-router-dom";
-import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie, Users, Search, Bell } from "lucide-react";
+import { ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen, Cookie, Users, Search, Bell, FlaskConical, Calculator, Bot, ClipboardList } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
@@ -53,6 +53,30 @@ const publicNavItems = [
     path: "/notifications",
     icon: Bell,
     ariaLabel: "View your notifications"
+  },
+  {
+    label: "Feeding Log",
+    path: "/feeding-log",
+    icon: ClipboardList,
+    ariaLabel: "Track starter feedings"
+  },
+  {
+    label: "Starter Check",
+    path: "/starter-checker",
+    icon: FlaskConical,
+    ariaLabel: "Check starter health"
+  },
+  {
+    label: "Dough Calc",
+    path: "/dough-assistant",
+    icon: Calculator,
+    ariaLabel: "Dough calculator"
+  },
+  {
+    label: "Starter AI",
+    path: "/starter-ai",
+    icon: Bot,
+    ariaLabel: "AI sourdough assistant"
   },
   {
     label: "Settings",
