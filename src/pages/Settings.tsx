@@ -32,7 +32,7 @@ const Settings = () => {
   const [showContentReports, setShowContentReports] = useState(false);
   const [showIntegrations, setShowIntegrations] = useState(false);
   const [showAppSettings, setShowAppSettings] = useState(false);
-  const [showPerformanceGoals, setShowPerformanceGoals] = useState(false);
+  
   const [showUserNotificationPrefs, setShowUserNotificationPrefs] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
   const [showVisibility, setShowVisibility] = useState(false);
