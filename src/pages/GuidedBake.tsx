@@ -228,6 +228,7 @@ const GuidedBake = () => {
           open={showOutcomeDialog}
           onOpenChange={setShowOutcomeDialog}
           premixId={id!}
+          prefillEnvironment={environmentData}
         />
       </main>
     </div>

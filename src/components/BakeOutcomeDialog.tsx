@@ -32,7 +32,7 @@ const commonIssues = [
   "Gummy texture",
 ];
 
-export const BakeOutcomeDialog = ({ open, onOpenChange, premixId, sessionId }: BakeOutcomeDialogProps) => {
+export const BakeOutcomeDialog = ({ open, onOpenChange, premixId, sessionId, prefillEnvironment }: BakeOutcomeDialogProps) => {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [rating, setRating] = useState(0);
@@ -54,6 +54,17 @@ export const BakeOutcomeDialog = ({ open, onOpenChange, premixId, sessionId }: B
   // Equipment
   const [ovenType, setOvenType] = useState("");
   const [mixingMethod, setMixingMethod] = useState("");
+
+  // Pre-fill from environment logger when dialog opens
+  useEffect(() => {
+    if (open && prefillEnvironment) {
+      if (prefillEnvironment.temperature != null) setTemperature(String(prefillEnvironment.temperature));
+      if (prefillEnvironment.humidity != null) setHumidity(String(prefillEnvironment.humidity));
+      if (prefillEnvironment.altitude != null) setAltitude(String(prefillEnvironment.altitude));
+      if (prefillEnvironment.season) setSeason(prefillEnvironment.season);
+      if (prefillEnvironment.ovenType) setOvenType(prefillEnvironment.ovenType);
+    }
+  }, [open, prefillEnvironment]);
 
   const handleIssueToggle = (issue: string) => {
     setSelectedIssues((prev) =>
