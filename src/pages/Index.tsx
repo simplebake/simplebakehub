@@ -38,7 +38,6 @@ const Index = () => {
 
   const shortcuts = [
     { label: "View Premixes", path: "/premixes", icon: Package },
-    { label: "Customer Analytics", path: "/marketing", icon: Users },
   ];
 
   return (
