@@ -14,6 +14,7 @@ import { TroubleshootingAlert } from "@/components/TroubleshootingAlert";
 import { RecipePersonaliserBanner } from "@/components/RecipePersonaliserBanner";
 import { BakeOutcomeDialog } from "@/components/BakeOutcomeDialog";
 import { CommunityInsights } from "@/components/CommunityInsights";
+import { EnvironmentLogger, type EnvironmentData } from "@/components/EnvironmentLogger";
 
 interface PremixStep {
   id: string;
