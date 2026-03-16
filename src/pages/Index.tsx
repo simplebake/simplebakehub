@@ -75,6 +75,7 @@ const Index = () => {
           type: "warning",
           message: `Your starter hasn't been fed in ${daysSinceFed} days — time for a refresh!`,
           time: formatDistanceToNow(fedAt, { addSuffix: true }),
+          path: "/feeding-log",
         });
       }
     } else if (user && latestFeeding === null) {
@@ -82,6 +83,7 @@ const Index = () => {
         type: "info",
         message: "Start tracking your starter feedings to get personalised reminders!",
         time: "Tip",
+        path: "/feeding-log",
       });
     }
 
@@ -91,6 +93,7 @@ const Index = () => {
         type: "info",
         message: `${todayBakeCount} new community bake${todayBakeCount === 1 ? "" : "s"} shared today — check them out`,
         time: "Today",
+        path: "/share-bake",
       });
     }
 
@@ -103,6 +106,7 @@ const Index = () => {
         type: "success",
         message: `Your last bake scored ${latestBake.success_rating}★ — nice work!`,
         time,
+        path: "/dashboard",
       });
     }
 
