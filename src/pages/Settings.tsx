@@ -178,13 +178,6 @@ const Settings = () => {
       onClick: () => { closeAllPanels(); setShowVisibility(true); },
       isExpanded: showVisibility,
     },
-    {
-      title: "Performance Targets",
-      description: "Set and monitor business KPIs and goals",
-      icon: Target,
-      onClick: () => { closeAllPanels(); setShowPerformanceGoals(true); },
-      isExpanded: showPerformanceGoals,
-    },
   ];
 
   // Cards visible to admin and moderator
