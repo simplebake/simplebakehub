@@ -15,7 +15,7 @@ import { UserNotificationPreferences } from "@/components/UserNotificationPrefer
 import { ContentReportsManager } from "@/components/ContentReportsManager";
 import { IntegrationsSettings } from "@/components/IntegrationsSettings";
 import { AppSettings } from "@/components/AppSettings";
-import { PerformanceGoals } from "@/components/PerformanceGoals";
+
 import { PermissionsManager } from "@/components/PermissionsManager";
 import { ContentVisibilityManager } from "@/components/ContentVisibilityManager";
 
