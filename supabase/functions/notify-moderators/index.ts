@@ -24,13 +24,51 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Authenticate the caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Verify the caller has admin or moderator role
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: hasRole } = await supabase.rpc("has_any_role", {
+      _user_id: userId,
+      _roles: ["admin", "moderator"],
+    });
+
+    if (!hasRole) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: admin or moderator role required" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const { type, data }: NotifyRequest = await req.json();
 
     console.log(`Processing ${type} notification:`, data);
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Determine which roles to notify based on notification type
     const rolesToNotify = type === "security_alert" 
@@ -76,9 +114,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Staff without preferences record get all notifications (default behavior)
     const staffWithPreferences = new Set(preferences?.map(p => p.user_id) || []);
     const staffWhoWantNotifications = staffUserIds.filter(userId => {
-      // If no preference record exists, default to receiving notifications
       if (!staffWithPreferences.has(userId)) return true;
-      // If preference exists and is true, include them
       return preferences?.some(p => p.user_id === userId);
     });
 
