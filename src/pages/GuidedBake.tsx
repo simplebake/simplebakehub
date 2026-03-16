@@ -132,10 +132,15 @@ const GuidedBake = () => {
           )}
         </div>
 
-        {/* Recipe Personaliser - Show at start */}
+        {/* Step 0: Environment + Personaliser + Community */}
         {steps.length > 0 && currentStep === 0 && (
-          <div className="mb-6 space-y-6">
-            <RecipePersonaliserBanner premixId={id!} premixName={premix.name} />
+          <div className="mb-6 space-y-4">
+            <EnvironmentLogger onChange={setEnvironmentData} />
+            <RecipePersonaliserBanner
+              premixId={id!}
+              premixName={premix.name}
+              environmentData={environmentData}
+            />
             <CommunityInsights 
               premixId={id}
               context={`Baking ${premix.name} - specific tips and patterns from the community`}
@@ -143,29 +148,12 @@ const GuidedBake = () => {
           </div>
         )}
 
-        {steps.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No steps available for this premix yet.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>{steps[currentStep].title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose max-w-none">
-                  <p className="whitespace-pre-wrap">{steps[currentStep].content}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Environment Logger - always visible during bake */}
-            <div className="mb-6">
-              <EnvironmentLogger onChange={setEnvironmentData} />
-            </div>
+        {/* Environment Logger on other steps (collapsed) */}
+        {steps.length > 0 && currentStep > 0 && (
+          <div className="mb-6">
+            <EnvironmentLogger onChange={setEnvironmentData} />
+          </div>
+        )}
 
             {/* Predictive Troubleshooting System */}
             <div className="mb-6">
