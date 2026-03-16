@@ -156,7 +156,8 @@ const Index = () => {
               {alerts.map((alert, index) => (
                 <div 
                   key={index} 
-                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
+                  className={`flex items-start gap-3 p-3 rounded-lg bg-muted/50 ${alert.path ? 'cursor-pointer hover:bg-muted transition-colors' : ''}`}
+                  onClick={() => alert.path && navigate(alert.path)}
                 >
                   <div className={`w-2 h-2 rounded-full mt-2 ${
                     alert.type === 'warning' ? 'bg-warning' : 
@@ -166,6 +167,7 @@ const Index = () => {
                     <p className="text-sm text-foreground">{alert.message}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{alert.time}</p>
                   </div>
+                  {alert.path && <ArrowRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />}
                 </div>
               ))}
             </div>
