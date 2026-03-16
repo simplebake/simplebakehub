@@ -76,18 +76,25 @@ export const Header = () => {
 
           <nav className="flex items-center gap-1 sm:gap-2">
             {user ? <>
-                {publicNavItems.map(item => (
-                  <NavLink 
-                    key={item.path} 
-                    to={item.path} 
-                    className="relative flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" 
-                    activeClassName="text-foreground bg-muted" 
-                    aria-label={item.ariaLabel}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span className="hidden md:inline">{item.label}</span>
-                    {item.path === "/notifications" && <NotificationBadge count={unreadCount} />}
-                  </NavLink>
+                {navGroups.map((group, groupIndex) => (
+                  <div key={groupIndex} className="flex items-center gap-1">
+                    {groupIndex > 0 && (
+                      <div className="h-5 w-px bg-border mx-1" aria-hidden="true" />
+                    )}
+                    {group.map(item => (
+                      <NavLink 
+                        key={item.path} 
+                        to={item.path} 
+                        className="relative flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" 
+                        activeClassName="text-foreground bg-muted" 
+                        aria-label={item.ariaLabel}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span className="hidden md:inline">{item.label}</span>
+                        {item.path === "/notifications" && <NotificationBadge count={unreadCount} />}
+                      </NavLink>
+                    ))}
+                  </div>
                 ))}
                 {isAdmin && adminNavItems.map(item => <NavLink key={item.path} to={item.path} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" activeClassName="text-foreground bg-muted" aria-label={item.ariaLabel}>
                     <item.icon className="h-4 w-4" />
