@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import ProgressStepper from "@/components/ProgressStepper";
@@ -10,6 +10,9 @@ import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { RotateCcw, ChevronRight, ChevronLeft, Check, AlertTriangle } from "lucide-react";
 import { recipes } from "@/data/recipes";
+import { RecipePersonaliserBanner } from "@/components/RecipePersonaliserBanner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/supabase";
 
 const DoughAssistant = () => {
   const navigate = useNavigate();
