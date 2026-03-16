@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Book, ChefHat, Share2 } from "lucide-react";
+import { Book, ChefHat, Share2, Camera, Sparkles } from "lucide-react";
 import { PersonalizedRecommendations } from "@/components/PersonalizedRecommendations";
 import { CommunityInsights } from "@/components/CommunityInsights";
 import { RecipeDifficultyAnalyzer } from "@/components/RecipeDifficultyAnalyzer";
