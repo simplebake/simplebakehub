@@ -17,9 +17,9 @@ const Index = () => {
 
 
   const alerts = [
-    { type: "warning", message: "Rice flour stock running low — reorder by Friday", time: "1h ago" },
-    { type: "info", message: "2 new community bakes awaiting moderation", time: "3h ago" },
-    { type: "success", message: "Sourdough Starter Kit back in stock", time: "5h ago" },
+    { type: "warning", message: "Your starter hasn't been fed in 3 days — time for a refresh!", time: "Just now" },
+    { type: "info", message: "3 new community bakes shared today — check them out", time: "2h ago" },
+    { type: "success", message: "Your last sourdough scored 4.8★ — your best yet!", time: "Yesterday" },
   ];
 
   const todaysFocus = [
