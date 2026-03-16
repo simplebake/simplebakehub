@@ -130,10 +130,10 @@ const GuidedBake = () => {
           )}
         </div>
 
-        {/* Adaptive Intelligence - Show at start */}
+        {/* Recipe Personaliser - Show at start */}
         {steps.length > 0 && currentStep === 0 && (
           <div className="mb-6 space-y-6">
-            <AdaptiveRecommendations premixId={id!} premixName={premix.name} />
+            <RecipePersonaliserBanner premixId={id!} premixName={premix.name} />
             <CommunityInsights 
               premixId={id}
               context={`Baking ${premix.name} - specific tips and patterns from the community`}
