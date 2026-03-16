@@ -160,6 +160,9 @@ const DoughAssistant = () => {
           </div>
         </details>
 
+        {/* Environment Logger */}
+        <EnvironmentLogger />
+
         {/* Step indicator dots */}
         <div className="flex gap-2 overflow-x-auto pb-2">
           {steps.map((_, i) => (
