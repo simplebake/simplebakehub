@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import ProgressStepper from "@/components/ProgressStepper";
@@ -10,17 +10,40 @@ import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { RotateCcw, ChevronRight, ChevronLeft, Check, AlertTriangle } from "lucide-react";
 import { recipes } from "@/data/recipes";
+import { RecipePersonaliserBanner } from "@/components/RecipePersonaliserBanner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/supabase";
 
 const DoughAssistant = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedId, setSelectedId] = useLocalStorage<string | null>("dough-recipe-id", null);
   const [currentStep, setCurrentStep] = useLocalStorage<number>("dough-step", 0);
   const [completedSteps, setCompletedSteps] = useLocalStorage<number[]>("dough-completed", []);
   const [notesValue, setNotesValue] = useState("");
+  const [premixDbId, setPremixDbId] = useState<string | undefined>(undefined);
 
   const recipe = recipes.find((r) => r.id === selectedId) ?? null;
   const steps = recipe?.steps ?? [];
   const step = steps[currentStep];
+
+  // Look up the database premix ID by matching the recipe name
+  useEffect(() => {
+    if (!recipe || !user) {
+      setPremixDbId(undefined);
+      return;
+    }
+    const lookupPremix = async () => {
+      const { data } = await supabase
+        .from("premixes")
+        .select("id")
+        .ilike("name", `%${recipe.name.split(" ")[0]}%`)
+        .limit(1)
+        .maybeSingle();
+      setPremixDbId(data?.id ?? undefined);
+    };
+    lookupPremix();
+  }, [recipe?.id, user]);
 
   const selectRecipe = (id: string) => {
     setSelectedId(id);
@@ -95,6 +118,11 @@ const DoughAssistant = () => {
         <AppHeader title={recipe.name} />
 
         <ProgressStepper current={completedSteps.length} total={steps.length} />
+
+        {/* Personalised recipe adjustments */}
+        {currentStep === 0 && premixDbId && (
+          <RecipePersonaliserBanner premixId={premixDbId} premixName={recipe.name} />
+        )}
 
         {/* Ingredients & Equipment */}
         <details className="rounded-xl border border-border bg-card p-4">
