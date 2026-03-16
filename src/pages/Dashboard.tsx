@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Book, ChefHat, Share2 } from "lucide-react";
+import { Book, ChefHat, Share2, Camera, Sparkles } from "lucide-react";
 import { PersonalizedRecommendations } from "@/components/PersonalizedRecommendations";
 import { CommunityInsights } from "@/components/CommunityInsights";
 import { RecipeDifficultyAnalyzer } from "@/components/RecipeDifficultyAnalyzer";
@@ -111,9 +111,43 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           )}
-        </div>
 
-        {/* Achievement Badges */}
+          {/* AI Tools */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/bake-analysis")}>
+            <CardHeader>
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Camera className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Bake Photo Analysis</CardTitle>
+              <CardDescription>
+                Upload a photo and get AI feedback on your bake
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="ghost" className="w-full">
+                Analyse Now →
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/recipe-generator")}>
+            <CardHeader>
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Sparkles className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Recipe Generator</CardTitle>
+              <CardDescription>
+                Create custom gluten-free recipes from your ingredients
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="ghost" className="w-full">
+                Create Recipe →
+              </Button>
+            </CardContent>
+          </Card>
+
+        </div>
         {isContentVisible('dashboard_sections', undefined, 'achievements') && (
           <div className="mt-12">
             <AchievementBadges />
