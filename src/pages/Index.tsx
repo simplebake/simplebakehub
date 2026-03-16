@@ -17,7 +17,6 @@ const Index = () => {
 
   // Placeholder data - wire to real backend
   const metrics = [
-    { label: "Avg Margin", value: "42%", icon: Percent, trend: "On target" },
     { label: "Open Issues", value: "2", icon: AlertTriangle, trend: "1 urgent" },
   ];
 
