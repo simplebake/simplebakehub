@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, ShoppingCart, DollarSign, Percent, AlertTriangle, Megaphone, Users, ArrowRight, Clock, Package, Camera, Sparkles } from "lucide-react";
+import { Plus, AlertTriangle, ArrowRight, Clock, Package, Camera, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
 import { PerformanceGoalsWidget } from "@/components/PerformanceGoalsWidget";
 import { BakerOfTheWeek } from "@/components/BakerOfTheWeek";
