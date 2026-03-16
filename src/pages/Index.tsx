@@ -64,7 +64,7 @@ const Index = () => {
   });
 
   const alerts = useMemo(() => {
-    const items: { type: string; message: string; time: string }[] = [];
+    const items: { type: string; message: string; time: string; path?: string }[] = [];
 
     // Starter feeding alert
     if (user && latestFeeding) {
@@ -75,6 +75,7 @@ const Index = () => {
           type: "warning",
           message: `Your starter hasn't been fed in ${daysSinceFed} days — time for a refresh!`,
           time: formatDistanceToNow(fedAt, { addSuffix: true }),
+          path: "/feeding-log",
         });
       }
     } else if (user && latestFeeding === null) {
@@ -82,6 +83,7 @@ const Index = () => {
         type: "info",
         message: "Start tracking your starter feedings to get personalised reminders!",
         time: "Tip",
+        path: "/feeding-log",
       });
     }
 
@@ -91,6 +93,7 @@ const Index = () => {
         type: "info",
         message: `${todayBakeCount} new community bake${todayBakeCount === 1 ? "" : "s"} shared today — check them out`,
         time: "Today",
+        path: "/share-bake",
       });
     }
 
@@ -103,6 +106,7 @@ const Index = () => {
         type: "success",
         message: `Your last bake scored ${latestBake.success_rating}★ — nice work!`,
         time,
+        path: "/dashboard",
       });
     }
 
@@ -152,7 +156,8 @@ const Index = () => {
               {alerts.map((alert, index) => (
                 <div 
                   key={index} 
-                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
+                  className={`flex items-start gap-3 p-3 rounded-lg bg-muted/50 ${alert.path ? 'cursor-pointer hover:bg-muted transition-colors' : ''}`}
+                  onClick={() => alert.path && navigate(alert.path)}
                 >
                   <div className={`w-2 h-2 rounded-full mt-2 ${
                     alert.type === 'warning' ? 'bg-warning' : 
@@ -162,6 +167,7 @@ const Index = () => {
                     <p className="text-sm text-foreground">{alert.message}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{alert.time}</p>
                   </div>
+                  {alert.path && <ArrowRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />}
                 </div>
               ))}
             </div>
