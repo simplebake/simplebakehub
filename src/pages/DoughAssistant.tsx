@@ -16,10 +16,12 @@ import { useAuth } from "@/lib/supabase";
 
 const DoughAssistant = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedId, setSelectedId] = useLocalStorage<string | null>("dough-recipe-id", null);
   const [currentStep, setCurrentStep] = useLocalStorage<number>("dough-step", 0);
   const [completedSteps, setCompletedSteps] = useLocalStorage<number[]>("dough-completed", []);
   const [notesValue, setNotesValue] = useState("");
+  const [premixDbId, setPremixDbId] = useState<string | undefined>(undefined);
 
   const recipe = recipes.find((r) => r.id === selectedId) ?? null;
   const steps = recipe?.steps ?? [];
