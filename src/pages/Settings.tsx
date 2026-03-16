@@ -47,7 +47,7 @@ const Settings = () => {
     setShowContentReports(false);
     setShowIntegrations(false);
     setShowAppSettings(false);
-    setShowPerformanceGoals(false);
+    
     setShowUserNotificationPrefs(false);
     setShowPermissions(false);
     setShowVisibility(false);
