@@ -100,6 +100,8 @@ const App = () => {
               <Route path="/dough" element={<DoughAssistant />} />
               <Route path="/starter-ai" element={<StarterAI />} />
               <Route path="/starter-guide" element={<StarterAI />} />
+              <Route path="/bake-analysis" element={<BakePhotoAnalysis />} />
+              <Route path="/recipe-generator" element={<RecipeGenerator />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
