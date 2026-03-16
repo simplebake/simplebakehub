@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/supabase";
 import { toast } from "sonner";
+import type { EnvironmentData } from "@/components/EnvironmentLogger";
 import {
   Brain,
   Loader2,
@@ -14,11 +15,14 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  CloudSun,
+  Mountain,
 } from "lucide-react";
 
 interface RecipePersonaliserBannerProps {
   premixId?: string;
   premixName: string;
+  environmentData?: EnvironmentData;
 }
 
 interface ParsedSections {
@@ -70,44 +74,65 @@ const ADJUSTMENT_ICONS = [
 export const RecipePersonaliserBanner = ({
   premixId,
   premixName,
+  environmentData,
 }: RecipePersonaliserBannerProps) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<string>("");
   const [sessionCount, setSessionCount] = useState(0);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+  const [usedEnvironment, setUsedEnvironment] = useState<EnvironmentData | null>(null);
 
-  const fetchRecommendations = async () => {
-    if (!user || !premixId) return;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke(
-        "adaptive-recommendations",
-        {
-          body: {
-            premixId,
-            currentEnvironment: { season: getCurrentSeason() },
-          },
+  const buildEnvironmentPayload = useCallback(
+    (env?: EnvironmentData) => {
+      const source = env || environmentData || {};
+      return {
+        season: source.season || getCurrentSeason(),
+        temperature: source.temperature,
+        humidity: source.humidity,
+        altitude: source.altitude,
+      };
+    },
+    [environmentData]
+  );
+
+  const fetchRecommendations = useCallback(
+    async (env?: EnvironmentData) => {
+      if (!user || !premixId) return;
+      setLoading(true);
+      const currentEnv = buildEnvironmentPayload(env);
+      try {
+        const { data, error } = await supabase.functions.invoke(
+          "adaptive-recommendations",
+          {
+            body: {
+              premixId,
+              currentEnvironment: currentEnv,
+            },
+          }
+        );
+        if (error) throw error;
+        if (data.error) {
+          if (data.error === "Rate limit exceeded") {
+            toast.error("Too many requests. Please wait a moment.");
+          } else if (data.error === "Payment required") {
+            toast.error("Service temporarily unavailable.");
+          }
+          return;
         }
-      );
-      if (error) throw error;
-      if (data.error) {
-        if (data.error === "Rate limit exceeded") {
-          toast.error("Too many requests. Please wait a moment.");
-        } else if (data.error === "Payment required") {
-          toast.error("Service temporarily unavailable.");
-        }
-        return;
+        setRecommendations(data.recommendations);
+        setSessionCount(data.sessionCount);
+        setUsedEnvironment(env || environmentData || null);
+      } catch (err) {
+        console.error("Personaliser error:", err);
+      } finally {
+        setLoading(false);
       }
-      setRecommendations(data.recommendations);
-      setSessionCount(data.sessionCount);
-    } catch (err) {
-      console.error("Personaliser error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [premixId, user, environmentData, buildEnvironmentPayload]
+  );
 
+  // Initial fetch
   useEffect(() => {
     fetchRecommendations();
   }, [premixId, user]);
@@ -118,6 +143,27 @@ export const RecipePersonaliserBanner = ({
   const sections = recommendations ? parseRecommendations(recommendations) : null;
   const hasAdjustments =
     sections && (sections.water || sections.proofing || sections.temperature);
+
+  // Check if environment data has changed since last fetch
+  const envChanged =
+    environmentData &&
+    (environmentData.temperature || environmentData.humidity || environmentData.altitude) &&
+    JSON.stringify(environmentData) !== JSON.stringify(usedEnvironment);
+
+  // Build environment summary chips
+  const envSummary: { icon: typeof Thermometer; label: string }[] = [];
+  const activeEnv = environmentData || usedEnvironment;
+  if (activeEnv?.temperature != null)
+    envSummary.push({ icon: Thermometer, label: `${activeEnv.temperature}°C` });
+  if (activeEnv?.humidity != null)
+    envSummary.push({ icon: Droplets, label: `${activeEnv.humidity}%` });
+  if (activeEnv?.altitude != null)
+    envSummary.push({ icon: Mountain, label: `${activeEnv.altitude}m` });
+  if (activeEnv?.season)
+    envSummary.push({
+      icon: CloudSun,
+      label: activeEnv.season.charAt(0).toUpperCase() + activeEnv.season.slice(1),
+    });
 
   return (
     <Card className="overflow-hidden border-primary/30 bg-gradient-to-r from-primary/8 via-accent/6 to-primary/8">
@@ -162,6 +208,22 @@ export const RecipePersonaliserBanner = ({
           </div>
         </button>
 
+        {/* Environment context chips */}
+        {envSummary.length > 0 && !expanded && (
+          <div className="flex flex-wrap items-center gap-1.5 px-5 pb-2">
+            <span className="text-xs text-muted-foreground mr-1">Conditions:</span>
+            {envSummary.map(({ icon: Icon, label }, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-xs text-muted-foreground"
+              >
+                <Icon className="h-3 w-3" />
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Quick-glance chips — always visible when we have data */}
         {!loading && hasAdjustments && !expanded && (
           <div className="flex flex-wrap gap-2 px-5 pb-4">
@@ -186,6 +248,24 @@ export const RecipePersonaliserBanner = ({
         {/* Expanded detail view */}
         {expanded && !loading && sections && (
           <div className="space-y-3 px-5 pb-5">
+            {/* Environment context in expanded view */}
+            {envSummary.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-muted/40 px-3 py-2">
+                <span className="text-xs font-medium text-muted-foreground mr-1">
+                  Your conditions:
+                </span>
+                {envSummary.map(({ icon: Icon, label }, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1 rounded-full bg-card border border-border px-2.5 py-0.5 text-xs text-foreground"
+                  >
+                    <Icon className="h-3 w-3 text-primary" />
+                    {label}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {ADJUSTMENT_ICONS.map(
               ({ key, icon: Icon, label }) =>
                 sections[key] && (
@@ -219,17 +299,19 @@ export const RecipePersonaliserBanner = ({
             )}
 
             <Button
-              variant="ghost"
+              variant={envChanged ? "default" : "ghost"}
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                fetchRecommendations();
+                fetchRecommendations(environmentData);
               }}
               disabled={loading}
               className="w-full text-xs"
             >
               <RefreshCw className="h-3 w-3 mr-1.5" />
-              Refresh Recommendations
+              {envChanged
+                ? "Update with Your Current Conditions"
+                : "Refresh Recommendations"}
             </Button>
           </div>
         )}
