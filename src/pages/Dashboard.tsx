@@ -111,7 +111,41 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           )}
-        </div>
+
+          {/* AI Tools */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/bake-analysis")}>
+            <CardHeader>
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Camera className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Bake Photo Analysis</CardTitle>
+              <CardDescription>
+                Upload a photo and get AI feedback on your bake
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="ghost" className="w-full">
+                Analyse Now →
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/recipe-generator")}>
+            <CardHeader>
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Sparkles className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Recipe Generator</CardTitle>
+              <CardDescription>
+                Create custom gluten-free recipes from your ingredients
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="ghost" className="w-full">
+                Create Recipe →
+              </Button>
+            </CardContent>
+          </Card>
 
         {/* Achievement Badges */}
         {isContentVisible('dashboard_sections', undefined, 'achievements') && (
