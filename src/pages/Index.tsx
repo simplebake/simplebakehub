@@ -17,9 +17,9 @@ const Index = () => {
 
 
   const alerts = [
-    { type: "warning", message: "Flour price increased 8% - review margins", time: "2h ago" },
-    { type: "info", message: "3 orders pending dispatch", time: "4h ago" },
-    { type: "success", message: "New customer signup from Cambridge", time: "6h ago" },
+    { type: "warning", message: "Rice flour stock running low — reorder by Friday", time: "1h ago" },
+    { type: "info", message: "2 new community bakes awaiting moderation", time: "3h ago" },
+    { type: "success", message: "Sourdough Starter Kit back in stock", time: "5h ago" },
   ];
 
   const todaysFocus = [
