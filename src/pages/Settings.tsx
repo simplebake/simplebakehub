@@ -442,12 +442,6 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Performance Goals Panel (Admin only) */}
-            {isAdmin && showPerformanceGoals && (
-              <div className="mt-6">
-                <PerformanceGoals />
-              </div>
-            )}
 
             {/* Permissions Manager Panel (Admin only) */}
             {isAdmin && showPermissions && (
