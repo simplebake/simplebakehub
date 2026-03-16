@@ -147,7 +147,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-        {/* Achievement Badges */}
+        </div>
         {isContentVisible('dashboard_sections', undefined, 'achievements') && (
           <div className="mt-12">
             <AchievementBadges />
