@@ -119,6 +119,11 @@ const DoughAssistant = () => {
 
         <ProgressStepper current={completedSteps.length} total={steps.length} />
 
+        {/* Personalised recipe adjustments */}
+        {currentStep === 0 && premixDbId && (
+          <RecipePersonaliserBanner premixId={premixDbId} premixName={recipe.name} />
+        )}
+
         {/* Ingredients & Equipment */}
         <details className="rounded-xl border border-border bg-card p-4">
           <summary className="flex cursor-pointer items-center justify-between text-sm font-medium text-foreground">
