@@ -27,6 +27,24 @@ const DoughAssistant = () => {
   const steps = recipe?.steps ?? [];
   const step = steps[currentStep];
 
+  // Look up the database premix ID by matching the recipe name
+  useEffect(() => {
+    if (!recipe || !user) {
+      setPremixDbId(undefined);
+      return;
+    }
+    const lookupPremix = async () => {
+      const { data } = await supabase
+        .from("premixes")
+        .select("id")
+        .ilike("name", `%${recipe.name.split(" ")[0]}%`)
+        .limit(1)
+        .maybeSingle();
+      setPremixDbId(data?.id ?? undefined);
+    };
+    lookupPremix();
+  }, [recipe?.id, user]);
+
   const selectRecipe = (id: string) => {
     setSelectedId(id);
     setCurrentStep(0);
