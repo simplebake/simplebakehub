@@ -38,6 +38,8 @@ const Index = () => {
 
   const shortcuts = [
     { label: "View Premixes", path: "/premixes", icon: Package },
+    { label: "Bake Photo Analysis", path: "/bake-analysis", icon: Camera },
+    { label: "Recipe Generator", path: "/recipe-generator", icon: Sparkles },
   ];
 
   return (
