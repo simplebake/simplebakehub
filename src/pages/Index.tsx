@@ -64,7 +64,7 @@ const Index = () => {
   });
 
   const alerts = useMemo(() => {
-    const items: { type: string; message: string; time: string }[] = [];
+    const items: { type: string; message: string; time: string; path?: string }[] = [];
 
     // Starter feeding alert
     if (user && latestFeeding) {
