@@ -162,6 +162,11 @@ const GuidedBake = () => {
               </CardContent>
             </Card>
 
+            {/* Environment Logger - always visible during bake */}
+            <div className="mb-6">
+              <EnvironmentLogger onChange={setEnvironmentData} />
+            </div>
+
             {/* Predictive Troubleshooting System */}
             <div className="mb-6">
               <TroubleshootingAlert
