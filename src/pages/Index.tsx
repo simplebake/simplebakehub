@@ -15,10 +15,6 @@ const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Placeholder data - wire to real backend
-  const metrics = [
-    { label: "Open Issues", value: "2", icon: AlertTriangle, trend: "1 urgent" },
-  ];
 
   const alerts = [
     { type: "warning", message: "Flour price increased 8% - review margins", time: "2h ago" },
