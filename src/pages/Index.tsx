@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,18 +11,110 @@ import { BakerOfTheWeek } from "@/components/BakerOfTheWeek";
 import { FollowingFeed } from "@/components/FollowingFeed";
 import { useContentVisibility } from "@/hooks/useContentVisibility";
 import { useAuth } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
+import { formatDistanceToNow } from "date-fns";
 
 const Index = () => {
   const { isContentVisible, loading: visibilityLoading } = useContentVisibility();
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Fetch latest feeding log for the current user
+  const { data: latestFeeding } = useQuery({
+    queryKey: ["latest-feeding", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("feeding_logs")
+        .select("fed_at")
+        .eq("user_id", user!.id)
+        .order("fed_at", { ascending: false })
+        .limit(1);
+      return data?.[0] ?? null;
+    },
+  });
 
-  const alerts = [
-    { type: "warning", message: "Your starter hasn't been fed in 3 days — time for a refresh!", time: "Just now" },
-    { type: "info", message: "3 new community bakes shared today — check them out", time: "2h ago" },
-    { type: "success", message: "Your last sourdough scored 4.8★ — your best yet!", time: "Yesterday" },
-  ];
+  // Fetch today's community bake count
+  const { data: todayBakeCount } = useQuery({
+    queryKey: ["today-bakes"],
+    queryFn: async () => {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { count } = await supabase
+        .from("bake_shares")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", todayStart.toISOString())
+        .eq("is_visible", true);
+      return count ?? 0;
+    },
+  });
+
+  // Fetch user's latest bake rating
+  const { data: latestBake } = useQuery({
+    queryKey: ["latest-bake-rating", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("baking_sessions")
+        .select("success_rating, completed_at")
+        .eq("user_id", user!.id)
+        .not("success_rating", "is", null)
+        .order("completed_at", { ascending: false })
+        .limit(1);
+      return data?.[0] ?? null;
+    },
+  });
+
+  const alerts = useMemo(() => {
+    const items: { type: string; message: string; time: string }[] = [];
+
+    // Starter feeding alert
+    if (user && latestFeeding) {
+      const fedAt = new Date(latestFeeding.fed_at);
+      const daysSinceFed = Math.floor((Date.now() - fedAt.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSinceFed >= 3) {
+        items.push({
+          type: "warning",
+          message: `Your starter hasn't been fed in ${daysSinceFed} days — time for a refresh!`,
+          time: formatDistanceToNow(fedAt, { addSuffix: true }),
+        });
+      }
+    } else if (user && latestFeeding === null) {
+      items.push({
+        type: "info",
+        message: "Start tracking your starter feedings to get personalised reminders!",
+        time: "Tip",
+      });
+    }
+
+    // Community bakes alert
+    if (todayBakeCount !== undefined && todayBakeCount > 0) {
+      items.push({
+        type: "info",
+        message: `${todayBakeCount} new community bake${todayBakeCount === 1 ? "" : "s"} shared today — check them out`,
+        time: "Today",
+      });
+    }
+
+    // Latest bake rating
+    if (latestBake?.success_rating) {
+      const time = latestBake.completed_at
+        ? formatDistanceToNow(new Date(latestBake.completed_at), { addSuffix: true })
+        : "Recently";
+      items.push({
+        type: "success",
+        message: `Your last bake scored ${latestBake.success_rating}★ — nice work!`,
+        time,
+      });
+    }
+
+    // Fallback if no dynamic alerts
+    if (items.length === 0) {
+      items.push({ type: "info", message: "All caught up — happy baking! 🎉", time: "Now" });
+    }
+
+    return items;
+  }, [user, latestFeeding, todayBakeCount, latestBake]);
 
   const todaysFocus = [
     { id: "1", task: "Review low-margin products", done: false },
