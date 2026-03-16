@@ -132,14 +132,26 @@ const GuidedBake = () => {
           )}
         </div>
 
-        {/* Recipe Personaliser - Show at start */}
+        {/* Step 0: Environment + Personaliser + Community */}
         {steps.length > 0 && currentStep === 0 && (
-          <div className="mb-6 space-y-6">
-            <RecipePersonaliserBanner premixId={id!} premixName={premix.name} />
+          <div className="mb-6 space-y-4">
+            <EnvironmentLogger onChange={setEnvironmentData} />
+            <RecipePersonaliserBanner
+              premixId={id!}
+              premixName={premix.name}
+              environmentData={environmentData}
+            />
             <CommunityInsights 
               premixId={id}
               context={`Baking ${premix.name} - specific tips and patterns from the community`}
             />
+          </div>
+        )}
+
+        {/* Environment Logger on other steps (collapsed) */}
+        {steps.length > 0 && currentStep > 0 && (
+          <div className="mb-6">
+            <EnvironmentLogger onChange={setEnvironmentData} />
           </div>
         )}
 
@@ -161,11 +173,6 @@ const GuidedBake = () => {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Environment Logger - always visible during bake */}
-            <div className="mb-6">
-              <EnvironmentLogger onChange={setEnvironmentData} />
-            </div>
 
             {/* Predictive Troubleshooting System */}
             <div className="mb-6">
