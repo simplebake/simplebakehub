@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -10,12 +10,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Loader2, Star } from "lucide-react";
+import type { EnvironmentData } from "@/components/EnvironmentLogger";
 
 interface BakeOutcomeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   premixId: string;
   sessionId?: string;
+  prefillEnvironment?: EnvironmentData;
 }
 
 const commonIssues = [
