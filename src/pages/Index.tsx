@@ -2,9 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, AlertTriangle, ArrowRight, Clock, Package, Camera, Sparkles } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, AlertTriangle, ArrowRight, Package, Camera, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
 import { BakerOfTheWeek } from "@/components/BakerOfTheWeek";
 import { FollowingFeed } from "@/components/FollowingFeed";
@@ -115,19 +114,6 @@ const Index = () => {
     return items;
   }, [user, latestFeeding, todayBakeCount, latestBake]);
 
-  const todaysFocus = [
-    { id: "1", task: "Review low-margin products", done: false },
-    { id: "2", task: "Respond to customer feedback", done: false },
-    { id: "3", task: "Update seasonal promotion", done: true },
-    { id: "4", task: "Check inventory levels", done: false },
-  ];
-
-  const recentActivity = [
-    { action: "Order #1847 shipped", time: "10 min ago" },
-    { action: "New review: Sourdough Mix ★★★★★", time: "1h ago" },
-    { action: "Promotion 'AUTUMN15' activated", time: "3h ago" },
-    { action: "Inventory restocked: Bread Mix", time: "Yesterday" },
-  ];
 
   const shortcuts = [
     { label: "View Premixes", path: "/premixes", icon: Package },
@@ -182,52 +168,6 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        {/* Two Column Section */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          {/* Today's Focus */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Today's Focus</CardTitle>
-              <CardDescription>Your priority tasks for today</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {todaysFocus.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3">
-                    <Checkbox id={item.id} checked={item.done} />
-                    <label 
-                      htmlFor={item.id} 
-                      className={`text-sm cursor-pointer ${item.done ? 'text-muted-foreground line-through' : 'text-foreground'}`}
-                    >
-                      {item.task}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Recent Activity</CardTitle>
-              <CardDescription>Latest updates across your business</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentActivity.map((item, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm text-foreground">{item.action}</p>
-                      <p className="text-xs text-muted-foreground">{item.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Baker of the Week & Following Feed */}
         {user && (
