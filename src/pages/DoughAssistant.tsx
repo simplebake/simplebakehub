@@ -11,6 +11,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { RotateCcw, ChevronRight, ChevronLeft, Check, AlertTriangle } from "lucide-react";
 import { recipes } from "@/data/recipes";
 import { RecipePersonaliserBanner } from "@/components/RecipePersonaliserBanner";
+import { EnvironmentLogger } from "@/components/EnvironmentLogger";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/supabase";
 
@@ -158,6 +159,9 @@ const DoughAssistant = () => {
             )}
           </div>
         </details>
+
+        {/* Environment Logger */}
+        <EnvironmentLogger />
 
         {/* Step indicator dots */}
         <div className="flex gap-2 overflow-x-auto pb-2">

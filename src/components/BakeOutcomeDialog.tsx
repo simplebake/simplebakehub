@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -10,12 +10,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Loader2, Star } from "lucide-react";
+import type { EnvironmentData } from "@/components/EnvironmentLogger";
 
 interface BakeOutcomeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   premixId: string;
   sessionId?: string;
+  prefillEnvironment?: EnvironmentData;
 }
 
 const commonIssues = [
@@ -30,7 +32,7 @@ const commonIssues = [
   "Gummy texture",
 ];
 
-export const BakeOutcomeDialog = ({ open, onOpenChange, premixId, sessionId }: BakeOutcomeDialogProps) => {
+export const BakeOutcomeDialog = ({ open, onOpenChange, premixId, sessionId, prefillEnvironment }: BakeOutcomeDialogProps) => {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [rating, setRating] = useState(0);
@@ -52,6 +54,17 @@ export const BakeOutcomeDialog = ({ open, onOpenChange, premixId, sessionId }: B
   // Equipment
   const [ovenType, setOvenType] = useState("");
   const [mixingMethod, setMixingMethod] = useState("");
+
+  // Pre-fill from environment logger when dialog opens
+  useEffect(() => {
+    if (open && prefillEnvironment) {
+      if (prefillEnvironment.temperature != null) setTemperature(String(prefillEnvironment.temperature));
+      if (prefillEnvironment.humidity != null) setHumidity(String(prefillEnvironment.humidity));
+      if (prefillEnvironment.altitude != null) setAltitude(String(prefillEnvironment.altitude));
+      if (prefillEnvironment.season) setSeason(prefillEnvironment.season);
+      if (prefillEnvironment.ovenType) setOvenType(prefillEnvironment.ovenType);
+    }
+  }, [open, prefillEnvironment]);
 
   const handleIssueToggle = (issue: string) => {
     setSelectedIssues((prev) =>

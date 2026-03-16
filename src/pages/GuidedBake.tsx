@@ -14,6 +14,7 @@ import { TroubleshootingAlert } from "@/components/TroubleshootingAlert";
 import { RecipePersonaliserBanner } from "@/components/RecipePersonaliserBanner";
 import { BakeOutcomeDialog } from "@/components/BakeOutcomeDialog";
 import { CommunityInsights } from "@/components/CommunityInsights";
+import { EnvironmentLogger, type EnvironmentData } from "@/components/EnvironmentLogger";
 
 interface PremixStep {
   id: string;
@@ -37,6 +38,7 @@ const GuidedBake = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
   const [showOutcomeDialog, setShowOutcomeDialog] = useState(false);
+  const [environmentData, setEnvironmentData] = useState<EnvironmentData>({});
 
   useEffect(() => {
     if (!loading && !user) {
@@ -160,6 +162,11 @@ const GuidedBake = () => {
               </CardContent>
             </Card>
 
+            {/* Environment Logger - always visible during bake */}
+            <div className="mb-6">
+              <EnvironmentLogger onChange={setEnvironmentData} />
+            </div>
+
             {/* Predictive Troubleshooting System */}
             <div className="mb-6">
               <TroubleshootingAlert
@@ -221,6 +228,7 @@ const GuidedBake = () => {
           open={showOutcomeDialog}
           onOpenChange={setShowOutcomeDialog}
           premixId={id!}
+          prefillEnvironment={environmentData}
         />
       </main>
     </div>
