@@ -168,52 +168,6 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        {/* Two Column Section */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          {/* Today's Focus */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Today's Focus</CardTitle>
-              <CardDescription>Your priority tasks for today</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {todaysFocus.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3">
-                    <Checkbox id={item.id} checked={item.done} />
-                    <label 
-                      htmlFor={item.id} 
-                      className={`text-sm cursor-pointer ${item.done ? 'text-muted-foreground line-through' : 'text-foreground'}`}
-                    >
-                      {item.task}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Recent Activity</CardTitle>
-              <CardDescription>Latest updates across your business</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentActivity.map((item, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm text-foreground">{item.action}</p>
-                      <p className="text-xs text-muted-foreground">{item.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Baker of the Week & Following Feed */}
         {user && (
