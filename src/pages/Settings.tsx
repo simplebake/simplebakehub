@@ -1,6 +1,6 @@
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Bell, Shield, Palette, Link2, Calendar, Target, Lock, Users, ChevronRight, FileText, MessageSquare, BookOpen, GraduationCap, Flag, Key, Eye } from "lucide-react";
+import { User, Bell, Shield, Palette, Link2, Calendar, Lock, Users, ChevronRight, FileText, MessageSquare, BookOpen, GraduationCap, Flag, Key, Eye } from "lucide-react";
 import { useAuth } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
