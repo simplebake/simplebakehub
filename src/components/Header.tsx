@@ -17,31 +17,32 @@ const NotificationBadge = ({ count }: { count: number }) => {
     </span>
   );
 };
-const publicNavItems = [
-  // Overview
-  { label: "Home", path: "/", icon: Home, ariaLabel: "Home overview" },
-
-  // Baking tools
-  { label: "Guided Bakes", path: "/premixes", icon: Cookie, ariaLabel: "Guided baking premixes" },
-  { label: "Dough Calc", path: "/dough", icon: Calculator, ariaLabel: "Dough calculator" },
-
-  // Starter management
-  { label: "Feeding Log", path: "/feeding-log", icon: ClipboardList, ariaLabel: "Track starter feedings" },
-  { label: "Starter Check", path: "/starter", icon: FlaskConical, ariaLabel: "Check starter health" },
-  { label: "Starter AI", path: "/starter-guide", icon: Bot, ariaLabel: "AI sourdough assistant" },
-
-  // Learning
-  { label: "Tutorials", path: "/tutorials", icon: GraduationCap, ariaLabel: "Browse baking tutorials" },
-
-  // Community
-  { label: "Community", path: "/share", icon: ChefHat, ariaLabel: "Community bakes feed" },
-  { label: "Discover", path: "/discover", icon: Search, ariaLabel: "Discover new bakers to follow" },
-  { label: "Connections", path: "/followers", icon: Users, ariaLabel: "Your followers and following" },
-
-  // Account & system
-  { label: "Notifications", path: "/notifications", icon: Bell, ariaLabel: "View your notifications" },
-  { label: "Settings", path: "/settings", icon: Cog, ariaLabel: "Settings and admin" },
-  { label: "Contact", path: "/contact", icon: MessageSquare, ariaLabel: "Send feedback or get help" },
+const navGroups = [
+  [
+    { label: "Home", path: "/", icon: Home, ariaLabel: "Home overview" },
+  ],
+  [
+    { label: "Guided Bakes", path: "/premixes", icon: Cookie, ariaLabel: "Guided baking premixes" },
+    { label: "Dough Calc", path: "/dough", icon: Calculator, ariaLabel: "Dough calculator" },
+  ],
+  [
+    { label: "Feeding Log", path: "/feeding-log", icon: ClipboardList, ariaLabel: "Track starter feedings" },
+    { label: "Starter Check", path: "/starter", icon: FlaskConical, ariaLabel: "Check starter health" },
+    { label: "Starter AI", path: "/starter-guide", icon: Bot, ariaLabel: "AI sourdough assistant" },
+  ],
+  [
+    { label: "Tutorials", path: "/tutorials", icon: GraduationCap, ariaLabel: "Browse baking tutorials" },
+  ],
+  [
+    { label: "Community", path: "/share", icon: ChefHat, ariaLabel: "Community bakes feed" },
+    { label: "Discover", path: "/discover", icon: Search, ariaLabel: "Discover new bakers to follow" },
+    { label: "Connections", path: "/followers", icon: Users, ariaLabel: "Your followers and following" },
+  ],
+  [
+    { label: "Notifications", path: "/notifications", icon: Bell, ariaLabel: "View your notifications" },
+    { label: "Settings", path: "/settings", icon: Cog, ariaLabel: "Settings and admin" },
+    { label: "Contact", path: "/contact", icon: MessageSquare, ariaLabel: "Send feedback or get help" },
+  ],
 ];
 
 const adminNavItems = [
@@ -75,18 +76,25 @@ export const Header = () => {
 
           <nav className="flex items-center gap-1 sm:gap-2">
             {user ? <>
-                {publicNavItems.map(item => (
-                  <NavLink 
-                    key={item.path} 
-                    to={item.path} 
-                    className="relative flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" 
-                    activeClassName="text-foreground bg-muted" 
-                    aria-label={item.ariaLabel}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span className="hidden md:inline">{item.label}</span>
-                    {item.path === "/notifications" && <NotificationBadge count={unreadCount} />}
-                  </NavLink>
+                {navGroups.map((group, groupIndex) => (
+                  <div key={groupIndex} className="flex items-center gap-1">
+                    {groupIndex > 0 && (
+                      <div className="h-5 w-px bg-border mx-1" aria-hidden="true" />
+                    )}
+                    {group.map(item => (
+                      <NavLink 
+                        key={item.path} 
+                        to={item.path} 
+                        className="relative flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" 
+                        activeClassName="text-foreground bg-muted" 
+                        aria-label={item.ariaLabel}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span className="hidden md:inline">{item.label}</span>
+                        {item.path === "/notifications" && <NotificationBadge count={unreadCount} />}
+                      </NavLink>
+                    ))}
+                  </div>
                 ))}
                 {isAdmin && adminNavItems.map(item => <NavLink key={item.path} to={item.path} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" activeClassName="text-foreground bg-muted" aria-label={item.ariaLabel}>
                     <item.icon className="h-4 w-4" />
