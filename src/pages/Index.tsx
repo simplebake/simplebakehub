@@ -114,19 +114,6 @@ const Index = () => {
     return items;
   }, [user, latestFeeding, todayBakeCount, latestBake]);
 
-  const todaysFocus = [
-    { id: "1", task: "Review low-margin products", done: false },
-    { id: "2", task: "Respond to customer feedback", done: false },
-    { id: "3", task: "Update seasonal promotion", done: true },
-    { id: "4", task: "Check inventory levels", done: false },
-  ];
-
-  const recentActivity = [
-    { action: "Order #1847 shipped", time: "10 min ago" },
-    { action: "New review: Sourdough Mix ★★★★★", time: "1h ago" },
-    { action: "Promotion 'AUTUMN15' activated", time: "3h ago" },
-    { action: "Inventory restocked: Bread Mix", time: "Yesterday" },
-  ];
 
   const shortcuts = [
     { label: "View Premixes", path: "/premixes", icon: Package },
