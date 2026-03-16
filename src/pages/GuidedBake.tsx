@@ -38,6 +38,7 @@ const GuidedBake = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
   const [showOutcomeDialog, setShowOutcomeDialog] = useState(false);
+  const [environmentData, setEnvironmentData] = useState<EnvironmentData>({});
 
   useEffect(() => {
     if (!loading && !user) {
