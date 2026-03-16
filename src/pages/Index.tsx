@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, AlertTriangle, ArrowRight, Clock, Package, Camera, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
-import { PerformanceGoalsWidget } from "@/components/PerformanceGoalsWidget";
 import { BakerOfTheWeek } from "@/components/BakerOfTheWeek";
 import { FollowingFeed } from "@/components/FollowingFeed";
 import { useContentVisibility } from "@/hooks/useContentVisibility";
@@ -238,10 +237,6 @@ const Index = () => {
           </div>
         )}
 
-        {/* Performance Goals Widget - Admin Only */}
-        <div className="mb-8">
-          <PerformanceGoalsWidget />
-        </div>
 
         {/* Shortcuts */}
         <div>
