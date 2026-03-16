@@ -236,7 +236,7 @@ const Settings = () => {
   // Combine cards based on role
   const getAdminCards = () => {
     if (isAdmin) {
-      return [...adminOnlyCards.slice(0, 3), ...moderatorCards, adminOnlyCards[3], adminOnlyCards[4], adminOnlyCards[5], adminOnlyCards[6], ...supportCards, notificationCard];
+      return [...adminOnlyCards.slice(0, 3), ...moderatorCards, adminOnlyCards[3], adminOnlyCards[4], adminOnlyCards[5], ...supportCards, notificationCard];
     }
     if (isModerator) {
       return [...moderatorCards, notificationCard];
