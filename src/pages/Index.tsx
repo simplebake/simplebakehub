@@ -237,10 +237,6 @@ const Index = () => {
           </div>
         )}
 
-        {/* Performance Goals Widget - Admin Only */}
-        <div className="mb-8">
-          <PerformanceGoalsWidget />
-        </div>
 
         {/* Shortcuts */}
         <div>
