@@ -66,28 +66,6 @@ const Index = () => {
           </Button>
         </div>
 
-        {/* Metric Cards - Admin only */}
-        {isContentVisible('dashboard_sections', undefined, 'business_metrics') && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {metrics.map((metric) => (
-              <Card key={metric.label} className="bg-card">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">{metric.label}</p>
-                      <p className="text-2xl font-semibold text-foreground">{metric.value}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{metric.trend}</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <metric.icon className="h-5 w-5 text-primary" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
         {/* Alerts & Issues */}
         <Card className="mb-8">
           <CardHeader className="pb-3">
