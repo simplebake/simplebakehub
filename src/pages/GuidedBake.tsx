@@ -155,6 +155,25 @@ const GuidedBake = () => {
           </div>
         )}
 
+        {steps.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">No steps available for this premix yet.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>{steps[currentStep].title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose max-w-none">
+                  <p className="whitespace-pre-wrap">{steps[currentStep].content}</p>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Predictive Troubleshooting System */}
             <div className="mb-6">
               <TroubleshootingAlert
