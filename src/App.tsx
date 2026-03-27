@@ -103,6 +103,7 @@ const App = () => {
               <Route path="/starter-guide" element={<StarterAI />} />
               <Route path="/bake-analysis" element={<BakePhotoAnalysis />} />
               <Route path="/recipe-generator" element={<RecipeGenerator />} />
+              <Route path="/starter-troubleshooting" element={<StarterTroubleshooting />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
