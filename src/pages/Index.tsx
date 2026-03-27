@@ -146,7 +146,9 @@ const Index = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-semibold text-foreground">Home / Overview</h1>
+            <h1 className="text-3xl font-semibold text-foreground">
+              {profile?.name ? `Hey ${profile.name.split(' ')[0]} 👋` : 'Home / Overview'}
+            </h1>
             <p className="text-muted-foreground mt-1">
               Your daily snapshot and quick actions
             </p>
