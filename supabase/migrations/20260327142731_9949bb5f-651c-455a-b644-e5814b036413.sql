@@ -1,0 +1,2 @@
+ALTER TABLE public.customer_messages DROP CONSTRAINT customer_messages_category_check;
+ALTER TABLE public.customer_messages ADD CONSTRAINT customer_messages_category_check CHECK (category = ANY (ARRAY['feedback'::text, 'help'::text, 'bug'::text, 'suggestion'::text, 'troubleshooting'::text]));
