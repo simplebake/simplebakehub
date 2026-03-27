@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, Upload, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { Download, Upload, FileText, ChevronDown, ChevronUp, HelpCircle, ArrowRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -556,6 +556,23 @@ const Tutorials = () => {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Starter Troubleshooting callout */}
+        <Card
+          className="mb-6 cursor-pointer hover:border-primary/50 transition-all group"
+          onClick={() => navigate("/starter-troubleshooting")}
+        >
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <HelpCircle className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">Starter Troubleshooting</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Having trouble activating your starter? Get a diagnosis and next step in under a minute.</p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+          </CardContent>
+        </Card>
 
         {filteredTutorials.length === 0 ? (
           <Card>
