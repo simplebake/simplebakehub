@@ -43,49 +43,59 @@ const Followers = () => {
 
     try {
       // Fetch followers (people who follow the current user)
-      // Use public_profiles view for security (excludes email)
       const { data: followersData, error: followersError } = await supabase
         .from("followers")
-        .select(`
-          follower_id,
-          profiles:public_profiles!followers_follower_id_fkey(id, name, avatar_url, bio)
-        `)
+        .select("follower_id")
         .eq("following_id", user.id);
 
       if (followersError) throw followersError;
 
       // Fetch following (people the current user follows)
-      // Use public_profiles view for security (excludes email)
       const { data: followingData, error: followingError } = await supabase
         .from("followers")
-        .select(`
-          following_id,
-          profiles:public_profiles!followers_following_id_fkey(id, name, avatar_url, bio)
-        `)
+        .select("following_id")
         .eq("follower_id", user.id);
 
       if (followingError) throw followingError;
 
-      // Get IDs of people the user follows to mark them in followers list
-      const followingIds = new Set(followingData?.map(f => f.following_id) || []);
+      const followerIds = (followersData || []).map(f => f.follower_id);
+      const followingIds = new Set((followingData || []).map(f => f.following_id));
+      const allIds = [...new Set([...followerIds, ...Array.from(followingIds)])];
+
+      // Fetch profiles for all relevant users
+      let profilesMap: Record<string, any> = {};
+      if (allIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("public_profiles")
+          .select("id, name, avatar_url, bio")
+          .in("id", allIds);
+
+        (profiles || []).forEach(p => {
+          if (p.id) profilesMap[p.id] = p;
+        });
+      }
 
       // Transform followers data
-      const transformedFollowers = (followersData || []).map(f => ({
-        id: (f.profiles as any).id,
-        name: (f.profiles as any).name,
-        avatar_url: (f.profiles as any).avatar_url,
-        bio: (f.profiles as any).bio,
-        isFollowing: followingIds.has((f.profiles as any).id),
-      }));
+      const transformedFollowers = followerIds
+        .filter(id => profilesMap[id])
+        .map(id => ({
+          id: profilesMap[id].id,
+          name: profilesMap[id].name,
+          avatar_url: profilesMap[id].avatar_url,
+          bio: profilesMap[id].bio,
+          isFollowing: followingIds.has(id),
+        }));
 
       // Transform following data
-      const transformedFollowing = (followingData || []).map(f => ({
-        id: (f.profiles as any).id,
-        name: (f.profiles as any).name,
-        avatar_url: (f.profiles as any).avatar_url,
-        bio: (f.profiles as any).bio,
-        isFollowing: true,
-      }));
+      const transformedFollowing = Array.from(followingIds)
+        .filter(id => profilesMap[id])
+        .map(id => ({
+          id: profilesMap[id].id,
+          name: profilesMap[id].name,
+          avatar_url: profilesMap[id].avatar_url,
+          bio: profilesMap[id].bio,
+          isFollowing: true,
+        }));
 
       setFollowers(transformedFollowers);
       setFollowing(transformedFollowing);
