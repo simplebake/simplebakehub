@@ -17,6 +17,20 @@ const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Fetch user's profile name
+  const { data: profile } = useQuery({
+    queryKey: ["profile-name", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("id", user!.id)
+        .single();
+      return data;
+    },
+  });
+
   // Fetch latest feeding log for the current user
   const { data: latestFeeding } = useQuery({
     queryKey: ["latest-feeding", user?.id],
