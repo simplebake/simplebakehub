@@ -17,6 +17,20 @@ const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Fetch user's profile name
+  const { data: profile } = useQuery({
+    queryKey: ["profile-name", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("id", user!.id)
+        .single();
+      return data;
+    },
+  });
+
   // Fetch latest feeding log for the current user
   const { data: latestFeeding } = useQuery({
     queryKey: ["latest-feeding", user?.id],
@@ -132,7 +146,9 @@ const Index = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-semibold text-foreground">Home / Overview</h1>
+            <h1 className="text-3xl font-semibold text-foreground">
+              {profile?.name ? `Hey ${profile.name.split(' ')[0]} 👋` : 'Home / Overview'}
+            </h1>
             <p className="text-muted-foreground mt-1">
               Your daily snapshot and quick actions
             </p>
