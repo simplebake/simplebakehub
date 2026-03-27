@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, AlertTriangle, ArrowRight, Package, Camera, Sparkles } from "lucide-react";
+import { Plus, AlertTriangle, ArrowRight, Package, Camera, Sparkles, HelpCircle } from "lucide-react";
 import { Header } from "@/components/Header";
 import { BakerOfTheWeek } from "@/components/BakerOfTheWeek";
 import { FollowingFeed } from "@/components/FollowingFeed";
