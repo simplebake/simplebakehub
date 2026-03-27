@@ -34,6 +34,7 @@ const DoughAssistant = lazy(() => import("./pages/DoughAssistant"));
 const StarterAI = lazy(() => import("./pages/StarterAI"));
 const BakePhotoAnalysis = lazy(() => import("./pages/BakePhotoAnalysis"));
 const RecipeGenerator = lazy(() => import("./pages/RecipeGenerator"));
+const StarterTroubleshooting = lazy(() => import("./pages/StarterTroubleshooting"));
 
 const queryClient = new QueryClient();
 
