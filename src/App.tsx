@@ -34,6 +34,7 @@ const DoughAssistant = lazy(() => import("./pages/DoughAssistant"));
 const StarterAI = lazy(() => import("./pages/StarterAI"));
 const BakePhotoAnalysis = lazy(() => import("./pages/BakePhotoAnalysis"));
 const RecipeGenerator = lazy(() => import("./pages/RecipeGenerator"));
+const StarterTroubleshooting = lazy(() => import("./pages/StarterTroubleshooting"));
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const App = () => {
               <Route path="/starter-guide" element={<StarterAI />} />
               <Route path="/bake-analysis" element={<BakePhotoAnalysis />} />
               <Route path="/recipe-generator" element={<RecipeGenerator />} />
+              <Route path="/starter-troubleshooting" element={<StarterTroubleshooting />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
