@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom";
 import {
   ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen,
   Cookie, Users, Search, Bell, FlaskConical, Calculator, Bot,
-  ClipboardList, GraduationCap, Menu, X,
+  ClipboardList, GraduationCap, Menu, X, User,
+  type LucideIcon,
 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
@@ -25,48 +26,71 @@ const NotificationBadge = ({ count }: { count: number }) => {
   );
 };
 
-const navGroups = [
+interface NavItem {
+  label: string;
+  path: string;
+  icon: LucideIcon;
+  ariaLabel: string;
+  iconColor?: string;
+}
+
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
   {
-    title: "Overview",
+    title: "Home",
     items: [
-      { label: "Home", path: "/", icon: Home, ariaLabel: "Home overview" },
+      { label: "Dashboard", path: "/", icon: Home, ariaLabel: "Home overview", iconColor: "text-blue-500" },
     ],
   },
   {
-    title: "Baking Tools",
+    title: "Baking",
     items: [
-      { label: "Guided Bakes", path: "/premixes", icon: Cookie, ariaLabel: "Guided baking premixes" },
-      { label: "Dough Calculator", path: "/dough", icon: Calculator, ariaLabel: "Dough calculator" },
+      { label: "Guided Bakes", path: "/premixes", icon: Cookie, ariaLabel: "Guided baking premixes", iconColor: "text-amber-500" },
+      { label: "Dough Calculator", path: "/dough", icon: Calculator, ariaLabel: "Dough calculator", iconColor: "text-amber-600" },
     ],
   },
   {
-    title: "Starter Management",
+    title: "Starter",
     items: [
-      { label: "Feeding Log", path: "/feeding-log", icon: ClipboardList, ariaLabel: "Track starter feedings" },
-      { label: "Starter Check", path: "/starter", icon: FlaskConical, ariaLabel: "Check starter health" },
-      { label: "Starter AI", path: "/starter-guide", icon: Bot, ariaLabel: "AI sourdough assistant" },
+      { label: "Feeding Log", path: "/feeding-log", icon: ClipboardList, ariaLabel: "Track starter feedings", iconColor: "text-emerald-500" },
+      { label: "Health Check", path: "/starter", icon: FlaskConical, ariaLabel: "Check starter health", iconColor: "text-emerald-600" },
+      { label: "Starter AI", path: "/starter-guide", icon: Bot, ariaLabel: "AI sourdough assistant", iconColor: "text-emerald-400" },
     ],
   },
   {
-    title: "Learning",
+    title: "Learn",
     items: [
-      { label: "Tutorials", path: "/tutorials", icon: GraduationCap, ariaLabel: "Browse baking tutorials" },
+      { label: "Tutorials", path: "/tutorials", icon: GraduationCap, ariaLabel: "Browse baking tutorials", iconColor: "text-violet-500" },
     ],
   },
   {
     title: "Community",
     items: [
-      { label: "Community Feed", path: "/share", icon: ChefHat, ariaLabel: "Community bakes feed" },
-      { label: "Discover Bakers", path: "/discover", icon: Search, ariaLabel: "Discover new bakers to follow" },
-      { label: "Connections", path: "/followers", icon: Users, ariaLabel: "Your followers and following" },
+      { label: "Feed", path: "/share", icon: ChefHat, ariaLabel: "Community bakes feed", iconColor: "text-rose-500" },
+      { label: "Discover Bakers", path: "/discover", icon: Search, ariaLabel: "Discover new bakers", iconColor: "text-rose-400" },
+      { label: "Connections", path: "/followers", icon: Users, ariaLabel: "Followers and following", iconColor: "text-rose-600" },
     ],
   },
   {
-    title: "Account",
+    title: "Notifications",
     items: [
-      { label: "Notifications", path: "/notifications", icon: Bell, ariaLabel: "View your notifications" },
-      { label: "Settings", path: "/settings", icon: Cog, ariaLabel: "Settings and admin" },
-      { label: "Contact Us", path: "/contact", icon: MessageSquare, ariaLabel: "Send feedback or get help" },
+      { label: "Notifications", path: "/notifications", icon: Bell, ariaLabel: "View your notifications", iconColor: "text-orange-500" },
+    ],
+  },
+  {
+    title: "Settings",
+    items: [
+      { label: "Settings", path: "/settings", icon: Cog, ariaLabel: "Settings and admin", iconColor: "text-muted-foreground" },
+    ],
+  },
+  {
+    title: "Support",
+    items: [
+      { label: "Contact Us", path: "/contact", icon: MessageSquare, ariaLabel: "Send feedback or get help", iconColor: "text-sky-500" },
     ],
   },
 ];
@@ -169,18 +193,18 @@ export const Header = () => {
                 </SheetTrigger>
                 <SheetContent side="right" className="w-72 p-0 overflow-y-auto">
                   <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
-                    <Avatar className="h-9 w-9">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.name || "User"} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">{initials}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{profile?.name || "User"}</p>
+                      <p className="text-base font-bold text-foreground truncate">{profile?.name || "User"}</p>
                       <NavLink
                         to="/profile"
-                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                        className="text-xs text-primary/80 hover:text-primary font-medium transition-colors"
                         onClick={() => setOpen(false)}
                       >
-                        View profile
+                        View profile →
                       </NavLink>
                     </div>
                     <SheetClose asChild>
@@ -190,10 +214,10 @@ export const Header = () => {
                     </SheetClose>
                   </div>
 
-                  <nav className="py-2">
+                  <nav className="py-3 px-2">
                     {navGroups.map((group) => (
-                      <div key={group.title} className="mb-1">
-                        <p className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                      <div key={group.title} className="mb-2">
+                        <p className="px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">
                           {group.title}
                         </p>
                         {group.items.map((item) => (
@@ -201,12 +225,12 @@ export const Header = () => {
                             key={item.path}
                             to={item.path}
                             end={item.path === "/"}
-                            className="relative flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                            activeClassName="text-foreground bg-muted font-medium"
+                            className="relative flex items-center gap-3 px-3 py-3 text-[15px] font-medium text-foreground/80 hover:text-foreground hover:bg-muted/60 rounded-lg transition-colors"
+                            activeClassName="text-foreground bg-muted font-semibold"
                             aria-label={item.ariaLabel}
                             onClick={() => setOpen(false)}
                           >
-                            <item.icon className="h-4 w-4 shrink-0" />
+                            <item.icon className={`h-5 w-5 shrink-0 ${item.iconColor || "text-muted-foreground"}`} />
                             <span>{item.label}</span>
                             {item.path === "/notifications" && <NotificationBadge count={unreadCount} />}
                           </NavLink>
@@ -216,28 +240,28 @@ export const Header = () => {
 
                     {/* Admin section */}
                     {isAdmin && (
-                      <div className="mb-1">
-                        <p className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                      <div className="mb-2">
+                        <p className="px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">
                           Admin
                         </p>
                         <NavLink
                           to="/marketing"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                          activeClassName="text-foreground bg-muted font-medium"
+                          className="flex items-center gap-3 px-3 py-3 text-[15px] font-medium text-foreground/80 hover:text-foreground hover:bg-muted/60 rounded-lg transition-colors"
+                          activeClassName="text-foreground bg-muted font-semibold"
                           aria-label="Marketing and customer tools"
                           onClick={() => setOpen(false)}
                         >
-                          <Megaphone className="h-4 w-4 shrink-0" />
+                          <Megaphone className="h-5 w-5 shrink-0 text-pink-500" />
                           <span>Marketing & Customers</span>
                         </NavLink>
                         <NavLink
                           to="/tutorials/manage"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                          activeClassName="text-foreground bg-muted font-medium"
+                          className="flex items-center gap-3 px-3 py-3 text-[15px] font-medium text-foreground/80 hover:text-foreground hover:bg-muted/60 rounded-lg transition-colors"
+                          activeClassName="text-foreground bg-muted font-semibold"
                           aria-label="Manage tutorials"
                           onClick={() => setOpen(false)}
                         >
-                          <BookOpen className="h-4 w-4 shrink-0" />
+                          <BookOpen className="h-5 w-5 shrink-0 text-pink-400" />
                           <span>Manage Tutorials</span>
                         </NavLink>
                       </div>
@@ -245,18 +269,18 @@ export const Header = () => {
                   </nav>
 
                   {/* Logout */}
-                  <div className="border-t border-border px-4 py-3">
+                  <div className="border-t border-border mx-2 px-3 py-4">
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="default"
                       onClick={() => {
                         setOpen(false);
                         handleLogout();
                       }}
-                      className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+                      className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive font-medium text-[15px]"
                     >
-                      <LogOut className="h-4 w-4" />
-                      Logout
+                      <LogOut className="h-5 w-5" />
+                      Log out
                     </Button>
                   </div>
                 </SheetContent>
