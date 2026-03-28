@@ -50,7 +50,17 @@ export function useContentVisibility(): UseContentVisibilityReturn {
   }, []);
 
   useEffect(() => {
-    fetchSettings();
+    // Defer the fetch so it doesn't extend the critical request chain
+    // (HTML → JS → API was flagged by Lighthouse as a long dependency chain)
+    const schedule = typeof requestIdleCallback === 'function' ? requestIdleCallback : (cb: () => void) => setTimeout(cb, 1);
+    const id = schedule(() => { fetchSettings(); });
+    return () => {
+      if (typeof cancelIdleCallback === 'function' && typeof requestIdleCallback === 'function') {
+        cancelIdleCallback(id as number);
+      } else {
+        clearTimeout(id as number);
+      }
+    };
   }, [fetchSettings]);
 
   const isContentVisible = useCallback((
