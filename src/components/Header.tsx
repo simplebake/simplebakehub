@@ -17,7 +17,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-interface NavItem {
+const NotificationBadge = ({ count }: { count: number }) => {
+  if (count === 0) return null;
+  return (
+    <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+};
+
   label: string;
   path: string;
   icon: LucideIcon;
