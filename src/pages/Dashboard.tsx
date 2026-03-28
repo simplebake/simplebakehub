@@ -37,7 +37,8 @@ const Dashboard = () => {
 
   const isLoading = loading || visibilityLoading;
 
-  if (!user) return null;
+  if (loading && !user) return null;
+  if (!loading && !user) return null;
 
   return (
     <div className="min-h-screen bg-background">
