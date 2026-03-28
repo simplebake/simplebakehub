@@ -193,18 +193,18 @@ export const Header = () => {
                 </SheetTrigger>
                 <SheetContent side="right" className="w-72 p-0 overflow-y-auto">
                   <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
-                    <Avatar className="h-9 w-9">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.name || "User"} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">{initials}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{profile?.name || "User"}</p>
+                      <p className="text-base font-bold text-foreground truncate">{profile?.name || "User"}</p>
                       <NavLink
                         to="/profile"
-                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                        className="text-xs text-primary/80 hover:text-primary font-medium transition-colors"
                         onClick={() => setOpen(false)}
                       >
-                        View profile
+                        View profile →
                       </NavLink>
                     </div>
                     <SheetClose asChild>
@@ -214,10 +214,10 @@ export const Header = () => {
                     </SheetClose>
                   </div>
 
-                  <nav className="py-2">
+                  <nav className="py-3 px-2">
                     {navGroups.map((group) => (
-                      <div key={group.title} className="mb-1">
-                        <p className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                      <div key={group.title} className="mb-2">
+                        <p className="px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">
                           {group.title}
                         </p>
                         {group.items.map((item) => (
@@ -225,12 +225,12 @@ export const Header = () => {
                             key={item.path}
                             to={item.path}
                             end={item.path === "/"}
-                            className="relative flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                            activeClassName="text-foreground bg-muted font-medium"
+                            className="relative flex items-center gap-3 px-3 py-3 text-[15px] font-medium text-foreground/80 hover:text-foreground hover:bg-muted/60 rounded-lg transition-colors"
+                            activeClassName="text-foreground bg-muted font-semibold"
                             aria-label={item.ariaLabel}
                             onClick={() => setOpen(false)}
                           >
-                            <item.icon className="h-4 w-4 shrink-0" />
+                            <item.icon className={`h-5 w-5 shrink-0 ${item.iconColor || "text-muted-foreground"}`} />
                             <span>{item.label}</span>
                             {item.path === "/notifications" && <NotificationBadge count={unreadCount} />}
                           </NavLink>
