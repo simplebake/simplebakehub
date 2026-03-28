@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthContext, useAuth, useAuthState } from "@/lib/supabase";
-import { LandingPage } from "@/components/LandingPage";
+const LandingPage = lazy(() => import("@/components/LandingPage").then(m => ({ default: m.LandingPage })));
 import { AdminRoute } from "@/components/AdminRoute";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppLayout } from "@/components/navigation/AppLayout";
