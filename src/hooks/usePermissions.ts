@@ -51,11 +51,9 @@ export function usePermissions(): UsePermissionsReturn {
         return;
       }
 
-      // Fetch user's role permissions
+      // Fetch user's role permissions via secure RPC
       const { data: rolePerms } = await supabase
-        .from('role_permissions')
-        .select('permission')
-        .in('role', (await supabase.from('user_roles').select('role').eq('user_id', user.id)).data?.map(r => r.role) || []);
+        .rpc('get_my_role_permissions');
 
       // Fetch user-specific overrides
       const { data: userPerms } = await supabase
