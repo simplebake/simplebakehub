@@ -23,7 +23,12 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#faf9f7">
+        <div style="width:32px;height:32px;border:3px solid #e5e2dc;border-top-color:#b5906f;border-radius:50%;animation:sp .6s linear infinite"></div>
+      </div>
+      <style>@keyframes sp{to{transform:rotate(360deg)}}</style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
