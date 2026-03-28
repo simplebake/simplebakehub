@@ -51,16 +51,6 @@ export const Header = ({ onMenuOpen }: HeaderProps) => {
                 )}
               </NavLink>
 
-              {/* Hamburger — mobile only */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 text-muted-foreground lg:hidden"
-                aria-label="Open menu"
-                onClick={onMenuOpen}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
             </div>
           ) : (
             <NavLink to="/auth">
