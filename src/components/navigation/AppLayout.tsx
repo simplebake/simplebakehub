@@ -56,8 +56,8 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
 
   return (
     <div className="min-h-screen flex w-full">
-      {/* Desktop sidebar */}
-      {user && (
+      {/* Desktop sidebar — hidden on immersive pages */}
+      {user && !immersive && (
         <DesktopSidebar
           profile={profile}
           initials={initials}
