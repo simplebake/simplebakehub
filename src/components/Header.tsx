@@ -10,6 +10,12 @@ import {
   ClipboardList, GraduationCap, Menu, X, User,
   type LucideIcon,
 } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 interface NavItem {
   label: string;
