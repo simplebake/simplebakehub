@@ -18,9 +18,11 @@ interface AppLayoutProps {
 export const AppLayout = ({ children }: AppLayoutProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { isAdmin } = useUserRole();
   const { data: unreadCount = 0 } = useUnreadNotifications();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const immersive = isImmersiveRoute(pathname);
 
   const { data: profile } = useQuery({
     queryKey: ["layout-profile", user?.id],
