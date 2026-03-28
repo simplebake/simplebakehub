@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthContext, useAuth, useAuthState } from "@/lib/supabase";
 import { LandingPage } from "@/components/LandingPage";
 import { AdminRoute } from "@/components/AdminRoute";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppLayout } from "@/components/navigation/AppLayout";
 
 // Lazy load all pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -64,6 +66,43 @@ const HomeRoute = () => {
   );
 };
 
+const AppRoutes = () => (
+  <Suspense fallback={<PageLoader />}>
+    <Routes>
+      <Route path="/" element={<HomeRoute />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+      <Route path="/premixes" element={<Premixes />} />
+      <Route path="/premixes/:id/bake" element={<GuidedBake />} />
+      <Route path="/tutorials" element={<Tutorials />} />
+      <Route path="/tutorials/manage" element={<TutorialsManagement />} />
+      <Route path="/share" element={<ShareBake />} />
+      <Route path="/marketing" element={<Marketing />} />
+      <Route path="/settings" element={<Settings />} />
+      <Route path="/settings/make-setup" element={<MakeSetupGuide />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/baker/:userId" element={<PublicProfile />} />
+      <Route path="/followers" element={<Followers />} />
+      <Route path="/discover" element={<DiscoverBakers />} />
+      <Route path="/notifications" element={<Notifications />} />
+      <Route path="/feeding-log" element={<FeedingLog />} />
+      <Route path="/starter-checker" element={<StarterChecker />} />
+      <Route path="/starter" element={<StarterChecker />} />
+      <Route path="/dough-assistant" element={<DoughAssistant />} />
+      <Route path="/dough" element={<DoughAssistant />} />
+      <Route path="/starter-ai" element={<StarterAI />} />
+      <Route path="/starter-guide" element={<StarterAI />} />
+      <Route path="/bake-analysis" element={<BakePhotoAnalysis />} />
+      <Route path="/recipe-generator" element={<RecipeGenerator />} />
+      <Route path="/starter-troubleshooting" element={<StarterTroubleshooting />} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  </Suspense>
+);
+
 const App = () => {
   const authState = useAuthState();
 
@@ -74,40 +113,11 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<HomeRoute />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-                <Route path="/premixes" element={<Premixes />} />
-                <Route path="/premixes/:id/bake" element={<GuidedBake />} />
-                <Route path="/tutorials" element={<Tutorials />} />
-                <Route path="/tutorials/manage" element={<TutorialsManagement />} />
-                <Route path="/share" element={<ShareBake />} />
-                <Route path="/marketing" element={<Marketing />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/settings/make-setup" element={<MakeSetupGuide />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/baker/:userId" element={<PublicProfile />} />
-              <Route path="/followers" element={<Followers />} />
-              <Route path="/discover" element={<DiscoverBakers />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/feeding-log" element={<FeedingLog />} />
-              <Route path="/starter-checker" element={<StarterChecker />} />
-              <Route path="/starter" element={<StarterChecker />} />
-              <Route path="/dough-assistant" element={<DoughAssistant />} />
-              <Route path="/dough" element={<DoughAssistant />} />
-              <Route path="/starter-ai" element={<StarterAI />} />
-              <Route path="/starter-guide" element={<StarterAI />} />
-              <Route path="/bake-analysis" element={<BakePhotoAnalysis />} />
-              <Route path="/recipe-generator" element={<RecipeGenerator />} />
-              <Route path="/starter-troubleshooting" element={<StarterTroubleshooting />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+            <SidebarProvider defaultOpen={true}>
+              <AppLayout>
+                <AppRoutes />
+              </AppLayout>
+            </SidebarProvider>
           </BrowserRouter>
         </TooltipProvider>
       </AuthContext.Provider>
