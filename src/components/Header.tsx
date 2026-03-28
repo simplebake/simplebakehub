@@ -7,66 +7,75 @@ import { useNavigate } from "react-router-dom";
 import {
   ChefHat, LogOut, Home, Megaphone, Cog, MessageSquare, BookOpen,
   Cookie, Users, Search, Bell, FlaskConical, Calculator, Bot,
-  ClipboardList, GraduationCap, Menu, X,
+  ClipboardList, GraduationCap, Menu, X, User,
+  type LucideIcon,
 } from "lucide-react";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 
-const NotificationBadge = ({ count }: { count: number }) => {
-  if (count === 0) return null;
-  return (
-    <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">
-      {count > 99 ? "99+" : count}
-    </span>
-  );
-};
+interface NavItem {
+  label: string;
+  path: string;
+  icon: LucideIcon;
+  ariaLabel: string;
+  iconColor?: string;
+}
 
-const navGroups = [
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
   {
-    title: "Overview",
+    title: "Home",
     items: [
-      { label: "Home", path: "/", icon: Home, ariaLabel: "Home overview" },
+      { label: "Dashboard", path: "/", icon: Home, ariaLabel: "Home overview", iconColor: "text-blue-500" },
     ],
   },
   {
-    title: "Baking Tools",
+    title: "Baking",
     items: [
-      { label: "Guided Bakes", path: "/premixes", icon: Cookie, ariaLabel: "Guided baking premixes" },
-      { label: "Dough Calculator", path: "/dough", icon: Calculator, ariaLabel: "Dough calculator" },
+      { label: "Guided Bakes", path: "/premixes", icon: Cookie, ariaLabel: "Guided baking premixes", iconColor: "text-amber-500" },
+      { label: "Dough Calculator", path: "/dough", icon: Calculator, ariaLabel: "Dough calculator", iconColor: "text-amber-600" },
     ],
   },
   {
-    title: "Starter Management",
+    title: "Starter",
     items: [
-      { label: "Feeding Log", path: "/feeding-log", icon: ClipboardList, ariaLabel: "Track starter feedings" },
-      { label: "Starter Check", path: "/starter", icon: FlaskConical, ariaLabel: "Check starter health" },
-      { label: "Starter AI", path: "/starter-guide", icon: Bot, ariaLabel: "AI sourdough assistant" },
+      { label: "Feeding Log", path: "/feeding-log", icon: ClipboardList, ariaLabel: "Track starter feedings", iconColor: "text-emerald-500" },
+      { label: "Health Check", path: "/starter", icon: FlaskConical, ariaLabel: "Check starter health", iconColor: "text-emerald-600" },
+      { label: "Starter AI", path: "/starter-guide", icon: Bot, ariaLabel: "AI sourdough assistant", iconColor: "text-emerald-400" },
     ],
   },
   {
-    title: "Learning",
+    title: "Learn",
     items: [
-      { label: "Tutorials", path: "/tutorials", icon: GraduationCap, ariaLabel: "Browse baking tutorials" },
+      { label: "Tutorials", path: "/tutorials", icon: GraduationCap, ariaLabel: "Browse baking tutorials", iconColor: "text-violet-500" },
     ],
   },
   {
     title: "Community",
     items: [
-      { label: "Community Feed", path: "/share", icon: ChefHat, ariaLabel: "Community bakes feed" },
-      { label: "Discover Bakers", path: "/discover", icon: Search, ariaLabel: "Discover new bakers to follow" },
-      { label: "Connections", path: "/followers", icon: Users, ariaLabel: "Your followers and following" },
+      { label: "Feed", path: "/share", icon: ChefHat, ariaLabel: "Community bakes feed", iconColor: "text-rose-500" },
+      { label: "Discover Bakers", path: "/discover", icon: Search, ariaLabel: "Discover new bakers", iconColor: "text-rose-400" },
+      { label: "Connections", path: "/followers", icon: Users, ariaLabel: "Followers and following", iconColor: "text-rose-600" },
     ],
   },
   {
-    title: "Account",
+    title: "Notifications",
     items: [
-      { label: "Notifications", path: "/notifications", icon: Bell, ariaLabel: "View your notifications" },
-      { label: "Settings", path: "/settings", icon: Cog, ariaLabel: "Settings and admin" },
-      { label: "Contact Us", path: "/contact", icon: MessageSquare, ariaLabel: "Send feedback or get help" },
+      { label: "Notifications", path: "/notifications", icon: Bell, ariaLabel: "View your notifications", iconColor: "text-orange-500" },
+    ],
+  },
+  {
+    title: "Settings",
+    items: [
+      { label: "Settings", path: "/settings", icon: Cog, ariaLabel: "Settings and admin", iconColor: "text-muted-foreground" },
+    ],
+  },
+  {
+    title: "Support",
+    items: [
+      { label: "Contact Us", path: "/contact", icon: MessageSquare, ariaLabel: "Send feedback or get help", iconColor: "text-sky-500" },
     ],
   },
 ];
