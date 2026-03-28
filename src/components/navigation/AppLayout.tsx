@@ -1,5 +1,4 @@
 import { useAuth } from "@/lib/supabase";
-import { Header } from "@/components/Header";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { DrawerNav } from "./DrawerNav";
 import { BottomNav } from "./BottomNav";
@@ -66,7 +65,6 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Header onMenuOpen={() => setDrawerOpen(true)} />
         <main className="flex-1 pb-16 lg:pb-0">
           {children}
         </main>
