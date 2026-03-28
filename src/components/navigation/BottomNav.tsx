@@ -1,7 +1,8 @@
 import { NavLink } from "@/components/NavLink";
 import { Menu, Bell } from "lucide-react";
-import { bottomNavItems } from "./navData";
+import { bottomNavItems, isImmersiveRoute } from "./navData";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { useLocation } from "react-router-dom";
 
 interface BottomNavProps {
   onMenuOpen: () => void;
