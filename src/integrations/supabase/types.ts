@@ -1399,6 +1399,12 @@ export type Database = {
       cleanup_expired_blocks: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      get_my_role_permissions: {
+        Args: never
+        Returns: {
+          permission: Database["public"]["Enums"]["app_permission"]
+        }[]
+      }
       get_rate_limit_violations_admin: {
         Args: never
         Returns: {
