@@ -12,7 +12,9 @@ import {
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "./ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 const NotificationBadge = ({ count }: { count: number }) => {
   if (count === 0) return null;
@@ -85,6 +87,27 @@ export const Header = () => {
   const { data: unreadCount = 0 } = useUnreadNotifications();
   const [open, setOpen] = useState(false);
 
+  const { data: profile } = useQuery({
+    queryKey: ["header-profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("name, avatar_url")
+        .eq("id", user!.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const initials = profile?.name
+    ?.split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "U";
+
   const handleLogout = async () => {
     const userId = user?.id;
     await supabase.auth.signOut();
@@ -145,10 +168,23 @@ export const Header = () => {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-72 p-0 overflow-y-auto">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                    <span className="text-sm font-semibold text-foreground">Menu</span>
+                  <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.name || "User"} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{profile?.name || "User"}</p>
+                      <NavLink
+                        to="/profile"
+                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                        onClick={() => setOpen(false)}
+                      >
+                        View profile
+                      </NavLink>
+                    </div>
                     <SheetClose asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Close menu">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label="Close menu">
                         <X className="h-4 w-4" />
                       </Button>
                     </SheetClose>
