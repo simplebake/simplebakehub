@@ -4,11 +4,12 @@ import { DrawerNav } from "./DrawerNav";
 import { BottomNav } from "./BottomNav";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/auditLogger";
 import { useQuery } from "@tanstack/react-query";
 import { ReactNode, useState } from "react";
+import { isImmersiveRoute } from "./navData";
 
 interface AppLayoutProps {
   children: ReactNode;
