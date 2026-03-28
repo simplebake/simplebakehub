@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetClose } from "@/components/ui/sheet";
 import { LogOut, X, ChefHat, ClipboardList } from "lucide-react";
 import { navGroups, adminItems } from "./navData";
-import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+
 
 interface DrawerNavProps {
   open: boolean;
