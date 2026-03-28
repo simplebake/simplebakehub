@@ -26,6 +26,7 @@ const NotificationBadge = ({ count }: { count: number }) => {
   );
 };
 
+interface NavItem {
   label: string;
   path: string;
   icon: LucideIcon;
