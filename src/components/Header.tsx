@@ -240,28 +240,28 @@ export const Header = () => {
 
                     {/* Admin section */}
                     {isAdmin && (
-                      <div className="mb-1">
-                        <p className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                      <div className="mb-2">
+                        <p className="px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">
                           Admin
                         </p>
                         <NavLink
                           to="/marketing"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                          activeClassName="text-foreground bg-muted font-medium"
+                          className="flex items-center gap-3 px-3 py-3 text-[15px] font-medium text-foreground/80 hover:text-foreground hover:bg-muted/60 rounded-lg transition-colors"
+                          activeClassName="text-foreground bg-muted font-semibold"
                           aria-label="Marketing and customer tools"
                           onClick={() => setOpen(false)}
                         >
-                          <Megaphone className="h-4 w-4 shrink-0" />
+                          <Megaphone className="h-5 w-5 shrink-0 text-pink-500" />
                           <span>Marketing & Customers</span>
                         </NavLink>
                         <NavLink
                           to="/tutorials/manage"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                          activeClassName="text-foreground bg-muted font-medium"
+                          className="flex items-center gap-3 px-3 py-3 text-[15px] font-medium text-foreground/80 hover:text-foreground hover:bg-muted/60 rounded-lg transition-colors"
+                          activeClassName="text-foreground bg-muted font-semibold"
                           aria-label="Manage tutorials"
                           onClick={() => setOpen(false)}
                         >
-                          <BookOpen className="h-4 w-4 shrink-0" />
+                          <BookOpen className="h-5 w-5 shrink-0 text-pink-400" />
                           <span>Manage Tutorials</span>
                         </NavLink>
                       </div>
@@ -269,18 +269,18 @@ export const Header = () => {
                   </nav>
 
                   {/* Logout */}
-                  <div className="border-t border-border px-4 py-3">
+                  <div className="border-t border-border mx-2 px-3 py-4">
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="default"
                       onClick={() => {
                         setOpen(false);
                         handleLogout();
                       }}
-                      className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+                      className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive font-medium text-[15px]"
                     >
-                      <LogOut className="h-4 w-4" />
-                      Logout
+                      <LogOut className="h-5 w-5" />
+                      Log out
                     </Button>
                   </div>
                 </SheetContent>
