@@ -87,6 +87,27 @@ export const Header = () => {
   const { data: unreadCount = 0 } = useUnreadNotifications();
   const [open, setOpen] = useState(false);
 
+  const { data: profile } = useQuery({
+    queryKey: ["header-profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("name, avatar_url")
+        .eq("id", user!.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const initials = profile?.name
+    ?.split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "U";
+
   const handleLogout = async () => {
     const userId = user?.id;
     await supabase.auth.signOut();
