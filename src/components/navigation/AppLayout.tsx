@@ -1,13 +1,15 @@
 import { useAuth } from "@/lib/supabase";
 import { Header } from "@/components/Header";
 import { DesktopSidebar } from "./DesktopSidebar";
+import { DrawerNav } from "./DrawerNav";
+import { BottomNav } from "./BottomNav";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/auditLogger";
 import { useQuery } from "@tanstack/react-query";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -18,6 +20,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const { data: unreadCount = 0 } = useUnreadNotifications();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ["layout-profile", user?.id],
@@ -51,7 +54,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
 
   return (
     <div className="min-h-screen flex w-full">
-      {/* Desktop sidebar — only for logged-in users */}
+      {/* Desktop sidebar */}
       {user && (
         <DesktopSidebar
           profile={profile}
@@ -63,11 +66,27 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Header />
+        <Header onMenuOpen={() => setDrawerOpen(true)} />
         <main className="flex-1 pb-16 lg:pb-0">
           {children}
         </main>
       </div>
+
+      {/* Mobile drawer */}
+      {user && (
+        <DrawerNav
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+          profile={profile}
+          initials={initials}
+          isAdmin={isAdmin}
+          unreadCount={unreadCount}
+          onLogout={handleLogout}
+        />
+      )}
+
+      {/* Mobile bottom nav */}
+      {user && <BottomNav onMenuOpen={() => setDrawerOpen(true)} />}
     </div>
   );
 };
