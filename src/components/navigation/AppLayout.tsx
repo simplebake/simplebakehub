@@ -4,11 +4,12 @@ import { DrawerNav } from "./DrawerNav";
 import { BottomNav } from "./BottomNav";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/auditLogger";
 import { useQuery } from "@tanstack/react-query";
 import { ReactNode, useState } from "react";
+import { isImmersiveRoute } from "./navData";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -17,9 +18,11 @@ interface AppLayoutProps {
 export const AppLayout = ({ children }: AppLayoutProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { isAdmin } = useUserRole();
   const { data: unreadCount = 0 } = useUnreadNotifications();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const immersive = isImmersiveRoute(pathname);
 
   const { data: profile } = useQuery({
     queryKey: ["layout-profile", user?.id],
@@ -53,8 +56,8 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
 
   return (
     <div className="min-h-screen flex w-full">
-      {/* Desktop sidebar */}
-      {user && (
+      {/* Desktop sidebar — hidden on immersive pages */}
+      {user && !immersive && (
         <DesktopSidebar
           profile={profile}
           initials={initials}
@@ -65,7 +68,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
-        <main className="flex-1 pb-16 lg:pb-0">
+        <main className={`flex-1 ${immersive ? "" : "pb-16 lg:pb-0"}`}>
           {children}
         </main>
       </div>

@@ -1,7 +1,8 @@
 import { NavLink } from "@/components/NavLink";
 import { Menu, Bell } from "lucide-react";
-import { bottomNavItems } from "./navData";
+import { bottomNavItems, isImmersiveRoute } from "./navData";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { useLocation } from "react-router-dom";
 
 interface BottomNavProps {
   onMenuOpen: () => void;
@@ -9,6 +10,9 @@ interface BottomNavProps {
 
 export const BottomNav = ({ onMenuOpen }: BottomNavProps) => {
   const { data: unreadCount = 0 } = useUnreadNotifications();
+  const { pathname } = useLocation();
+
+  if (isImmersiveRoute(pathname)) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 lg:hidden">

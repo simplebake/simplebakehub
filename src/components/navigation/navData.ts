@@ -1,3 +1,20 @@
+/** Routes where the bottom nav & sidebar should hide to give full-screen space */
+export const immersiveRoutes = [
+  "/premixes/",    // guided bake (dynamic segment)
+  "/dough-assistant",
+  "/dough",
+  "/starter-ai",
+  "/starter-guide",
+  "/bake-analysis",
+  "/recipe-generator",
+  "/share",
+  "/auth",
+];
+
+/** Check whether a pathname matches an immersive route */
+export const isImmersiveRoute = (pathname: string) =>
+  immersiveRoutes.some((r) => pathname === r || pathname.startsWith(r));
+
 import {
   ChefHat, Home, Megaphone, Cog, MessageSquare, BookOpen,
   Cookie, Users, Search, Bell, FlaskConical, Calculator, Bot,
