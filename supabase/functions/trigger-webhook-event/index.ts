@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireAuth, isAdmin } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,10 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const auth = await requireAuth(req);
+  if ("response" in auth) return auth.response;
+  const admin = await isAdmin(auth.userId);
 
   const supabaseClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -29,12 +34,15 @@ serve(async (req) => {
 
     console.log(`Triggering webhook event: ${event}`, data);
 
-    // Get all active webhook configurations subscribed to this event
-    const { data: configs, error: configError } = await supabaseClient
+    // Get active webhook configurations subscribed to this event
+    // Non-admins are restricted to their own configs
+    let cfgQ = supabaseClient
       .from('webhook_configs')
       .select('*')
       .eq('is_enabled', true)
       .contains('subscribed_events', [event]);
+    if (!admin) cfgQ = cfgQ.eq('user_id', auth.userId);
+    const { data: configs, error: configError } = await cfgQ;
 
     if (configError) {
       console.error("Error fetching configs:", configError);
@@ -43,11 +51,13 @@ serve(async (req) => {
 
     if (!configs || configs.length === 0) {
       // Also check configs with empty subscribed_events (subscribed to all)
-      const { data: allEventConfigs } = await supabaseClient
+      let allQ = supabaseClient
         .from('webhook_configs')
         .select('*')
         .eq('is_enabled', true)
         .or('subscribed_events.is.null,subscribed_events.eq.{}');
+      if (!admin) allQ = allQ.eq('user_id', auth.userId);
+      const { data: allEventConfigs } = await allQ;
 
       if (!allEventConfigs || allEventConfigs.length === 0) {
         console.log(`No webhooks subscribed to event: ${event}`);
@@ -63,6 +73,7 @@ serve(async (req) => {
       'send-webhook',
       {
         body: { event, data },
+        headers: { Authorization: `Bearer ${auth.token}` },
       }
     );
 
