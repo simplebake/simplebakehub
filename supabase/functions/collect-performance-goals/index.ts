@@ -10,6 +10,46 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  // Require either a CRON secret or an admin JWT to invoke this endpoint.
+  const cronSecret = Deno.env.get('CRON_SECRET')
+  const authHeader = req.headers.get('Authorization') || req.headers.get('authorization') || ''
+  let authorized = false
+
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    authorized = true
+  } else if (authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.slice(7)
+      const authClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+      )
+      const { data: userData } = await authClient.auth.getUser(token)
+      if (userData?.user) {
+        const adminClient = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        )
+        const { data: roleRow } = await adminClient
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userData.user.id)
+          .eq('role', 'admin')
+          .maybeSingle()
+        if (roleRow) authorized = true
+      }
+    } catch (_e) {
+      // fall through to unauthorized
+    }
+  }
+
+  if (!authorized) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    )
+  }
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -189,18 +229,19 @@ Deno.serve(async (req) => {
     console.log('Daily performance goals collection completed')
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: 'Performance goals data collection completed',
-        results,
-        timestamp: new Date().toISOString()
+        processed: results.length,
+        succeeded: results.filter((r: { success: boolean }) => r.success).length,
+        timestamp: new Date().toISOString(),
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
     console.error('Error in collect-performance-goals:', error)
     return new Response(
-      JSON.stringify({ success: false, error: String(error) }),
+      JSON.stringify({ success: false, error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
