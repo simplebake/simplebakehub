@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireAuth, isAdmin } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -110,6 +111,10 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const auth = await requireAuth(req);
+  if ("response" in auth) return auth.response;
+  const admin = await isAdmin(auth.userId);
+
   const supabaseClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -120,7 +125,7 @@ serve(async (req) => {
 
     console.log("Send webhook request:", { event, config_id, dataPreview: JSON.stringify(data).substring(0, 200) });
 
-    // Get webhook configurations
+    // Get webhook configurations — non-admins are scoped to their own configs
     let configQuery = supabaseClient
       .from('webhook_configs')
       .select('*')
@@ -128,6 +133,9 @@ serve(async (req) => {
 
     if (config_id) {
       configQuery = configQuery.eq('id', config_id);
+    }
+    if (!admin) {
+      configQuery = configQuery.eq('user_id', auth.userId);
     }
 
     const { data: configs, error: configError } = await configQuery;
