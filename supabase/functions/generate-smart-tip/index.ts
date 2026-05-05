@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { checkIPBlocked, checkAndAutoBlock } from '../_shared/ipBlocking.ts';
+import { requireAuth } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +31,9 @@ serve(async (req) => {
   const endpoint = 'generate-smart-tip';
 
   try {
+    const auth = await requireAuth(req);
+    if ("response" in auth) return auth.response;
+
     // Check if IP is blocked
     const blockCheck = await checkIPBlocked(supabase, clientIP);
     if (blockCheck.isBlocked) {

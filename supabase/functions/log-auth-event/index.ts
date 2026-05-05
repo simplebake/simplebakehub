@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { checkIPBlocked, checkAndAutoBlock } from '../_shared/ipBlocking.ts';
+import { requireAuth } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,6 +30,15 @@ serve(async (req) => {
   const endpoint = 'log-auth-event';
 
   try {
+    // Require a valid Supabase JWT — except for the 'signin' event which
+    // can be logged just before a session exists. For unauthenticated calls
+    // we still ignore any client-supplied userId.
+    const auth = await requireAuth(req);
+    let authedUserId: string | null = null;
+    if (!("response" in auth)) {
+      authedUserId = auth.userId;
+    }
+
     // Check if IP is blocked
     const blockCheck = await checkIPBlocked(supabase, clientIP);
     if (blockCheck.isBlocked) {
@@ -84,6 +94,20 @@ serve(async (req) => {
 
     const { eventType, userId, details } = validationResult.data;
 
+    // If the caller is authenticated, force the user_id to their own id to
+    // prevent forging entries for other users. If not authenticated, only
+    // allow the 'signin'/'signup' events and drop any client-supplied userId.
+    let safeUserId: string | null = authedUserId;
+    if (!authedUserId) {
+      if (eventType !== 'signin' && eventType !== 'signup' && eventType !== 'password_reset' && eventType !== 'email_verification') {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      safeUserId = null;
+    }
+
     // Map event types to standardized strings
     const eventMapping: Record<string, string> = {
       'signup': 'authentication_signup',
@@ -98,7 +122,7 @@ serve(async (req) => {
     // Insert audit log
     const { error } = await supabase.from('audit_logs').insert({
       event_type: mappedEventType,
-      user_id: userId || null,
+      user_id: safeUserId,
       ip_address: clientIP,
       endpoint: 'auth',
       details: {
