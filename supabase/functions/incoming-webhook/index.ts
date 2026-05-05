@@ -91,9 +91,16 @@ serve(async (req) => {
     const rawBody = await req.text();
     const payload = rawBody ? JSON.parse(rawBody) : {};
     
+    const SENSITIVE_HEADERS_LOG = new Set([
+      'authorization', 'x-api-key', 'cookie', 'set-cookie',
+      'x-webhook-signature', 'apikey',
+    ]);
+    const safeLogHeaders = Object.fromEntries(
+      [...req.headers.entries()].filter(([k]) => !SENSITIVE_HEADERS_LOG.has(k.toLowerCase()))
+    );
     console.log("Incoming webhook received:", {
       method: req.method,
-      headers: Object.fromEntries(req.headers.entries()),
+      headers: safeLogHeaders,
       payloadPreview: rawBody.substring(0, 500),
     });
 
