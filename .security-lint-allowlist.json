@@ -1,0 +1,35 @@
+{
+  "$schema_doc": "Findings listed here are intentionally accepted. Each entry must include a justification. Format: {name, detail, reason}. The CI script matches on `${name}::${detail}` exactly.",
+  "allowed": [
+    {
+      "name": "auth_security_definer_function",
+      "detail": "Function \\`public.has_role\\` is a SECURITY DEFINER function callable by signed-in users (\"authenticated\" role).",
+      "reason": "Required by RLS policies; only returns a boolean about the caller's own role."
+    },
+    {
+      "name": "auth_security_definer_function",
+      "detail": "Function \\`public.has_any_role\\` is a SECURITY DEFINER function callable by signed-in users (\"authenticated\" role).",
+      "reason": "Required by RLS policies for multi-role checks."
+    },
+    {
+      "name": "auth_security_definer_function",
+      "detail": "Function \\`public.has_permission\\` is a SECURITY DEFINER function callable by signed-in users (\"authenticated\" role).",
+      "reason": "Powers granular permission RLS policies; only returns a boolean about the caller's own permission."
+    },
+    {
+      "name": "auth_security_definer_function",
+      "detail": "Function \\`public.get_my_role_permissions\\` is a SECURITY DEFINER function callable by signed-in users (\"authenticated\" role).",
+      "reason": "Returns ONLY the caller's own permissions; used by the usePermissions hook to render UI."
+    },
+    {
+      "name": "auth_security_definer_function",
+      "detail": "Function \\`public.regenerate_webhook_secret\\` is a SECURITY DEFINER function callable by signed-in users (\"authenticated\" role).",
+      "reason": "Admin-gated internally via has_role(..., 'admin'); raises 'Access denied' for non-admins."
+    },
+    {
+      "name": "auth_security_definer_function",
+      "detail": "Function \\`public.verify_webhook_secret\\` is a SECURITY DEFINER function callable by signed-in users (\"authenticated\" role).",
+      "reason": "Admin-gated internally via has_role(..., 'admin'); raises 'Access denied' for non-admins."
+    }
+  ]
+}
