@@ -194,12 +194,23 @@ serve(async (req) => {
 
   // Log the webhook call
   try {
+    const SENSITIVE_HEADERS = new Set([
+      'authorization',
+      'x-api-key',
+      'cookie',
+      'set-cookie',
+      'x-webhook-signature',
+      'apikey',
+    ]);
+    const safeHeaders = Object.fromEntries(
+      [...req.headers.entries()].filter(([k]) => !SENSITIVE_HEADERS.has(k.toLowerCase()))
+    );
     await supabaseClient.from('webhook_logs').insert({
       integration_id: 'custom-webhook',
       direction: 'incoming',
       endpoint_url: req.url,
       method: req.method,
-      request_headers: Object.fromEntries(req.headers.entries()),
+      request_headers: safeHeaders,
       request_payload: responseBody,
       response_status: responseStatus,
       response_body: responseBody,
