@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Header } from '@/components/Header';
-import { Shield, ArrowLeft, ShieldCheck, AlertTriangle, Download, Lock, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Shield, ArrowLeft, ShieldCheck, AlertTriangle, Download, Lock, CheckCircle2, RefreshCw, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import allowlist from '../../.security-lint-allowlist.json';
 import jsPDF from 'jspdf';
@@ -39,6 +39,14 @@ const CIStatusBanner = () => {
   const testCount = SECURITY_TESTS.length;
   const [checkedAt, setCheckedAt] = useState<Date>(() => new Date());
   const [refreshing, setRefreshing] = useState(false);
+  const buildTime = (() => {
+    try {
+      return new Date(__BUILD_TIME__);
+    } catch {
+      return null;
+    }
+  })();
+  const ciRunUrl = typeof __CI_RUN_URL__ === 'string' && __CI_RUN_URL__.length > 0 ? __CI_RUN_URL__ : null;
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -68,6 +76,25 @@ const CIStatusBanner = () => {
                 Last successful build matched the linter against the allowlist
                 and ran every security test in <code className="bg-muted px-1 rounded">supabase/functions/_rls_tests/</code>.
               </p>
+              {buildTime && (
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Last successful build: {buildTime.toLocaleString()}
+                </p>
+              )}
+              {ciRunUrl ? (
+                <a
+                  href={ciRunUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-primary hover:underline mt-0.5 inline-flex items-center gap-1"
+                >
+                  View CI run <ExternalLink className="h-3 w-3" />
+                </a>
+              ) : (
+                <p className="text-[11px] text-muted-foreground mt-0.5 italic">
+                  CI run URL not configured (set <code className="bg-muted px-1 rounded">VITE_CI_RUN_URL</code> at build time).
+                </p>
+              )}
               <p className="text-[11px] text-muted-foreground mt-1">
                 Checked at {checkedAt.toLocaleTimeString()}
               </p>

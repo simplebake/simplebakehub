@@ -10,6 +10,14 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  define: {
+    // Injected at build time so the admin Security page can show when the
+    // last successful build (and therefore the last green CI gate) ran.
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __CI_RUN_URL__: JSON.stringify(
+      process.env.VITE_CI_RUN_URL ?? process.env.GITHUB_RUN_URL ?? ''
+    ),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
