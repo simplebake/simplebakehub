@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield, User, Crown, FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { AuditLogsViewer } from '@/components/AuditLogsViewer';
 import { SecurityDashboard } from '@/components/SecurityDashboard';
@@ -150,16 +151,14 @@ const Admin = () => {
           <p className="text-muted-foreground">
             Manage users and system permissions
           </p>
-          <a
-            href="/SECURITY.md"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/admin/security"
             className="mt-3 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-            aria-label="Open the project Security document in a new tab"
+            aria-label="Open the Security admin page"
           >
             <FileText className="h-4 w-4" />
             Security: allowed SECURITY DEFINER functions &amp; CI rules
-          </a>
+          </Link>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-8">
