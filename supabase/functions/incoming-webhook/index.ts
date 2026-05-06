@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-signature, x-webhook-timestamp',
-};
+import { createLogger } from "../_shared/logger.ts";
 
 function hexToBytes(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2);
@@ -69,10 +65,8 @@ function isTimestampValid(timestamp: string | null, toleranceSeconds = 300): boo
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const log = createLogger("incoming-webhook", req);
+  if (req.method === 'OPTIONS') return log.preflight();
 
   const startTime = Date.now();
   
@@ -98,7 +92,7 @@ serve(async (req) => {
     const safeLogHeaders = Object.fromEntries(
       [...req.headers.entries()].filter(([k]) => !SENSITIVE_HEADERS_LOG.has(k.toLowerCase()))
     );
-    console.log("Incoming webhook received:", {
+    log.info("incoming_received", {
       method: req.method,
       headers: safeLogHeaders,
       payloadPreview: rawBody.substring(0, 500),
@@ -116,12 +110,12 @@ serve(async (req) => {
       .eq('is_enabled', true);
 
     if (configError) {
-      console.error("Error fetching webhook configs:", configError);
+      log.error("config_fetch_failed", { error: configError.message });
     }
 
     // Validate timestamp to prevent replay attacks
     if (!isTimestampValid(timestamp)) {
-      console.warn("Webhook timestamp expired or invalid");
+      log.warn("timestamp_invalid");
       responseStatus = 401;
       responseBody = { error: "Timestamp expired or invalid" };
       errorMessage = "Webhook timestamp expired";
@@ -139,7 +133,7 @@ serve(async (req) => {
 
     if (signatureRequired) {
       if (!signature) {
-        console.warn("Missing webhook signature");
+        log.warn("signature_missing");
         responseStatus = 401;
         responseBody = { error: "Missing signature", hint: "Include X-Webhook-Signature header" };
         errorMessage = "Missing webhook signature";
@@ -150,13 +144,13 @@ serve(async (req) => {
       for (const config of configs!) {
         if (config.secret_key && await verifySignature(rawBody, signature, config.secret_key)) {
           signatureValid = true;
-          console.log("Signature verified successfully");
+          log.info("signature_verified", { configId: config.id });
           break;
         }
       }
       
       if (!signatureValid) {
-        console.warn("Invalid webhook signature");
+        log.warn("signature_invalid");
         responseStatus = 401;
         responseBody = { error: "Invalid signature" };
         errorMessage = "Invalid webhook signature";
@@ -164,20 +158,10 @@ serve(async (req) => {
       }
     }
 
-    // Process the webhook based on event type
-    console.log(`Processing webhook event: ${eventType}`);
+    log.info("event_processing", { eventType });
     
     // Handle different event types
-    switch (eventType) {
-      case 'bake.created':
-      case 'bake.completed':
-      case 'order.placed':
-      case 'user.signup':
-        console.log(`Received ${eventType} event:`, payload);
-        break;
-      default:
-        console.log(`Received unknown event type: ${eventType}`, payload);
-    }
+    log.debug("event_payload", { eventType, payloadPreview: JSON.stringify(payload).slice(0, 500) });
 
     success = true;
     responseBody = {
@@ -185,10 +169,11 @@ serve(async (req) => {
       message: "Webhook received and processed",
       eventType,
       timestamp: new Date().toISOString(),
+      correlationId: log.correlationId,
     };
 
   } catch (error: unknown) {
-    console.error("Webhook processing error:", error);
+    log.error("processing_failed", { error: error instanceof Error ? error.message : String(error) });
     success = false;
     errorMessage = error instanceof Error ? error.message : 'Unknown error';
     if (responseStatus === 200) {
@@ -226,11 +211,8 @@ serve(async (req) => {
       error_message: errorMessage,
     });
   } catch (logError) {
-    console.error("Failed to log webhook:", logError);
+    log.error("audit_log_failed", { error: logError instanceof Error ? logError.message : String(logError) });
   }
 
-  return new Response(JSON.stringify(responseBody), {
-    status: responseStatus,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+  return log.respond(responseBody, { status: responseStatus });
 });
