@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Header } from '@/components/Header';
-import { Shield, FileText, ArrowLeft, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Shield, ArrowLeft, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 /**
  * Allowed `SECURITY DEFINER` functions. Mirrors `.security-lint-allowlist.json`
@@ -75,16 +75,11 @@ const AdminSecurity = () => {
             Allowed <code className="text-xs bg-muted px-1.5 py-0.5 rounded">SECURITY DEFINER</code> functions
             and how the CI security gate enforces them.
           </p>
-          <a
-            href="/SECURITY.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-            aria-label="Open the full SECURITY.md document in a new tab"
-          >
-            <FileText className="h-4 w-4" />
-            Open full SECURITY.md
-          </a>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Full reference lives in the repository at{' '}
+            <code className="bg-muted px-1.5 py-0.5 rounded">docs/SECURITY.md</code>
+            {' '}— admin-only and not exposed on the public web.
+          </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 mb-8">
