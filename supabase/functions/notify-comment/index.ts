@@ -46,7 +46,7 @@ serve(async (req) => {
     const authenticatedUserId = claimsData.claims.sub;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { commenterId, bakeShareId, bakeOwnerId, commentPreview }: NotifyCommentRequest = await req.json();
+    const { commenterId, bakeShareId, commentPreview }: NotifyCommentRequest = await req.json();
 
     // Ensure the caller is the commenter
     if (authenticatedUserId !== commenterId) {
@@ -55,6 +55,21 @@ serve(async (req) => {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
+
+    // Verify the bake share exists and resolve the true owner server-side
+    const { data: share, error: shareError } = await supabase
+      .from("bake_shares")
+      .select("user_id")
+      .eq("id", bakeShareId)
+      .single();
+
+    if (shareError || !share) {
+      return new Response(JSON.stringify({ error: "Bake share not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    const bakeOwnerId = share.user_id;
 
     // Don't notify if user commented on their own bake
     if (commenterId === bakeOwnerId) {
