@@ -115,11 +115,12 @@ const CIStatusBanner = () => {
   const [issues, setIssues] = useState<GateIssue[]>(() => computeGateIssues());
   const passing = issues.length === 0;
   const issueKey = (i: GateIssue) => `${i.kind}::${i.label}`;
-  const RESOLVED_STORAGE_KEY = 'admin-security:ci-gate-resolved-v1';
-  const [resolved, setResolved] = useState<Record<string, boolean>>(() => {
+  type ResolutionPath = 'primary' | 'alternate';
+  const RESOLVED_STORAGE_KEY = 'admin-security:ci-gate-resolved-v2';
+  const [resolved, setResolved] = useState<Record<string, ResolutionPath>>(() => {
     try {
       const raw = localStorage.getItem(RESOLVED_STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+      return raw ? (JSON.parse(raw) as Record<string, ResolutionPath>) : {};
     } catch {
       return {};
     }
@@ -136,7 +137,7 @@ const CIStatusBanner = () => {
   useEffect(() => {
     setResolved((prev) => {
       const valid = new Set(issues.map(issueKey));
-      const next: Record<string, boolean> = {};
+      const next: Record<string, ResolutionPath> = {};
       let changed = false;
       for (const [k, v] of Object.entries(prev)) {
         if (valid.has(k)) next[k] = v;
@@ -145,9 +146,68 @@ const CIStatusBanner = () => {
       return changed ? next : prev;
     });
   }, [issues]);
-  const toggleResolved = (i: GateIssue) =>
-    setResolved((prev) => ({ ...prev, [issueKey(i)]: !prev[issueKey(i)] }));
+
+  // Friendly action labels for each (kind, path) pair — shown on the buttons
+  // and persisted in the audit log so admins can see exactly which fix path
+  // they chose for each issue later.
+  const PATH_ACTIONS: Record<GateIssue['kind'], { primary: string; alternate: string }> = {
+    'missing-allowlist': { primary: 'allowlist-add', alternate: 'revoke-execute' },
+    'extra-allowlist':   { primary: 'allowlist-remove', alternate: 'expected-add' },
+    'missing-test':      { primary: 'test-restore', alternate: 'expected-remove' },
+    'extra-test':        { primary: 'expected-add', alternate: 'test-delete' },
+  };
+  const PATH_LABELS: Record<GateIssue['kind'], { primary: string; alternate: string }> = {
+    'missing-allowlist': { primary: 'Added to allowlist', alternate: 'Revoked EXECUTE' },
+    'extra-allowlist':   { primary: 'Removed from allowlist', alternate: 'Added to EXPECTED list' },
+    'missing-test':      { primary: 'Restored test file', alternate: 'Removed from EXPECTED list' },
+    'extra-test':        { primary: 'Added to EXPECTED list', alternate: 'Deleted test file' },
+  };
+
+  const recordResolution = async (
+    issue: GateIssue,
+    path: ResolutionPath | 'unresolve',
+    action: string,
+  ) => {
+    try {
+      const { error } = await supabase.rpc('log_ci_gate_resolution', {
+        _issue_kind: issue.kind,
+        _issue_label: issue.label,
+        _path: path,
+        _action: action,
+        _details: {
+          commit_sha: remoteStatus?.commit_sha ?? null,
+          ci_run_url: ciRunUrl ?? null,
+        },
+      });
+      if (error) throw error;
+    } catch (e) {
+      // Non-fatal — surface to the admin but keep the local state change.
+      toast.error(
+        `Couldn't record audit entry: ${e instanceof Error ? e.message : 'unknown error'}`,
+      );
+    }
+  };
+
+  const setIssuePath = (issue: GateIssue, path: ResolutionPath) => {
+    const current = resolved[issueKey(issue)];
+    if (current === path) {
+      // Toggle off — mark as unresolved and audit it as a reversal.
+      setResolved((prev) => {
+        const { [issueKey(issue)]: _, ...rest } = prev;
+        return rest;
+      });
+      void recordResolution(issue, 'unresolve', `revert-${PATH_ACTIONS[issue.kind][path]}`);
+      toast.success(`Unmarked ${issue.label}`);
+      return;
+    }
+    setResolved((prev) => ({ ...prev, [issueKey(issue)]: path }));
+    const action = PATH_ACTIONS[issue.kind][path];
+    void recordResolution(issue, path, action);
+    toast.success(`Logged: ${PATH_LABELS[issue.kind][path]}`);
+  };
+
   const isResolved = (i: GateIssue) => Boolean(resolved[issueKey(i)]);
+  const pathFor = (i: GateIssue): ResolutionPath | undefined => resolved[issueKey(i)];
   const resolvedCount = issues.filter(isResolved).length;
   const progressPct = issues.length === 0 ? 100 : Math.round((resolvedCount / issues.length) * 100);
   const allResolved = issues.length > 0 && resolvedCount === issues.length;
