@@ -1485,6 +1485,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_ci_gate_resolution: {
+        Args: {
+          _action: string
+          _details?: Json
+          _issue_kind: string
+          _issue_label: string
+          _path: string
+        }
+        Returns: undefined
+      }
       log_moderation_action: {
         Args: {
           _action: string
