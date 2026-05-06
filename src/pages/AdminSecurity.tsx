@@ -557,17 +557,43 @@ const CIStatusBanner = () => {
 
         {!passing && (
           <div className="mt-4 rounded border border-destructive/40 bg-destructive/5 p-3 text-xs space-y-2">
+            <div className="flex items-center justify-between gap-3 pb-2 border-b border-destructive/20">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="font-medium text-foreground">
+                    Resolution checklist
+                  </span>
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
+                    {resolvedCount} / {issues.length} resolved · {progressPct}%
+                  </span>
+                </div>
+                <Progress value={progressPct} className="h-1.5" aria-label="CI gate resolution progress" />
+                {allResolved && (
+                  <div className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400">
+                    🎉 All items ticked off locally. Commit, push, and use <span className="font-medium">Refresh</span> to re-check the live gate.
+                  </div>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={resetChecklist}
+                disabled={resolvedCount === 0}
+                className="shrink-0 h-7 text-[11px]"
+                aria-label="Reset checklist progress"
+              >
+                Reset
+              </Button>
+            </div>
             {missingAllowlist.length > 0 && (
               <div>
                 <div className="font-medium text-destructive mb-1">
                   Missing allowlist entries ({missingAllowlist.length})
                 </div>
-                <ul className="text-muted-foreground space-y-1">
+                <ul className="text-muted-foreground space-y-2">
                   {missingAllowlist.map((i) => (
-                    <li key={`ma-${i.label}`}>
-                      <div className="font-mono">− {i.label}</div>
-                      <RecommendationBlock rec={recommendationFor(i.kind, i.label)} />
-                    </li>
+                    <IssueChecklistItem key={`ma-${i.label}`} issue={i} prefix="−" />
                   ))}
                 </ul>
               </div>
@@ -577,12 +603,9 @@ const CIStatusBanner = () => {
                 <div className="font-medium text-amber-600 mb-1">
                   Unexpected allowlist entries ({extraAllowlist.length})
                 </div>
-                <ul className="text-muted-foreground space-y-1">
+                <ul className="text-muted-foreground space-y-2">
                   {extraAllowlist.map((i) => (
-                    <li key={`ea-${i.label}`}>
-                      <div className="font-mono">+ {i.label}</div>
-                      <RecommendationBlock rec={recommendationFor(i.kind, i.label)} />
-                    </li>
+                    <IssueChecklistItem key={`ea-${i.label}`} issue={i} prefix="+" />
                   ))}
                 </ul>
               </div>
@@ -592,12 +615,9 @@ const CIStatusBanner = () => {
                 <div className="font-medium text-destructive mb-1">
                   Missing security test files ({missingTests.length})
                 </div>
-                <ul className="text-muted-foreground space-y-1">
+                <ul className="text-muted-foreground space-y-2">
                   {missingTests.map((i) => (
-                    <li key={`mt-${i.label}`}>
-                      <div className="font-mono">− {i.label}</div>
-                      <RecommendationBlock rec={recommendationFor(i.kind, i.label)} />
-                    </li>
+                    <IssueChecklistItem key={`mt-${i.label}`} issue={i} prefix="−" />
                   ))}
                 </ul>
               </div>
@@ -607,12 +627,9 @@ const CIStatusBanner = () => {
                 <div className="font-medium text-amber-600 mb-1">
                   Unexpected security test files ({extraTests.length})
                 </div>
-                <ul className="text-muted-foreground space-y-1">
+                <ul className="text-muted-foreground space-y-2">
                   {extraTests.map((i) => (
-                    <li key={`et-${i.label}`}>
-                      <div className="font-mono">+ {i.label}</div>
-                      <RecommendationBlock rec={recommendationFor(i.kind, i.label)} />
-                    </li>
+                    <IssueChecklistItem key={`et-${i.label}`} issue={i} prefix="+" />
                   ))}
                 </ul>
               </div>
