@@ -1446,6 +1446,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_security_doc_view: { Args: never; Returns: undefined }
       regenerate_webhook_secret: {
         Args: { _config_id: string }
         Returns: string
