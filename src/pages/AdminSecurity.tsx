@@ -274,10 +274,28 @@ const CIStatusBanner = () => {
     }
   };
 
-  const missingAllowlist = issues.filter((i) => i.kind === 'missing-allowlist');
-  const extraAllowlist = issues.filter((i) => i.kind === 'extra-allowlist');
-  const missingTests = issues.filter((i) => i.kind === 'missing-test');
-  const extraTests = issues.filter((i) => i.kind === 'extra-test');
+  const [searchTerm, setSearchTerm] = useState('');
+  type KindFilter = 'all' | GateIssue['kind'];
+  const [kindFilter, setKindFilter] = useState<KindFilter>('all');
+  const normalisedSearch = searchTerm.trim().toLowerCase();
+  const matchesFilters = (i: GateIssue) =>
+    (kindFilter === 'all' || i.kind === kindFilter) &&
+    (normalisedSearch === '' || i.label.toLowerCase().includes(normalisedSearch));
+
+  const missingAllowlist = issues.filter((i) => i.kind === 'missing-allowlist' && matchesFilters(i));
+  const extraAllowlist = issues.filter((i) => i.kind === 'extra-allowlist' && matchesFilters(i));
+  const missingTests = issues.filter((i) => i.kind === 'missing-test' && matchesFilters(i));
+  const extraTests = issues.filter((i) => i.kind === 'extra-test' && matchesFilters(i));
+  const visibleCount = missingAllowlist.length + extraAllowlist.length + missingTests.length + extraTests.length;
+  const filtersActive = kindFilter !== 'all' || normalisedSearch !== '';
+
+  const filterButtons: { key: KindFilter; label: string; count: number }[] = [
+    { key: 'all', label: 'All', count: issues.length },
+    { key: 'missing-allowlist', label: 'Missing allowlist', count: issues.filter((i) => i.kind === 'missing-allowlist').length },
+    { key: 'extra-allowlist', label: 'Extra allowlist', count: issues.filter((i) => i.kind === 'extra-allowlist').length },
+    { key: 'missing-test', label: 'Missing tests', count: issues.filter((i) => i.kind === 'missing-test').length },
+    { key: 'extra-test', label: 'Extra tests', count: issues.filter((i) => i.kind === 'extra-test').length },
+  ];
 
   type Recommendation = {
     summary: string;
