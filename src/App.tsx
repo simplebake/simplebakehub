@@ -19,6 +19,7 @@ const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const Admin = lazy(() => import("./pages/Admin"));
 const AdminSecurity = lazy(() => import("./pages/AdminSecurity"));
 const AdminAuditLogs = lazy(() => import("./pages/AdminAuditLogs"));
+const AdminWebhooks = lazy(() => import("./pages/AdminWebhooks"));
 const Premixes = lazy(() => import("./pages/Premixes"));
 const GuidedBake = lazy(() => import("./pages/GuidedBake"));
 const Tutorials = lazy(() => import("./pages/Tutorials"));
@@ -86,6 +87,7 @@ const AppRoutes = () => (
               <Route index element={<Admin />} />
               <Route path="security" element={<AdminSecurity />} />
               <Route path="audit-logs" element={<AdminAuditLogs />} />
+              <Route path="webhooks" element={<AdminWebhooks />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AdminRoute>

@@ -167,6 +167,14 @@ const Admin = () => {
             <FileText className="h-4 w-4" />
             Audit Logs: moderation &amp; security events
           </Link>
+          <Link
+            to="/admin/webhooks"
+            className="mt-3 ml-4 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            aria-label="Open the Webhook Destinations admin page"
+          >
+            <FileText className="h-4 w-4" />
+            Webhooks: destinations &amp; configuration audit
+          </Link>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-8">
