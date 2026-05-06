@@ -17,13 +17,10 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return log.respond({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      log.warn("auth_missing");
+      return log.respond({ error: "Unauthorized" }, { status: 401 });
     }
 
     const authClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -32,19 +29,20 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
+      log.warn("auth_invalid", { error: claimsError?.message });
       return log.respond({ error: "Unauthorized" }, { status: 401 });
     }
     const authenticatedUserId = claimsData.claims.sub;
+    const reqLog = log.child({ userId: authenticatedUserId });
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { likerId, bakeShareId }: NotifyLikeRequest = await req.json();
 
-    // Ensure the caller is the liker
     if (authenticatedUserId !== likerId) {
+      reqLog.warn("identity_mismatch", { claimedLikerId: likerId });
       return log.respond({ error: "Forbidden: identity mismatch" }, { status: 403 });
     }
 
-    // Verify the bake share exists and resolve the true owner server-side
     const { data: share, error: shareError } = await supabase
       .from("bake_shares")
       .select("user_id")
@@ -52,17 +50,19 @@ serve(async (req) => {
       .single();
 
     if (shareError || !share) {
+      reqLog.warn("bake_share_not_found", { bakeShareId });
       return log.respond({ error: "Bake share not found" }, { status: 404 });
     }
     const bakeOwnerId = share.user_id;
 
-    // Don't notify if user liked their own bake
     if (likerId === bakeOwnerId) {
-      return new Response(
-        JSON.stringify({ message: "User liked their own bake, no notification needed" }, { status: 200 });
+      reqLog.info("self_like_skipped");
+      return log.respond(
+        { message: "User liked their own bake, no notification needed" },
+        { status: 200 },
+      );
     }
 
-    // Get liker's profile name
     const { data: likerProfile } = await supabase
       .from("profiles")
       .select("name")
@@ -70,10 +70,10 @@ serve(async (req) => {
       .single();
 
     if (!likerProfile) {
+      reqLog.warn("liker_not_found");
       return log.respond({ error: "Liker not found" }, { status: 404 });
     }
 
-    // Store notification in database
     await supabase.from("notifications").insert({
       user_id: bakeOwnerId,
       type: "like",
@@ -81,8 +81,8 @@ serve(async (req) => {
       content_id: bakeShareId,
       message: `${likerProfile.name} liked your bake`,
     });
+    reqLog.info("notification_stored", { recipientId: bakeOwnerId });
 
-    // Check if owner has push enabled
     const { data: preferences } = await supabase
       .from("notification_preferences")
       .select("push_enabled")
@@ -90,10 +90,10 @@ serve(async (req) => {
       .single();
 
     if (!preferences?.push_enabled) {
+      reqLog.debug("push_disabled");
       return log.respond({ message: "Notification stored, push not enabled" }, { status: 200 });
     }
 
-    // Get push subscription
     const { data: subscription } = await supabase
       .from("push_subscriptions")
       .select("*")
@@ -101,36 +101,35 @@ serve(async (req) => {
       .single();
 
     if (!subscription) {
+      reqLog.debug("no_push_subscription");
       return log.respond({ message: "No push subscription found" }, { status: 200 });
     }
 
-    // Send push notification
     const payload = JSON.stringify({
       title: `${likerProfile.name} liked your bake! ❤️`,
       body: "Check out who's loving your creation",
       icon: "/favicon.ico",
       tag: "like",
-      data: { url: `/share` },
+      data: { url: `/share`, correlationId: log.correlationId },
     });
 
     try {
       const response = await fetch(subscription.endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "TTL": "86400",
-        },
+        headers: { "Content-Type": "application/json", TTL: "86400" },
         body: payload,
       });
 
       if (!response.ok && (response.status === 404 || response.status === 410)) {
-        await supabase
-          .from("push_subscriptions")
-          .delete()
-          .eq("id", subscription.id);
+        await supabase.from("push_subscriptions").delete().eq("id", subscription.id);
+        reqLog.info("push_subscription_pruned", { status: response.status });
+      } else {
+        reqLog.info("push_dispatched", { status: response.status });
       }
     } catch (error) {
-      log.warn("push_send_failed", { error: error instanceof Error ? error.message : String(error) });
+      reqLog.warn("push_send_failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
 
     return log.respond({ message: "Notification sent" }, { status: 200 });
