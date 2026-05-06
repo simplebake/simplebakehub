@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { requireAuth } from "../_shared/auth.ts";
+import { validateImageBase64 } from "../_shared/imageValidation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,34 +20,12 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    if (!imageBase64) {
-      return new Response(JSON.stringify({ error: "No image provided" }), {
-        status: 400,
+    const imgCheck = validateImageBase64(imageBase64);
+    if (!imgCheck.ok) {
+      return new Response(JSON.stringify({ error: imgCheck.error }), {
+        status: imgCheck.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    }
-
-    if (typeof imageBase64 !== "string") {
-      return new Response(JSON.stringify({ error: "Invalid image payload" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (!/^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(imageBase64)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid image format. Expected data:image/{jpeg|png|webp|gif};base64,..." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB raw
-    // base64 is ~1.37x the raw size; allow a little headroom
-    if (imageBase64.length > Math.ceil(MAX_IMAGE_BYTES * 1.4)) {
-      return new Response(
-        JSON.stringify({ error: "Image too large (max 5 MB)" }),
-        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
