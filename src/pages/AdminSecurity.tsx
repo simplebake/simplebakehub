@@ -302,9 +302,14 @@ const CIStatusBanner = () => {
                 <div className="font-medium text-destructive mb-1">
                   Missing allowlist entries ({missingAllowlist.length})
                 </div>
-                <ul className="font-mono text-muted-foreground space-y-0.5">
+                <ul className="text-muted-foreground space-y-1">
                   {missingAllowlist.map((i) => (
-                    <li key={`ma-${i.label}`}>− {i.label}</li>
+                    <li key={`ma-${i.label}`}>
+                      <div className="font-mono">− {i.label}</div>
+                      <div className="text-[11px] pl-3 text-muted-foreground/80">
+                        💡 {hintFor(i.kind, i.label)}
+                      </div>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -314,9 +319,14 @@ const CIStatusBanner = () => {
                 <div className="font-medium text-amber-600 mb-1">
                   Unexpected allowlist entries ({extraAllowlist.length})
                 </div>
-                <ul className="font-mono text-muted-foreground space-y-0.5">
+                <ul className="text-muted-foreground space-y-1">
                   {extraAllowlist.map((i) => (
-                    <li key={`ea-${i.label}`}>+ {i.label}</li>
+                    <li key={`ea-${i.label}`}>
+                      <div className="font-mono">+ {i.label}</div>
+                      <div className="text-[11px] pl-3 text-muted-foreground/80">
+                        💡 {hintFor(i.kind, i.label)}
+                      </div>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -326,9 +336,14 @@ const CIStatusBanner = () => {
                 <div className="font-medium text-destructive mb-1">
                   Missing security test files ({missingTests.length})
                 </div>
-                <ul className="font-mono text-muted-foreground space-y-0.5">
+                <ul className="text-muted-foreground space-y-1">
                   {missingTests.map((i) => (
-                    <li key={`mt-${i.label}`}>− {i.label}</li>
+                    <li key={`mt-${i.label}`}>
+                      <div className="font-mono">− {i.label}</div>
+                      <div className="text-[11px] pl-3 text-muted-foreground/80">
+                        💡 {hintFor(i.kind, i.label)}
+                      </div>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -338,13 +353,28 @@ const CIStatusBanner = () => {
                 <div className="font-medium text-amber-600 mb-1">
                   Unexpected security test files ({extraTests.length})
                 </div>
-                <ul className="font-mono text-muted-foreground space-y-0.5">
+                <ul className="text-muted-foreground space-y-1">
                   {extraTests.map((i) => (
-                    <li key={`et-${i.label}`}>+ {i.label}</li>
+                    <li key={`et-${i.label}`}>
+                      <div className="font-mono">+ {i.label}</div>
+                      <div className="text-[11px] pl-3 text-muted-foreground/80">
+                        💡 {hintFor(i.kind, i.label)}
+                      </div>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
+
+            <div className="mt-2 pt-2 border-t border-destructive/20 text-[11px] text-muted-foreground space-y-1">
+              <div className="font-medium text-foreground">Next steps</div>
+              <ol className="list-decimal pl-4 space-y-0.5">
+                <li>Run <code className="bg-muted px-1 rounded">node scripts/security-lint.mjs</code> locally to reproduce the failure.</li>
+                <li>Update <code className="bg-muted px-1 rounded">.security-lint-allowlist.json</code> and/or <code className="bg-muted px-1 rounded">supabase/functions/_rls_tests/</code> per the hints above.</li>
+                <li>Re-run <code className="bg-muted px-1 rounded">deno test -A supabase/functions/_rls_tests/</code> to confirm tests pass.</li>
+                <li>Commit, push, and watch the <code className="bg-muted px-1 rounded">.github/workflows/security-lint.yml</code> run go green.</li>
+              </ol>
+            </div>
           </div>
         )}
 
