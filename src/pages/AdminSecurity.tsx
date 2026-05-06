@@ -111,6 +111,16 @@ const CIStatusBanner = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [issues, setIssues] = useState<GateIssue[]>(() => computeGateIssues());
   const passing = issues.length === 0;
+  const [remoteStatus, setRemoteStatus] = useState<{
+    status: 'passing' | 'failing' | 'unknown';
+    commit_sha: string | null;
+    ci_run_url: string | null;
+    build_time: string | null;
+    checked_at: string;
+    issues: GateIssue[];
+  } | null>(null);
+  const [remoteError, setRemoteError] = useState<string | null>(null);
+  const [loadingRemote, setLoadingRemote] = useState(true);
   const buildTime = (() => {
     try {
       return new Date(__BUILD_TIME__);
@@ -118,14 +128,41 @@ const CIStatusBanner = () => {
       return null;
     }
   })();
-  const ciRunUrl = typeof __CI_RUN_URL__ === 'string' && __CI_RUN_URL__.length > 0 ? __CI_RUN_URL__ : null;
+  const ciRunUrl =
+    remoteStatus?.ci_run_url ??
+    (typeof __CI_RUN_URL__ === 'string' && __CI_RUN_URL__.length > 0 ? __CI_RUN_URL__ : null);
+
+  const fetchRemote = async () => {
+    setLoadingRemote(true);
+    setRemoteError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('ci-security-status', {
+        method: 'GET',
+      });
+      if (error) throw error;
+      const row = (data as { status: typeof remoteStatus | null })?.status ?? null;
+      if (row) {
+        setRemoteStatus(row);
+      } else {
+        setRemoteStatus(null);
+      }
+    } catch (e) {
+      setRemoteError(e instanceof Error ? e.message : 'Failed to load CI status');
+    } finally {
+      setLoadingRemote(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRemote();
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await new Promise((r) => setTimeout(r, 400));
       const next = computeGateIssues();
       setIssues(next);
+      await fetchRemote();
       setCheckedAt(new Date());
       if (next.length === 0) {
         toast.success('CI security status re-checked — gate still passing.');
@@ -180,6 +217,34 @@ const CIStatusBanner = () => {
               ) : (
                 <p className="text-[11px] text-muted-foreground mt-0.5 italic">
                   CI run URL not configured (set <code className="bg-muted px-1 rounded">VITE_CI_RUN_URL</code> at build time).
+                </p>
+              )}
+              {loadingRemote ? (
+                <p className="text-[11px] text-muted-foreground mt-1 italic">
+                  Loading latest CI status…
+                </p>
+              ) : remoteError ? (
+                <p className="text-[11px] text-amber-600 mt-1">
+                  Live CI status unavailable: {remoteError}
+                </p>
+              ) : remoteStatus ? (
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Live CI: <span className={
+                    remoteStatus.status === 'passing'
+                      ? 'text-emerald-600 font-medium'
+                      : remoteStatus.status === 'failing'
+                        ? 'text-destructive font-medium'
+                        : 'text-muted-foreground font-medium'
+                  }>{remoteStatus.status}</span>
+                  {remoteStatus.commit_sha && (
+                    <> · commit <code className="bg-muted px-1 rounded">{remoteStatus.commit_sha.slice(0, 7)}</code></>
+                  )}
+                  {' · updated '}
+                  {new Date(remoteStatus.checked_at).toLocaleString()}
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground mt-1 italic">
+                  No CI status reported yet — falling back to the bundled check.
                 </p>
               )}
               <p className="text-[11px] text-muted-foreground mt-1">
