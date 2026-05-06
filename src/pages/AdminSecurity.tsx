@@ -371,7 +371,7 @@ const CIStatusBanner = () => {
                   {missingAllowlist.map((i) => (
                     <li key={`ma-${i.label}`}>
                       <div className="font-mono">− {i.label}</div>
-                      <div className="text-[11px] pl-3 text-muted-foreground/80">
+                      <RecommendationBlockWrap>
                         💡 {hintFor(i.kind, i.label)}
                       </div>
                     </li>
@@ -388,7 +388,7 @@ const CIStatusBanner = () => {
                   {extraAllowlist.map((i) => (
                     <li key={`ea-${i.label}`}>
                       <div className="font-mono">+ {i.label}</div>
-                      <div className="text-[11px] pl-3 text-muted-foreground/80">
+                      <RecommendationBlockWrap>
                         💡 {hintFor(i.kind, i.label)}
                       </div>
                     </li>
@@ -405,7 +405,7 @@ const CIStatusBanner = () => {
                   {missingTests.map((i) => (
                     <li key={`mt-${i.label}`}>
                       <div className="font-mono">− {i.label}</div>
-                      <div className="text-[11px] pl-3 text-muted-foreground/80">
+                      <RecommendationBlockWrap>
                         💡 {hintFor(i.kind, i.label)}
                       </div>
                     </li>
@@ -422,7 +422,7 @@ const CIStatusBanner = () => {
                   {extraTests.map((i) => (
                     <li key={`et-${i.label}`}>
                       <div className="font-mono">+ {i.label}</div>
-                      <div className="text-[11px] pl-3 text-muted-foreground/80">
+                      <RecommendationBlockWrap>
                         💡 {hintFor(i.kind, i.label)}
                       </div>
                     </li>
