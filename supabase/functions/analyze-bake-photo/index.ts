@@ -1,20 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { requireAuth } from "../_shared/auth.ts";
 import { validateImageBase64 } from "../_shared/imageValidation.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { createLogger } from "../_shared/logger.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const log = createLogger("analyze-bake-photo", req);
+  if (req.method === "OPTIONS") return log.preflight();
 
   try {
     const auth = await requireAuth(req);
-    if ("response" in auth) return auth.response;
+    if ("response" in auth) {
+      log.warn("auth_failed");
+      return auth.response;
+    }
+    const reqLog = log.child({ userId: auth.userId });
 
     const { imageBase64 } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -22,17 +21,17 @@ serve(async (req) => {
 
     const imgCheck = validateImageBase64(imageBase64);
     if (!imgCheck.ok) {
-      return new Response(JSON.stringify({ error: imgCheck.error }), {
-        status: imgCheck.status,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      reqLog.warn("image_rejected", { reason: imgCheck.error, status: imgCheck.status });
+      return log.respond({ error: imgCheck.error }, { status: imgCheck.status });
     }
+    reqLog.info("ai_request_dispatch", { sizeBytes: imageBase64.length });
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
+        "X-Correlation-Id": log.correlationId,
       },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
@@ -69,33 +68,29 @@ VERDICT: [One enthusiastic sentence summarising the bake]`
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        reqLog.warn("ai_rate_limited");
+        return log.respond({ error: "Rate limit exceeded. Please try again later." }, { status: 429 });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI service quota exceeded." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        reqLog.warn("ai_quota_exceeded");
+        return log.respond({ error: "AI service quota exceeded." }, { status: 402 });
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      reqLog.error("ai_gateway_error", { status: response.status, body: errorText.slice(0, 500) });
       throw new Error("AI gateway error");
     }
 
     const data = await response.json();
     const analysis = data.choices[0].message.content;
-
-    return new Response(JSON.stringify({ analysis }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    reqLog.info("ai_response_ok");
+    return log.respond({ analysis }, { status: 200 });
   } catch (error) {
-    console.error("Error analysing bake photo:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    log.error("unhandled_exception", {
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+    return log.respond(
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 },
     );
   }
 });
