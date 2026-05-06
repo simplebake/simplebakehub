@@ -7,6 +7,44 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function isPrivateHostname(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal')) return true;
+  // IPv6 loopback / unspecified / link-local / unique-local
+  if (h === '::1' || h === '::' || h.startsWith('fe80:') || h.startsWith('fc') || h.startsWith('fd')) return true;
+  // IPv4 ranges
+  const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+  const m = h.match(ipv4);
+  if (m) {
+    const [a, b] = [parseInt(m[1], 10), parseInt(m[2], 10)];
+    if (a === 10) return true;
+    if (a === 127) return true;
+    if (a === 0) return true;
+    if (a === 169 && b === 254) return true; // link-local (incl. cloud metadata)
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+    if (a >= 224) return true; // multicast/reserved
+  }
+  return false;
+}
+
+function validateOutgoingUrl(url: string): { ok: true } | { ok: false; error: string } {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { ok: false, error: 'Invalid webhook URL' };
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return { ok: false, error: 'Webhook URL must use http(s)' };
+  }
+  if (isPrivateHostname(parsed.hostname)) {
+    return { ok: false, error: 'Webhook URL targets a private/internal address' };
+  }
+  return { ok: true };
+}
+
 async function generateSignature(payload: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -174,6 +212,29 @@ serve(async (req) => {
 
       if (!config.outgoing_url) {
         console.log(`Config ${config.id} has no outgoing URL`);
+        continue;
+      }
+
+      const urlCheck = validateOutgoingUrl(config.outgoing_url);
+      if (!urlCheck.ok) {
+        console.warn(`Config ${config.id} blocked: ${urlCheck.error}`);
+        await supabaseClient.from('webhook_logs').insert({
+          integration_id: 'custom-webhook',
+          direction: 'outgoing',
+          endpoint_url: config.outgoing_url,
+          method: 'POST',
+          request_payload: { event },
+          response_status: 0,
+          response_body: null,
+          duration_ms: 0,
+          success: false,
+          error_message: `Blocked by SSRF guard: ${urlCheck.error}`,
+        });
+        results.push({
+          config_id: config.id,
+          success: false,
+          error: urlCheck.error,
+        });
         continue;
       }
 

@@ -26,6 +26,29 @@ serve(async (req) => {
       });
     }
 
+    if (typeof imageBase64 !== "string") {
+      return new Response(JSON.stringify({ error: "Invalid image payload" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!/^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(imageBase64)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid image format. Expected data:image/{jpeg|png|webp|gif};base64,..." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB raw
+    // base64 is ~1.37x the raw size; allow a little headroom
+    if (imageBase64.length > Math.ceil(MAX_IMAGE_BYTES * 1.4)) {
+      return new Response(
+        JSON.stringify({ error: "Image too large (max 5 MB)" }),
+        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {

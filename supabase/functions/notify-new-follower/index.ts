@@ -54,6 +54,21 @@ serve(async (req) => {
       });
     }
 
+    // Verify the follow relationship actually exists server-side
+    const { data: followRow, error: followErr } = await supabase
+      .from("followers")
+      .select("following_id")
+      .eq("follower_id", followerId)
+      .eq("following_id", followingId)
+      .maybeSingle();
+
+    if (followErr || !followRow) {
+      return new Response(JSON.stringify({ error: "Follow relationship not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // Get follower's profile name
     const { data: followerProfile } = await supabase
       .from("profiles")
