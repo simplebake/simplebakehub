@@ -3,11 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { checkIPBlocked, checkAndAutoBlock } from '../_shared/ipBlocking.ts';
 import { requireAuth } from "../_shared/auth.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { createLogger } from "../_shared/logger.ts";
 
 const requestSchema = z.object({
   eventType: z.enum(['signup', 'signin', 'signout', 'password_reset', 'email_verification']),
@@ -16,9 +12,8 @@ const requestSchema = z.object({
 });
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const log = createLogger("log-auth-event", req);
+  if (req.method === "OPTIONS") return log.preflight();
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -28,6 +23,7 @@ serve(async (req) => {
                    req.headers.get('x-real-ip') || 
                    'unknown';
   const endpoint = 'log-auth-event';
+  const reqLog = log.child({ ip: clientIP });
 
   try {
     // Require a valid Supabase JWT — except for the 'signin' event which
@@ -42,14 +38,14 @@ serve(async (req) => {
     // Check if IP is blocked
     const blockCheck = await checkIPBlocked(supabase, clientIP);
     if (blockCheck.isBlocked) {
-      console.log(`Blocked IP attempt: ${clientIP}`);
-      return new Response(
-        JSON.stringify({ 
+      reqLog.warn("ip_blocked", { reason: blockCheck.reason });
+      return log.respond(
+        {
           error: "Access denied. Your IP address has been blocked.",
           reason: blockCheck.reason,
-          expires_at: blockCheck.expiresAt
-        }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          expires_at: blockCheck.expiresAt,
+        },
+        { status: 403 },
       );
     }
 
@@ -66,14 +62,14 @@ serve(async (req) => {
       .maybeSingle();
 
     if (rateLimitData && rateLimitData.request_count >= 60) {
-      console.log(`Rate limit exceeded for IP: ${clientIP}`);
+      reqLog.warn("rate_limit_exceeded");
       
       // Check for repeat violations and auto-block if needed
       await checkAndAutoBlock(supabase, clientIP, endpoint);
       
-      return new Response(
-        JSON.stringify({ error: "Rate limit exceeded. Maximum 60 requests per hour." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return log.respond(
+        { error: "Rate limit exceeded. Maximum 60 requests per hour." },
+        { status: 429 },
       );
     }
 
@@ -82,13 +78,10 @@ serve(async (req) => {
     const validationResult = requestSchema.safeParse(body);
 
     if (!validationResult.success) {
-      console.error('Validation error:', validationResult.error);
-      return new Response(
-        JSON.stringify({ 
-          error: "Invalid request data",
-          details: validationResult.error.issues 
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      reqLog.warn("validation_error", { issues: validationResult.error.issues });
+      return log.respond(
+        { error: "Invalid request data", details: validationResult.error.issues },
+        { status: 400 },
       );
     }
 
@@ -100,10 +93,8 @@ serve(async (req) => {
     let safeUserId: string | null = authedUserId;
     if (!authedUserId) {
       if (eventType !== 'signin' && eventType !== 'signup' && eventType !== 'password_reset' && eventType !== 'email_verification') {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        reqLog.warn("unauth_event", { eventType });
+        return log.respond({ error: "Unauthorized" }, { status: 401 });
       }
       safeUserId = null;
     }
@@ -133,7 +124,7 @@ serve(async (req) => {
     });
 
     if (error) {
-      console.error('Error logging auth event:', error);
+      reqLog.error("audit_insert_failed", { error: error.message });
       throw error;
     }
 
@@ -156,17 +147,12 @@ serve(async (req) => {
         });
     }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    reqLog.info("auth_event_logged", { eventType, userId: safeUserId });
+    return log.respond({ success: true }, { status: 200 });
 
   } catch (error) {
-    console.error("Error in log-auth-event:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    reqLog.error("unhandled_exception", { error: errorMessage });
+    return log.respond({ error: errorMessage }, { status: 500 });
   }
 });
