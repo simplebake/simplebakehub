@@ -40,6 +40,11 @@
       "name": "auth_security_definer_function",
       "detail": "Function \\`public.log_moderation_action\\` is a SECURITY DEFINER function callable by signed-in users (\"authenticated\" role).",
       "reason": "Admin/moderator-gated internally via has_any_role(..., ['admin','moderator']); writes a single audit_logs row when staff hide, delete, or update community content. Raises 'Access denied' for non-staff."
+    },
+    {
+      "name": "auth_security_definer_function",
+      "detail": "Function \\`public.log_security_step_up\\` is a SECURITY DEFINER function callable by signed-in users (\"authenticated\" role).",
+      "reason": "Admin-gated internally via has_role(..., 'admin'); writes a single audit_logs row when an admin completes the step-up password confirmation. Raises 'Access denied' for non-admins."
     }
   ]
 }
