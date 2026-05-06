@@ -830,14 +830,25 @@ const AdminSecurity = () => {
               <Shield className="h-8 w-8 text-primary" />
               <h1 className="text-4xl font-bold">Security</h1>
             </div>
-            <Button onClick={handleDownload} variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Download SECURITY.md
-            </Button>
-            <Button onClick={handleExportPdf} variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Export PDF summary
-            </Button>
+            {canExportSecuritySummary ? (
+              <>
+                <Button onClick={handleDownload} variant="outline" size="sm" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Download SECURITY.md
+                </Button>
+                <Button onClick={handleExportPdf} variant="outline" size="sm" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export PDF summary
+                </Button>
+              </>
+            ) : !permsLoading ? (
+              <p
+                className="text-xs text-muted-foreground italic"
+                title="Requires the 'Export Security Summaries' permission. An admin can grant this in Permissions Manager."
+              >
+                Export disabled — missing permission
+              </p>
+            ) : null}
             <Button onClick={handleLock} variant="ghost" size="sm" className="gap-2">
               <Lock className="h-4 w-4" />
               Lock
