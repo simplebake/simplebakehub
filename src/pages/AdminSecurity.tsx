@@ -724,6 +724,10 @@ const AdminSecurity = () => {
   }
 
   const handleDownload = () => {
+    if (!canExportSecuritySummary) {
+      toast.error('You do not have permission to export security summaries.');
+      return;
+    }
     const blob = new Blob([SECURITY_MD], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -736,6 +740,10 @@ const AdminSecurity = () => {
   };
 
   const handleExportPdf = () => {
+    if (!canExportSecuritySummary) {
+      toast.error('You do not have permission to export security summaries.');
+      return;
+    }
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
     const generatedAt = new Date().toLocaleString('en-GB');
 
