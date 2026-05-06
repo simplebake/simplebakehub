@@ -1446,6 +1446,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_moderation_action: {
+        Args: {
+          _action: string
+          _content_id: string
+          _content_type: string
+          _details?: Json
+        }
+        Returns: undefined
+      }
       log_security_doc_view: { Args: never; Returns: undefined }
       regenerate_webhook_secret: {
         Args: { _config_id: string }
