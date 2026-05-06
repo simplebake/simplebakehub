@@ -215,6 +215,29 @@ serve(async (req) => {
         continue;
       }
 
+      const urlCheck = validateOutgoingUrl(config.outgoing_url);
+      if (!urlCheck.ok) {
+        console.warn(`Config ${config.id} blocked: ${urlCheck.error}`);
+        await supabaseClient.from('webhook_logs').insert({
+          integration_id: 'custom-webhook',
+          direction: 'outgoing',
+          endpoint_url: config.outgoing_url,
+          method: 'POST',
+          request_payload: { event },
+          response_status: 0,
+          response_body: null,
+          duration_ms: 0,
+          success: false,
+          error_message: `Blocked by SSRF guard: ${urlCheck.error}`,
+        });
+        results.push({
+          config_id: config.id,
+          success: false,
+          error: urlCheck.error,
+        });
+        continue;
+      }
+
       const payload = {
         event,
         data,
