@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createLogger } from "../_shared/logger.ts";
+import { checkRateLimit, getClientIp } from "../_shared/rateLimit.ts";
 
 interface NotifyCommentRequest {
   commenterId: string;
@@ -37,6 +38,23 @@ serve(async (req) => {
     const reqLog = log.child({ userId: authenticatedUserId });
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Rate limit: 30 comment notifications per minute per user.
+    const rl = await checkRateLimit(
+      supabase,
+      authenticatedUserId,
+      "notify-comment",
+      30,
+      60,
+    );
+    if (!rl.allowed) {
+      reqLog.warn("rate_limited", { count: rl.count, limit: rl.limit, ip: getClientIp(req) });
+      return log.respond(
+        { error: "Too many requests", retryAfterSeconds: rl.retryAfterSeconds },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+      );
+    }
+
     const { commenterId, bakeShareId, commentPreview }: NotifyCommentRequest = await req.json();
 
     if (authenticatedUserId !== commenterId) {

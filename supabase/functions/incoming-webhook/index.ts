@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createLogger } from "../_shared/logger.ts";
+import { checkRateLimit, getClientIp } from "../_shared/rateLimit.ts";
 
 function hexToBytes(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2);
@@ -74,6 +75,17 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
+
+  // Rate limit: 120 incoming webhook calls per minute per source IP.
+  const ip = getClientIp(req);
+  const rl = await checkRateLimit(supabaseClient, ip, "incoming-webhook", 120, 60);
+  if (!rl.allowed) {
+    log.warn("rate_limited", { ip, count: rl.count, limit: rl.limit });
+    return log.respond(
+      { error: "Too many requests", retryAfterSeconds: rl.retryAfterSeconds },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
+  }
 
   let responseStatus = 200;
   let responseBody: Record<string, unknown> = {};

@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireAuth, isAdmin } from "../_shared/auth.ts";
 import { validateOutgoingUrl } from "../_shared/urlGuard.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { checkRateLimit, getClientIp } from "../_shared/rateLimit.ts";
 
 async function generateSignature(payload: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -120,6 +121,17 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
+
+  // Rate limit outgoing webhook dispatch: 60/min per user (admins higher: 300/min).
+  const limit = admin ? 300 : 60;
+  const rl = await checkRateLimit(supabaseClient, auth.userId, "send-webhook", limit, 60);
+  if (!rl.allowed) {
+    reqLog.warn("rate_limited", { count: rl.count, limit: rl.limit, ip: getClientIp(req) });
+    return reqLog.respond(
+      { error: "Too many requests", retryAfterSeconds: rl.retryAfterSeconds },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
+  }
 
   try {
     const { event, data, config_id } = await req.json();
