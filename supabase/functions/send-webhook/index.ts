@@ -209,7 +209,8 @@ serve(async (req) => {
         payload,
         config.secret_key,
         config.retry_count || 3,
-        config.timeout_seconds || 30
+        config.timeout_seconds || 30,
+        log.correlationId,
       );
 
       // Log the webhook call
