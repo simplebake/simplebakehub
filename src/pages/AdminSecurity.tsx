@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -54,6 +56,16 @@ const ALLOWED_FUNCTIONS: Array<{
 ];
 
 const AdminSecurity = () => {
+  useEffect(() => {
+    // Best-effort audit trail: record that an admin opened this page.
+    // The function is admin-gated; failures are silent and don't block the UI.
+    supabase.rpc('log_security_doc_view').then(({ error }) => {
+      if (error) {
+        console.warn('Failed to log security doc view:', error.message);
+      }
+    });
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
