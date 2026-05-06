@@ -12,6 +12,8 @@ import { Header } from '@/components/Header';
 import { Shield, ArrowLeft, ShieldCheck, AlertTriangle, Download, Lock, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import allowlist from '../../.security-lint-allowlist.json';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 /**
  * Security tests run by the edge-function test runner. Update this list when
@@ -347,6 +349,83 @@ const AdminSecurity = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportPdf = () => {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const generatedAt = new Date().toLocaleString('en-GB');
+
+    doc.setFontSize(18);
+    doc.text('Security Summary', 40, 50);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated ${generatedAt}`, 40, 68);
+    doc.text(`Exported by ${user?.email ?? 'admin'}`, 40, 82);
+    doc.setTextColor(0);
+
+    doc.setFontSize(13);
+    doc.text('Allowed SECURITY DEFINER functions', 40, 110);
+
+    autoTable(doc, {
+      startY: 120,
+      head: [['Function', 'Callable by', 'Purpose', 'Protection']],
+      body: ALLOWED_FUNCTIONS.map((fn) => [
+        fn.name,
+        fn.callableBy,
+        fn.purpose,
+        fn.protection,
+      ]),
+      styles: { fontSize: 8, cellPadding: 4, overflow: 'linebreak' },
+      headStyles: { fillColor: [55, 65, 81] },
+      columnStyles: {
+        0: { cellWidth: 130, font: 'courier' },
+        1: { cellWidth: 80 },
+      },
+      margin: { left: 40, right: 40 },
+    });
+
+    const afterFns = (doc as unknown as { lastAutoTable: { finalY: number } })
+      .lastAutoTable.finalY + 24;
+
+    doc.setFontSize(13);
+    doc.text('Security test coverage', 40, afterFns);
+
+    autoTable(doc, {
+      startY: afterFns + 10,
+      head: [['Test file', 'Covers']],
+      body: [
+        ['rls_test.ts', 'Anon denial across protected tables; revoked EXECUTE on has_role, has_permission, get_my_role_permissions.'],
+        ['webhook_admin_test.ts', 'Non-admins are rejected by both webhook helpers; admins succeed end-to-end.'],
+        ['webhook_edge_cases_test.ts', 'Malformed UUIDs, wrong ownership, missing/empty secrets, cross-user RLS.'],
+      ],
+      styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+      headStyles: { fillColor: [55, 65, 81] },
+      columnStyles: { 0: { cellWidth: 160, font: 'courier' } },
+      margin: { left: 40, right: 40 },
+    });
+
+    const afterTests = (doc as unknown as { lastAutoTable: { finalY: number } })
+      .lastAutoTable.finalY + 24;
+
+    doc.setFontSize(13);
+    doc.text('CI allowlist matches', 40, afterTests);
+
+    autoTable(doc, {
+      startY: afterTests + 10,
+      head: [['#', 'Lint rule', 'Justification']],
+      body: allowlist.allowed.map((entry, i) => [
+        String(i + 1),
+        entry.name,
+        entry.reason,
+      ]),
+      styles: { fontSize: 8, cellPadding: 4, overflow: 'linebreak' },
+      headStyles: { fillColor: [55, 65, 81] },
+      columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 180, font: 'courier' } },
+      margin: { left: 40, right: 40 },
+    });
+
+    doc.save(`security-summary-${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success('PDF summary downloaded.');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -368,6 +447,10 @@ const AdminSecurity = () => {
             <Button onClick={handleDownload} variant="outline" size="sm" className="gap-2">
               <Download className="h-4 w-4" />
               Download SECURITY.md
+            </Button>
+            <Button onClick={handleExportPdf} variant="outline" size="sm" className="gap-2">
+              <Download className="h-4 w-4" />
+              Export PDF summary
             </Button>
             <Button onClick={handleLock} variant="ghost" size="sm" className="gap-2">
               <Lock className="h-4 w-4" />
