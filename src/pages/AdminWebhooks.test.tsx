@@ -109,12 +109,15 @@ const renderPage = async () => {
 };
 
 const expectNoUrlLeak = (html: string) => {
-  expect(html).not.toContain(VICTIM_HOST);
-  expect(html).not.toContain(VICTIM_URL);
-  expect(html.toLowerCase()).not.toContain("https://victim");
-  // Generic guard: there should be no http(s) link at all when RLS filters
-  // everything or we only have null-url rows.
-  expect(html).not.toMatch(/https?:\/\/[^\s"'<>]+/i);
+  // Strip SVG xmlns attributes (http://www.w3.org/...) which are always
+  // present in lucide icons and aren't user-controlled data.
+  const cleaned = html.replace(/xmlns="[^"]*"/g, "");
+  expect(cleaned).not.toContain(VICTIM_HOST);
+  expect(cleaned).not.toContain(VICTIM_URL);
+  expect(cleaned.toLowerCase()).not.toContain("https://victim");
+  // After stripping xmlns, no http(s) URL should remain — that would indicate
+  // a leaked outgoing_url surfaced via text, href, or any attribute.
+  expect(cleaned).not.toMatch(/https?:\/\/[^\s"'<>]+/i);
 };
 
 // --- Tests ---------------------------------------------------------------
