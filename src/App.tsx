@@ -17,6 +17,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Profile = lazy(() => import("./pages/Profile"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const Admin = lazy(() => import("./pages/Admin"));
+const AdminSecurity = lazy(() => import("./pages/AdminSecurity"));
 const Premixes = lazy(() => import("./pages/Premixes"));
 const GuidedBake = lazy(() => import("./pages/GuidedBake"));
 const Tutorials = lazy(() => import("./pages/Tutorials"));
@@ -74,6 +75,7 @@ const AppRoutes = () => (
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+      <Route path="/admin/security" element={<AdminRoute><AdminSecurity /></AdminRoute>} />
       <Route path="/premixes" element={<Premixes />} />
       <Route path="/premixes/:id/bake" element={<GuidedBake />} />
       <Route path="/tutorials" element={<Tutorials />} />
