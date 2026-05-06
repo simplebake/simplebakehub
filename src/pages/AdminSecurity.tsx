@@ -308,6 +308,8 @@ const AdminSecurity = () => {
           </p>
         </div>
 
+        <CIStatusBanner />
+
         <div className="grid gap-4 md:grid-cols-2 mb-8">
           <Card>
             <CardHeader className="pb-3">
