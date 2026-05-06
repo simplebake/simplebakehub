@@ -179,6 +179,19 @@ const CIStatusBanner = () => {
   const missingTests = issues.filter((i) => i.kind === 'missing-test');
   const extraTests = issues.filter((i) => i.kind === 'extra-test');
 
+  const hintFor = (kind: GateIssue['kind'], label: string): string => {
+    switch (kind) {
+      case 'missing-allowlist':
+        return `Add an entry for \`${label}\` to .security-lint-allowlist.json with a justification, or revoke EXECUTE from authenticated if it shouldn't be exposed.`;
+      case 'extra-allowlist':
+        return `\`${label}\` is allowlisted but no longer expected. Remove it from .security-lint-allowlist.json, or add it to EXPECTED_ALLOWLIST_FUNCTIONS in AdminSecurity.tsx if it's intentional.`;
+      case 'missing-test':
+        return `Restore supabase/functions/_rls_tests/${label} (check git history) or remove it from EXPECTED_SECURITY_TESTS / SECURITY_TESTS if it was deliberately retired.`;
+      case 'extra-test':
+        return `${label} exists on disk but isn't in EXPECTED_SECURITY_TESTS. Add it to the expected list (and SECURITY_TESTS) so CI runs it, or delete the file.`;
+    }
+  };
+
   return (
     <Card className={`mb-6 border-l-4 ${passing ? 'border-l-emerald-500' : 'border-l-destructive'}`}>
       <CardContent className="py-4">
