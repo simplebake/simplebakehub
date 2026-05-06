@@ -816,6 +816,38 @@ const AdminSecurity = () => {
       margin: { left: 40, right: 40 },
     });
 
+    // Apply a diagonal watermark to every page identifying the exporter and
+    // the generation time. This is a deterrent / audit aid — it does not
+    // replace the audit_logs entry written when the export is triggered.
+    const exporter = user?.email ?? 'admin';
+    const watermarkText = `CONFIDENTIAL · ${exporter} · ${generatedAt}`;
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      doc.saveGraphicsState();
+      // jsPDF GState gives us a true alpha channel.
+      const gState = (doc as unknown as { GState: new (o: { opacity: number }) => unknown }).GState;
+      (doc as unknown as { setGState: (g: unknown) => void }).setGState(new gState({ opacity: 0.12 }));
+      doc.setTextColor(120, 120, 120);
+      doc.setFontSize(48);
+      doc.text(watermarkText, pageWidth / 2, pageHeight / 2, {
+        align: 'center',
+        angle: 35,
+      });
+      // Bottom-of-page footer (full opacity, small) for legibility on print.
+      doc.restoreGraphicsState();
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text(
+        `Exported by ${exporter} · ${generatedAt} · Page ${i} of ${pageCount}`,
+        pageWidth / 2,
+        pageHeight - 20,
+        { align: 'center' },
+      );
+    }
+
     doc.save(`security-summary-${new Date().toISOString().slice(0, 10)}.pdf`);
     toast.success('PDF summary downloaded.');
   };
