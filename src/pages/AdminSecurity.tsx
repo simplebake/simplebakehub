@@ -219,6 +219,34 @@ const CIStatusBanner = () => {
                   CI run URL not configured (set <code className="bg-muted px-1 rounded">VITE_CI_RUN_URL</code> at build time).
                 </p>
               )}
+              {loadingRemote ? (
+                <p className="text-[11px] text-muted-foreground mt-1 italic">
+                  Loading latest CI status…
+                </p>
+              ) : remoteError ? (
+                <p className="text-[11px] text-amber-600 mt-1">
+                  Live CI status unavailable: {remoteError}
+                </p>
+              ) : remoteStatus ? (
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Live CI: <span className={
+                    remoteStatus.status === 'passing'
+                      ? 'text-emerald-600 font-medium'
+                      : remoteStatus.status === 'failing'
+                        ? 'text-destructive font-medium'
+                        : 'text-muted-foreground font-medium'
+                  }>{remoteStatus.status}</span>
+                  {remoteStatus.commit_sha && (
+                    <> · commit <code className="bg-muted px-1 rounded">{remoteStatus.commit_sha.slice(0, 7)}</code></>
+                  )}
+                  {' · updated '}
+                  {new Date(remoteStatus.checked_at).toLocaleString()}
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground mt-1 italic">
+                  No CI status reported yet — falling back to the bundled check.
+                </p>
+              )}
               <p className="text-[11px] text-muted-foreground mt-1">
                 Checked at {checkedAt.toLocaleTimeString()}
               </p>
