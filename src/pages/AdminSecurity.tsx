@@ -105,6 +105,25 @@ const CIStatusBanner = () => {
 const STEP_UP_KEY = 'admin_security_step_up_at';
 const STEP_UP_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
+// Client-side lockout for repeated wrong password confirmations.
+// Note: this is a UX guardrail; Supabase Auth itself remains the source of
+// truth for credential checks and applies its own server-side throttling.
+const STEP_UP_FAIL_KEY = 'admin_security_step_up_fails';
+const STEP_UP_LOCK_KEY = 'admin_security_step_up_lock_until';
+const MAX_FAIL_ATTEMPTS = 5;
+const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+const readNumber = (key: string): number => {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return 0;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0;
+  }
+};
+
 const isStepUpFresh = (): boolean => {
   try {
     const raw = sessionStorage.getItem(STEP_UP_KEY);
@@ -226,6 +245,19 @@ const AdminSecurity = () => {
   const [unlocked, setUnlocked] = useState<boolean>(() => isStepUpFresh());
   const [password, setPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
+  const [lockUntil, setLockUntil] = useState<number>(() => readNumber(STEP_UP_LOCK_KEY));
+  const [failCount, setFailCount] = useState<number>(() => readNumber(STEP_UP_FAIL_KEY));
+  const [now, setNow] = useState<number>(() => Date.now());
+
+  useEffect(() => {
+    if (lockUntil <= Date.now()) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [lockUntil]);
+
+  const isLocked = lockUntil > now;
+  const secondsRemaining = isLocked ? Math.ceil((lockUntil - now) / 1000) : 0;
+  const attemptsLeft = Math.max(0, MAX_FAIL_ATTEMPTS - failCount);
 
   useEffect(() => {
     if (!unlocked) return;
@@ -238,6 +270,10 @@ const AdminSecurity = () => {
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.email || !password) return;
+    if (isLocked) {
+      toast.error(`Too many failed attempts. Try again in ${secondsRemaining}s.`);
+      return;
+    }
     setVerifying(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -245,10 +281,30 @@ const AdminSecurity = () => {
         password,
       });
       if (error) {
-        toast.error('Password incorrect — please try again.');
+        const nextFails = failCount + 1;
+        setFailCount(nextFails);
+        try { sessionStorage.setItem(STEP_UP_FAIL_KEY, String(nextFails)); } catch { /* ignore */ }
+        if (nextFails >= MAX_FAIL_ATTEMPTS) {
+          const until = Date.now() + LOCKOUT_MS;
+          setLockUntil(until);
+          try { sessionStorage.setItem(STEP_UP_LOCK_KEY, String(until)); } catch { /* ignore */ }
+          toast.error(`Too many failed attempts. Locked for ${Math.round(LOCKOUT_MS / 60000)} minutes.`);
+        } else {
+          const left = MAX_FAIL_ATTEMPTS - nextFails;
+          toast.error(`Password incorrect — ${left} attempt${left === 1 ? '' : 's'} remaining.`);
+        }
         setPassword('');
         return;
       }
+      // Success — clear failure counters.
+      try {
+        sessionStorage.removeItem(STEP_UP_FAIL_KEY);
+        sessionStorage.removeItem(STEP_UP_LOCK_KEY);
+      } catch {
+        // ignore
+      }
+      setFailCount(0);
+      setLockUntil(0);
       try {
         sessionStorage.setItem(STEP_UP_KEY, Date.now().toString());
       } catch {
@@ -325,10 +381,24 @@ const AdminSecurity = () => {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={verifying || !password}
+                  disabled={verifying || !password || isLocked}
                 >
-                  {verifying ? 'Confirming…' : 'Confirm and continue'}
+                  {isLocked
+                    ? `Locked — try again in ${secondsRemaining}s`
+                    : verifying
+                      ? 'Confirming…'
+                      : 'Confirm and continue'}
                 </Button>
+                {!isLocked && failCount > 0 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    {attemptsLeft} attempt{attemptsLeft === 1 ? '' : 's'} remaining before temporary lockout.
+                  </p>
+                )}
+                {isLocked && (
+                  <p className="text-xs text-destructive text-center">
+                    Too many failed attempts. Please wait {secondsRemaining}s before trying again.
+                  </p>
+                )}
               </form>
             </CardContent>
           </Card>
