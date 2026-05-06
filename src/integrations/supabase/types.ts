@@ -377,6 +377,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ci_security_status: {
+        Row: {
+          allowlist_entries: string[]
+          build_time: string | null
+          checked_at: string
+          ci_run_url: string | null
+          commit_sha: string | null
+          created_at: string
+          id: string
+          issues: Json
+          status: string
+          test_files: string[]
+        }
+        Insert: {
+          allowlist_entries?: string[]
+          build_time?: string | null
+          checked_at?: string
+          ci_run_url?: string | null
+          commit_sha?: string | null
+          created_at?: string
+          id?: string
+          issues?: Json
+          status: string
+          test_files?: string[]
+        }
+        Update: {
+          allowlist_entries?: string[]
+          build_time?: string | null
+          checked_at?: string
+          ci_run_url?: string | null
+          commit_sha?: string | null
+          created_at?: string
+          id?: string
+          issues?: Json
+          status?: string
+          test_files?: string[]
+        }
+        Relationships: []
+      }
       content_ideas: {
         Row: {
           channel: string
