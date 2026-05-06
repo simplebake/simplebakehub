@@ -9,7 +9,7 @@ const corsHeaders = {
 interface NotifyCommentRequest {
   commenterId: string;
   bakeShareId: string;
-  bakeOwnerId: string;
+  bakeOwnerId?: string; // ignored; resolved server-side
   commentPreview: string;
 }
 
