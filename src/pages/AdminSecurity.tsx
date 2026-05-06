@@ -1,12 +1,30 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Header } from '@/components/Header';
-import { Shield, ArrowLeft, ShieldCheck, AlertTriangle, Download } from 'lucide-react';
+import { Shield, ArrowLeft, ShieldCheck, AlertTriangle, Download, Lock } from 'lucide-react';
+import { toast } from 'sonner';
+
+const STEP_UP_KEY = 'admin_security_step_up_at';
+const STEP_UP_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
+const isStepUpFresh = (): boolean => {
+  try {
+    const raw = sessionStorage.getItem(STEP_UP_KEY);
+    if (!raw) return false;
+    const ts = parseInt(raw, 10);
+    return Number.isFinite(ts) && Date.now() - ts < STEP_UP_TTL_MS;
+  } catch {
+    return false;
+  }
+};
 
 /**
  * Inlined copy of `docs/SECURITY.md` for admin-only offline review.
@@ -114,15 +132,120 @@ const ALLOWED_FUNCTIONS: Array<{
 ];
 
 const AdminSecurity = () => {
+  const { user } = useAuth();
+  const [unlocked, setUnlocked] = useState<boolean>(() => isStepUpFresh());
+  const [password, setPassword] = useState('');
+  const [verifying, setVerifying] = useState(false);
+
   useEffect(() => {
-    // Best-effort audit trail: record that an admin opened this page.
-    // The function is admin-gated; failures are silent and don't block the UI.
+    if (!unlocked) return;
+    // Best-effort audit trail: record that an admin viewed this page after step-up.
     supabase.rpc('log_security_doc_view').then(({ error }) => {
-      if (error) {
-        console.warn('Failed to log security doc view:', error.message);
-      }
+      if (error) console.warn('Failed to log security doc view:', error.message);
     });
-  }, []);
+  }, [unlocked]);
+
+  const handleConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.email || !password) return;
+    setVerifying(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password,
+      });
+      if (error) {
+        toast.error('Password incorrect — please try again.');
+        setPassword('');
+        return;
+      }
+      try {
+        sessionStorage.setItem(STEP_UP_KEY, Date.now().toString());
+      } catch {
+        // ignore storage errors
+      }
+      // Audit log entry for the step-up itself.
+      supabase.rpc('log_security_step_up').then(({ error: auditError }) => {
+        if (auditError) console.warn('Failed to log step-up:', auditError.message);
+      });
+      setPassword('');
+      setUnlocked(true);
+      toast.success('Identity confirmed for the next 15 minutes.');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleLock = () => {
+    try {
+      sessionStorage.removeItem(STEP_UP_KEY);
+    } catch {
+      // ignore
+    }
+    setUnlocked(false);
+  };
+
+  if (!unlocked) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8 max-w-md">
+          <Link
+            to="/admin"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Admin Dashboard
+          </Link>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-primary" />
+                Confirm it's you
+              </CardTitle>
+              <CardDescription>
+                For your safety, please re-enter your password to view sensitive
+                security details. This unlock lasts 15 minutes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleConfirm} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="step-up-email">Account</Label>
+                  <Input
+                    id="step-up-email"
+                    value={user?.email ?? ''}
+                    readOnly
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="step-up-password">Password</Label>
+                  <Input
+                    id="step-up-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoFocus
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={verifying || !password}
+                >
+                  {verifying ? 'Confirming…' : 'Confirm and continue'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   const handleDownload = () => {
     const blob = new Blob([SECURITY_MD], { type: 'text/markdown;charset=utf-8' });
@@ -157,6 +280,10 @@ const AdminSecurity = () => {
             <Button onClick={handleDownload} variant="outline" size="sm" className="gap-2">
               <Download className="h-4 w-4" />
               Download SECURITY.md
+            </Button>
+            <Button onClick={handleLock} variant="ghost" size="sm" className="gap-2">
+              <Lock className="h-4 w-4" />
+              Lock
             </Button>
           </div>
           <p className="text-muted-foreground">

@@ -1456,6 +1456,7 @@ export type Database = {
         Returns: undefined
       }
       log_security_doc_view: { Args: never; Returns: undefined }
+      log_security_step_up: { Args: never; Returns: undefined }
       regenerate_webhook_secret: {
         Args: { _config_id: string }
         Returns: string
