@@ -9,7 +9,7 @@ const corsHeaders = {
 interface NotifyLikeRequest {
   likerId: string;
   bakeShareId: string;
-  bakeOwnerId: string;
+  bakeOwnerId?: string; // ignored; resolved server-side
 }
 
 serve(async (req) => {
@@ -45,7 +45,7 @@ serve(async (req) => {
     const authenticatedUserId = claimsData.claims.sub;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { likerId, bakeShareId, bakeOwnerId }: NotifyLikeRequest = await req.json();
+    const { likerId, bakeShareId }: NotifyLikeRequest = await req.json();
 
     // Ensure the caller is the liker
     if (authenticatedUserId !== likerId) {
@@ -54,6 +54,21 @@ serve(async (req) => {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
+
+    // Verify the bake share exists and resolve the true owner server-side
+    const { data: share, error: shareError } = await supabase
+      .from("bake_shares")
+      .select("user_id")
+      .eq("id", bakeShareId)
+      .single();
+
+    if (shareError || !share) {
+      return new Response(JSON.stringify({ error: "Bake share not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    const bakeOwnerId = share.user_id;
 
     // Don't notify if user liked their own bake
     if (likerId === bakeOwnerId) {
