@@ -12,6 +12,8 @@ import { Header } from '@/components/Header';
 import { Shield, ArrowLeft, ShieldCheck, AlertTriangle, Download, Lock, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import allowlist from '../../.security-lint-allowlist.json';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 /**
  * Security tests run by the edge-function test runner. Update this list when
