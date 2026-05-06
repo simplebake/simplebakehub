@@ -274,10 +274,28 @@ const CIStatusBanner = () => {
     }
   };
 
-  const missingAllowlist = issues.filter((i) => i.kind === 'missing-allowlist');
-  const extraAllowlist = issues.filter((i) => i.kind === 'extra-allowlist');
-  const missingTests = issues.filter((i) => i.kind === 'missing-test');
-  const extraTests = issues.filter((i) => i.kind === 'extra-test');
+  const [searchTerm, setSearchTerm] = useState('');
+  type KindFilter = 'all' | GateIssue['kind'];
+  const [kindFilter, setKindFilter] = useState<KindFilter>('all');
+  const normalisedSearch = searchTerm.trim().toLowerCase();
+  const matchesFilters = (i: GateIssue) =>
+    (kindFilter === 'all' || i.kind === kindFilter) &&
+    (normalisedSearch === '' || i.label.toLowerCase().includes(normalisedSearch));
+
+  const missingAllowlist = issues.filter((i) => i.kind === 'missing-allowlist' && matchesFilters(i));
+  const extraAllowlist = issues.filter((i) => i.kind === 'extra-allowlist' && matchesFilters(i));
+  const missingTests = issues.filter((i) => i.kind === 'missing-test' && matchesFilters(i));
+  const extraTests = issues.filter((i) => i.kind === 'extra-test' && matchesFilters(i));
+  const visibleCount = missingAllowlist.length + extraAllowlist.length + missingTests.length + extraTests.length;
+  const filtersActive = kindFilter !== 'all' || normalisedSearch !== '';
+
+  const filterButtons: { key: KindFilter; label: string; count: number }[] = [
+    { key: 'all', label: 'All', count: issues.length },
+    { key: 'missing-allowlist', label: 'Missing allowlist', count: issues.filter((i) => i.kind === 'missing-allowlist').length },
+    { key: 'extra-allowlist', label: 'Extra allowlist', count: issues.filter((i) => i.kind === 'extra-allowlist').length },
+    { key: 'missing-test', label: 'Missing tests', count: issues.filter((i) => i.kind === 'missing-test').length },
+    { key: 'extra-test', label: 'Extra tests', count: issues.filter((i) => i.kind === 'extra-test').length },
+  ];
 
   type Recommendation = {
     summary: string;
@@ -672,6 +690,57 @@ const CIStatusBanner = () => {
                 Reset
               </Button>
             </div>
+            <div className="flex flex-col gap-2 pb-2 border-b border-destructive/20">
+              <Input
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by function name or test file…"
+                className="h-8 text-xs"
+                aria-label="Search resolution checklist"
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {filterButtons.map((f) => (
+                  <Button
+                    key={f.key}
+                    type="button"
+                    size="sm"
+                    variant={kindFilter === f.key ? 'default' : 'outline'}
+                    onClick={() => setKindFilter(f.key)}
+                    className="h-6 px-2 text-[11px] gap-1"
+                    aria-pressed={kindFilter === f.key}
+                  >
+                    {f.label}
+                    <span className="text-[10px] opacity-75">({f.count})</span>
+                  </Button>
+                ))}
+                {filtersActive && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setKindFilter('all');
+                    }}
+                    className="h-6 px-2 text-[11px]"
+                    aria-label="Clear search and filters"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+              {filtersActive && (
+                <div className="text-[11px] text-muted-foreground">
+                  Showing {visibleCount} of {issues.length} issue{issues.length === 1 ? '' : 's'}
+                </div>
+              )}
+            </div>
+            {filtersActive && visibleCount === 0 && (
+              <div className="text-[11px] text-muted-foreground italic py-2">
+                No issues match your search or filter.
+              </div>
+            )}
             {missingAllowlist.length > 0 && (
               <div>
                 <div className="font-medium text-destructive mb-1">
