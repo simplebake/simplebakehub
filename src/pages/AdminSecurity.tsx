@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/supabase';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -555,6 +556,8 @@ const ALLOWED_FUNCTIONS: Array<{
 
 const AdminSecurity = () => {
   const { user } = useAuth();
+  const { hasPermission, loading: permsLoading } = usePermissions();
+  const canExportSecuritySummary = hasPermission('can_export_security_summary');
   const [unlocked, setUnlocked] = useState<boolean>(() => isStepUpFresh());
   const [password, setPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
