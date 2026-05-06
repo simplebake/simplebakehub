@@ -30,7 +30,8 @@ async function sendWebhookWithRetry(
   payload: Record<string, unknown>,
   secret: string,
   maxRetries: number,
-  timeoutSeconds: number
+  timeoutSeconds: number,
+  correlationId: string,
 ): Promise<{ success: boolean; status?: number; body?: unknown; error?: string; duration: number }> {
   const payloadString = JSON.stringify(payload);
   const timestamp = Date.now().toString();
@@ -60,6 +61,7 @@ async function sendWebhookWithRetry(
           'X-Webhook-Signature': signature,
           'X-Webhook-Timestamp': timestamp,
           'X-Webhook-Event': payload.event as string || 'unknown',
+          'X-Correlation-Id': correlationId,
           'User-Agent': 'BakeAssist-Webhooks/1.0',
         },
         body: payloadString,
