@@ -105,6 +105,16 @@ export function ContentReportsManager() {
         .eq("id", id);
       if (error) throw error;
 
+      // Audit trail (best effort): record that staff updated a report's status.
+      supabase.rpc('log_moderation_action', {
+        _action: `report_${status}`,
+        _content_type: 'content_report',
+        _content_id: id,
+        _details: {},
+      }).then(({ error: auditError }) => {
+        if (auditError) console.warn('Failed to log moderation action:', auditError.message);
+      });
+
       // Send notification to reporter when resolved/dismissed
       if (status === "resolved" || status === "dismissed") {
         try {
@@ -141,6 +151,14 @@ export function ContentReportsManager() {
           .eq("id", contentId);
         if (error) throw error;
       }
+      supabase.rpc('log_moderation_action', {
+        _action: 'hide',
+        _content_type: contentType,
+        _content_id: contentId,
+        _details: {},
+      }).then(({ error: auditError }) => {
+        if (auditError) console.warn('Failed to log moderation action:', auditError.message);
+      });
       return { contentType, contentId };
     },
     onSuccess: () => {
@@ -167,6 +185,14 @@ export function ContentReportsManager() {
           .eq("id", contentId);
         if (error) throw error;
       }
+      supabase.rpc('log_moderation_action', {
+        _action: 'delete',
+        _content_type: contentType,
+        _content_id: contentId,
+        _details: {},
+      }).then(({ error: auditError }) => {
+        if (auditError) console.warn('Failed to log moderation action:', auditError.message);
+      });
       return { contentType, contentId };
     },
     onSuccess: () => {
