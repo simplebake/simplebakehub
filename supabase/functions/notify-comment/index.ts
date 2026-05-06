@@ -18,13 +18,10 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return log.respond({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      log.warn("auth_missing");
+      return log.respond({ error: "Unauthorized" }, { status: 401 });
     }
 
     const authClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -33,19 +30,20 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
+      log.warn("auth_invalid", { error: claimsError?.message });
       return log.respond({ error: "Unauthorized" }, { status: 401 });
     }
     const authenticatedUserId = claimsData.claims.sub;
+    const reqLog = log.child({ userId: authenticatedUserId });
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { commenterId, bakeShareId, commentPreview }: NotifyCommentRequest = await req.json();
 
-    // Ensure the caller is the commenter
     if (authenticatedUserId !== commenterId) {
+      reqLog.warn("identity_mismatch", { claimedCommenterId: commenterId });
       return log.respond({ error: "Forbidden: identity mismatch" }, { status: 403 });
     }
 
-    // Verify the bake share exists and resolve the true owner server-side
     const { data: share, error: shareError } = await supabase
       .from("bake_shares")
       .select("user_id")
@@ -53,17 +51,19 @@ serve(async (req) => {
       .single();
 
     if (shareError || !share) {
+      reqLog.warn("bake_share_not_found", { bakeShareId });
       return log.respond({ error: "Bake share not found" }, { status: 404 });
     }
     const bakeOwnerId = share.user_id;
 
-    // Don't notify if user commented on their own bake
     if (commenterId === bakeOwnerId) {
-      return new Response(
-        JSON.stringify({ message: "User commented on their own bake, no notification needed" }, { status: 200 });
+      reqLog.info("self_comment_skipped");
+      return log.respond(
+        { message: "User commented on their own bake, no notification needed" },
+        { status: 200 },
+      );
     }
 
-    // Get commenter's profile name
     const { data: commenterProfile } = await supabase
       .from("profiles")
       .select("name")
@@ -71,15 +71,14 @@ serve(async (req) => {
       .single();
 
     if (!commenterProfile) {
+      reqLog.warn("commenter_not_found");
       return log.respond({ error: "Commenter not found" }, { status: 404 });
     }
 
-    // Truncate comment for message
-    const truncatedComment = commentPreview.length > 50 
-      ? commentPreview.substring(0, 50) + "..." 
+    const truncatedComment = commentPreview.length > 50
+      ? commentPreview.substring(0, 50) + "..."
       : commentPreview;
 
-    // Store notification in database
     await supabase.from("notifications").insert({
       user_id: bakeOwnerId,
       type: "comment",
@@ -87,8 +86,8 @@ serve(async (req) => {
       content_id: bakeShareId,
       message: `${commenterProfile.name} commented: "${truncatedComment}"`,
     });
+    reqLog.info("notification_stored", { recipientId: bakeOwnerId });
 
-    // Check if owner has push enabled
     const { data: preferences } = await supabase
       .from("notification_preferences")
       .select("push_enabled")
@@ -96,10 +95,10 @@ serve(async (req) => {
       .single();
 
     if (!preferences?.push_enabled) {
+      reqLog.debug("push_disabled");
       return log.respond({ message: "Notification stored, push not enabled" }, { status: 200 });
     }
 
-    // Get push subscription
     const { data: subscription } = await supabase
       .from("push_subscriptions")
       .select("*")
@@ -107,36 +106,35 @@ serve(async (req) => {
       .single();
 
     if (!subscription) {
+      reqLog.debug("no_push_subscription");
       return log.respond({ message: "No push subscription found" }, { status: 200 });
     }
 
-    // Send push notification
     const payload = JSON.stringify({
       title: `${commenterProfile.name} commented on your bake! 💬`,
       body: truncatedComment,
       icon: "/favicon.ico",
       tag: "comment",
-      data: { url: `/share` },
+      data: { url: `/share`, correlationId: log.correlationId },
     });
 
     try {
       const response = await fetch(subscription.endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "TTL": "86400",
-        },
+        headers: { "Content-Type": "application/json", TTL: "86400" },
         body: payload,
       });
 
       if (!response.ok && (response.status === 404 || response.status === 410)) {
-        await supabase
-          .from("push_subscriptions")
-          .delete()
-          .eq("id", subscription.id);
+        await supabase.from("push_subscriptions").delete().eq("id", subscription.id);
+        reqLog.info("push_subscription_pruned", { status: response.status });
+      } else {
+        reqLog.info("push_dispatched", { status: response.status });
       }
     } catch (error) {
-      log.warn("push_send_failed", { error: error instanceof Error ? error.message : String(error) });
+      reqLog.warn("push_send_failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
 
     return log.respond({ message: "Notification sent" }, { status: 200 });
