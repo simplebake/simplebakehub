@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Header } from '@/components/Header';
@@ -112,6 +114,44 @@ const CIStatusBanner = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [issues, setIssues] = useState<GateIssue[]>(() => computeGateIssues());
   const passing = issues.length === 0;
+  const issueKey = (i: GateIssue) => `${i.kind}::${i.label}`;
+  const RESOLVED_STORAGE_KEY = 'admin-security:ci-gate-resolved-v1';
+  const [resolved, setResolved] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem(RESOLVED_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(RESOLVED_STORAGE_KEY, JSON.stringify(resolved));
+    } catch {
+      /* ignore quota/SSR errors */
+    }
+  }, [resolved]);
+  // Drop resolved keys that no longer correspond to a current issue so the
+  // checklist stays in sync as CI re-runs add or remove items.
+  useEffect(() => {
+    setResolved((prev) => {
+      const valid = new Set(issues.map(issueKey));
+      const next: Record<string, boolean> = {};
+      let changed = false;
+      for (const [k, v] of Object.entries(prev)) {
+        if (valid.has(k)) next[k] = v;
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [issues]);
+  const toggleResolved = (i: GateIssue) =>
+    setResolved((prev) => ({ ...prev, [issueKey(i)]: !prev[issueKey(i)] }));
+  const isResolved = (i: GateIssue) => Boolean(resolved[issueKey(i)]);
+  const resolvedCount = issues.filter(isResolved).length;
+  const progressPct = issues.length === 0 ? 100 : Math.round((resolvedCount / issues.length) * 100);
+  const allResolved = issues.length > 0 && resolvedCount === issues.length;
+  const resetChecklist = () => setResolved({});
   const [remoteStatus, setRemoteStatus] = useState<{
     status: 'passing' | 'failing' | 'unknown';
     commit_sha: string | null;
