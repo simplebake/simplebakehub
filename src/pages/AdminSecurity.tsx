@@ -26,6 +26,76 @@ const SECURITY_TESTS = [
 ] as const;
 
 /**
+ * Allowlist entries (matched on the bare function name) that the CI gate
+ * expects to find in `.security-lint-allowlist.json`. If any of these are
+ * missing or unexpected entries appear, the gate is treated as failing and
+ * the banner surfaces the diff so an admin can fix it quickly.
+ */
+const EXPECTED_ALLOWLIST_FUNCTIONS = [
+  'public.has_role',
+  'public.has_any_role',
+  'public.has_permission',
+  'public.get_my_role_permissions',
+  'public.regenerate_webhook_secret',
+  'public.verify_webhook_secret',
+  'public.log_security_doc_view',
+  'public.log_moderation_action',
+  'public.log_security_step_up',
+] as const;
+
+/**
+ * Test files that MUST exist in `supabase/functions/_rls_tests/` for the CI
+ * gate to be considered green.
+ */
+const EXPECTED_SECURITY_TESTS = [
+  'rls_test.ts',
+  'webhook_admin_test.ts',
+  'webhook_edge_cases_test.ts',
+] as const;
+
+type GateIssue = {
+  kind: 'missing-allowlist' | 'extra-allowlist' | 'missing-test' | 'extra-test';
+  label: string;
+};
+
+const computeGateIssues = (): GateIssue[] => {
+  const issues: GateIssue[] = [];
+
+  const presentAllowlist = new Set(
+    (allowlist.allowed ?? []).map((entry) => {
+      const m = entry.detail?.match(/`([^`]+)`/);
+      // Normalise escaped backticks / paths (e.g. "\\`public.has_role\\`")
+      return m ? m[1] : (entry.detail ?? '').replace(/\\`/g, '').trim();
+    }),
+  );
+
+  for (const expected of EXPECTED_ALLOWLIST_FUNCTIONS) {
+    if (!presentAllowlist.has(expected)) {
+      issues.push({ kind: 'missing-allowlist', label: expected });
+    }
+  }
+  for (const present of presentAllowlist) {
+    if (!EXPECTED_ALLOWLIST_FUNCTIONS.includes(present as typeof EXPECTED_ALLOWLIST_FUNCTIONS[number])) {
+      issues.push({ kind: 'extra-allowlist', label: present });
+    }
+  }
+
+  const presentTests = new Set<string>(SECURITY_TESTS);
+  for (const expected of EXPECTED_SECURITY_TESTS) {
+    if (!presentTests.has(expected)) {
+      issues.push({ kind: 'missing-test', label: expected });
+    }
+  }
+  for (const present of presentTests) {
+    if (!EXPECTED_SECURITY_TESTS.includes(present as typeof EXPECTED_SECURITY_TESTS[number])) {
+      issues.push({ kind: 'extra-test', label: present });
+    }
+  }
+
+  return issues;
+};
+
+/**
  * Banner that summarises the current state of the CI security gate.
  *
  * The data shown is sourced from the repo itself (the allowlist JSON checked
