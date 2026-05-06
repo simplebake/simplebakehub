@@ -484,27 +484,54 @@ const CIStatusBanner = () => {
 
   const IssueChecklistItem = ({ issue, prefix }: { issue: GateIssue; prefix: '−' | '+' }) => {
     const done = isResolved(issue);
-    const id = `ci-issue-${issueKey(issue)}`;
+    const chosen = pathFor(issue);
+    const labels = PATH_LABELS[issue.kind];
     return (
       <li className="flex items-start gap-2">
-        <Checkbox
-          id={id}
-          checked={done}
-          onCheckedChange={() => toggleResolved(issue)}
-          aria-label={done ? `Mark ${issue.label} as not yet resolved` : `Mark ${issue.label} as resolved`}
-          className="mt-1"
-        />
-        <div className={`flex-1 min-w-0 ${done ? 'opacity-60' : ''}`}>
-          <label
-            htmlFor={id}
-            className={`font-mono cursor-pointer block ${done ? 'line-through text-muted-foreground' : ''}`}
+        <div className="mt-1">
+          {done ? (
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden="true" />
+          ) : (
+            <div
+              className="h-4 w-4 rounded-sm border border-muted-foreground/40"
+              aria-hidden="true"
+            />
+          )}
+        </div>
+        <div className={`flex-1 min-w-0 ${done ? 'opacity-80' : ''}`}>
+          <div
+            className={`font-mono ${done ? 'line-through text-muted-foreground' : ''}`}
           >
             {prefix} {issue.label}
-          </label>
+          </div>
           {!done && <RecommendationBlock rec={recommendationFor(issue.kind, issue.label)} />}
+          <div className="flex flex-wrap gap-2 mt-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant={chosen === 'primary' ? 'default' : 'outline'}
+              onClick={() => setIssuePath(issue, 'primary')}
+              className="h-6 text-[11px] px-2"
+              aria-pressed={chosen === 'primary'}
+              aria-label={`Mark ${issue.label}: ${labels.primary}`}
+            >
+              {chosen === 'primary' ? '✓ ' : ''}{labels.primary}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={chosen === 'alternate' ? 'secondary' : 'outline'}
+              onClick={() => setIssuePath(issue, 'alternate')}
+              className="h-6 text-[11px] px-2"
+              aria-pressed={chosen === 'alternate'}
+              aria-label={`Mark ${issue.label}: ${labels.alternate}`}
+            >
+              {chosen === 'alternate' ? '✓ ' : ''}{labels.alternate}
+            </Button>
+          </div>
           {done && (
-            <div className="text-[11px] text-emerald-600 dark:text-emerald-400 pl-1 mt-0.5">
-              ✓ Marked resolved — re-run CI to confirm.
+            <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">
+              ✓ Logged to audit — re-run CI to confirm.
             </div>
           )}
         </div>
