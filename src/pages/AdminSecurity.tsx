@@ -422,6 +422,36 @@ const CIStatusBanner = () => {
     </div>
   );
 
+  const IssueChecklistItem = ({ issue, prefix }: { issue: GateIssue; prefix: '−' | '+' }) => {
+    const done = isResolved(issue);
+    const id = `ci-issue-${issueKey(issue)}`;
+    return (
+      <li className="flex items-start gap-2">
+        <Checkbox
+          id={id}
+          checked={done}
+          onCheckedChange={() => toggleResolved(issue)}
+          aria-label={done ? `Mark ${issue.label} as not yet resolved` : `Mark ${issue.label} as resolved`}
+          className="mt-1"
+        />
+        <div className={`flex-1 min-w-0 ${done ? 'opacity-60' : ''}`}>
+          <label
+            htmlFor={id}
+            className={`font-mono cursor-pointer block ${done ? 'line-through text-muted-foreground' : ''}`}
+          >
+            {prefix} {issue.label}
+          </label>
+          {!done && <RecommendationBlock rec={recommendationFor(issue.kind, issue.label)} />}
+          {done && (
+            <div className="text-[11px] text-emerald-600 dark:text-emerald-400 pl-1 mt-0.5">
+              ✓ Marked resolved — re-run CI to confirm.
+            </div>
+          )}
+        </div>
+      </li>
+    );
+  };
+
   return (
     <Card className={`mb-6 border-l-4 ${passing ? 'border-l-emerald-500' : 'border-l-destructive'}`}>
       <CardContent className="py-4">
