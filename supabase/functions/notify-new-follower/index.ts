@@ -31,10 +31,7 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return log.respond({ error: "Unauthorized" }, { status: 401 });
     }
     const authenticatedUserId = claimsData.claims.sub;
 
@@ -43,10 +40,7 @@ serve(async (req) => {
 
     // Ensure the caller is the follower
     if (authenticatedUserId !== followerId) {
-      return new Response(JSON.stringify({ error: "Forbidden: identity mismatch" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return log.respond({ error: "Forbidden: identity mismatch" }, { status: 403 });
     }
 
     // Verify the follow relationship actually exists server-side
@@ -58,10 +52,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (followErr || !followRow) {
-      return new Response(JSON.stringify({ error: "Follow relationship not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return log.respond({ error: "Follow relationship not found" }, { status: 404 });
     }
 
     // Get follower's profile name

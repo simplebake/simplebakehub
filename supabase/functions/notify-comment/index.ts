@@ -33,10 +33,7 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return log.respond({ error: "Unauthorized" }, { status: 401 });
     }
     const authenticatedUserId = claimsData.claims.sub;
 
@@ -45,10 +42,7 @@ serve(async (req) => {
 
     // Ensure the caller is the commenter
     if (authenticatedUserId !== commenterId) {
-      return new Response(JSON.stringify({ error: "Forbidden: identity mismatch" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return log.respond({ error: "Forbidden: identity mismatch" }, { status: 403 });
     }
 
     // Verify the bake share exists and resolve the true owner server-side
@@ -59,10 +53,7 @@ serve(async (req) => {
       .single();
 
     if (shareError || !share) {
-      return new Response(JSON.stringify({ error: "Bake share not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return log.respond({ error: "Bake share not found" }, { status: 404 });
     }
     const bakeOwnerId = share.user_id;
 
