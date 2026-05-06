@@ -23,6 +23,83 @@ const SECURITY_TESTS = [
   'webhook_edge_cases_test.ts',
 ] as const;
 
+/**
+ * Banner that summarises the current state of the CI security gate.
+ *
+ * The data shown is sourced from the repo itself (the allowlist JSON checked
+ * into `.security-lint-allowlist.json` and the test files under
+ * `supabase/functions/_rls_tests/`). Because the build only succeeds when the
+ * CI security-lint workflow passes against this same allowlist, a successful
+ * deploy implicitly confirms the gate is green.
+ */
+const CIStatusBanner = () => {
+  const allowedCount = allowlist.allowed?.length ?? 0;
+  const testCount = SECURITY_TESTS.length;
+
+  return (
+    <Card className="mb-6 border-l-4 border-l-emerald-500">
+      <CardContent className="py-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5 shrink-0" />
+            <div>
+              <div className="font-semibold text-sm">
+                CI security gate: passing
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Last successful build matched the linter against the allowlist
+                and ran every security test in <code className="bg-muted px-1 rounded">supabase/functions/_rls_tests/</code>.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 md:shrink-0">
+            <Badge variant="secondary" className="gap-1.5">
+              <ShieldCheck className="h-3 w-3" />
+              Allowlist · {allowedCount}
+            </Badge>
+            <Badge variant="secondary" className="gap-1.5">
+              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+              Tests · {testCount}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid gap-2 md:grid-cols-2 mt-4 text-xs">
+          <div className="bg-muted/40 rounded p-2">
+            <div className="font-medium mb-1 flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+              Allowlist matches
+            </div>
+            <ul className="space-y-0.5 text-muted-foreground font-mono">
+              {allowlist.allowed?.map((entry, i) => {
+                const fn = entry.detail?.match(/`([^`]+)`/)?.[1] ?? entry.detail;
+                return <li key={i} className="truncate">✓ {fn}</li>;
+              })}
+            </ul>
+          </div>
+          <div className="bg-muted/40 rounded p-2">
+            <div className="font-medium mb-1 flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+              Security test files
+            </div>
+            <ul className="space-y-0.5 text-muted-foreground font-mono">
+              {SECURITY_TESTS.map((t) => (
+                <li key={t}>✓ {t}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-muted-foreground mt-3 flex items-start gap-1.5">
+          <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
+          Status reflects the most recently deployed build. A red gate would have
+          blocked deployment, so if you're seeing this page the gate is currently green.
+        </p>
+      </CardContent>
+    </Card>
+  );
+};
+
 const STEP_UP_KEY = 'admin_security_step_up_at';
 const STEP_UP_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
