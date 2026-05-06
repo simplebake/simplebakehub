@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { createLogger } from "../_shared/logger.ts";
 
 interface NotifyCommentRequest {
   commenterId: string;
@@ -14,9 +10,8 @@ interface NotifyCommentRequest {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const log = createLogger("notify-comment", req);
+  if (req.method === "OPTIONS") return log.preflight();
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -26,7 +21,7 @@ serve(async (req) => {
     // Verify JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      return log.respond({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -74,9 +69,7 @@ serve(async (req) => {
     // Don't notify if user commented on their own bake
     if (commenterId === bakeOwnerId) {
       return new Response(
-        JSON.stringify({ message: "User commented on their own bake, no notification needed" }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+        JSON.stringify({ message: "User commented on their own bake, no notification needed" }, { status: 200 });
     }
 
     // Get commenter's profile name
@@ -87,10 +80,7 @@ serve(async (req) => {
       .single();
 
     if (!commenterProfile) {
-      return new Response(
-        JSON.stringify({ error: "Commenter not found" }),
-        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return log.respond({ error: "Commenter not found" }, { status: 404 });
     }
 
     // Truncate comment for message
@@ -115,10 +105,7 @@ serve(async (req) => {
       .single();
 
     if (!preferences?.push_enabled) {
-      return new Response(
-        JSON.stringify({ message: "Notification stored, push not enabled" }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return log.respond({ message: "Notification stored, push not enabled" }, { status: 200 });
     }
 
     // Get push subscription
@@ -129,10 +116,7 @@ serve(async (req) => {
       .single();
 
     if (!subscription) {
-      return new Response(
-        JSON.stringify({ message: "No push subscription found" }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return log.respond({ message: "No push subscription found" }, { status: 200 });
     }
 
     // Send push notification
@@ -161,19 +145,13 @@ serve(async (req) => {
           .eq("id", subscription.id);
       }
     } catch (error) {
-      console.error("Failed to send push notification:", error);
+      log.warn("push_send_failed", { error: error instanceof Error ? error.message : String(error) });
     }
 
-    return new Response(
-      JSON.stringify({ message: "Notification sent" }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    return log.respond({ message: "Notification sent" }, { status: 200 });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error in notify-comment:", error);
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    log.error("unhandled_exception", { error: errorMessage });
+    return log.respond({ error: errorMessage }, { status: 500 });
   }
 });
