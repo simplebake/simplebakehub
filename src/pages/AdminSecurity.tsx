@@ -9,8 +9,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Header } from '@/components/Header';
-import { Shield, ArrowLeft, ShieldCheck, AlertTriangle, Download, Lock } from 'lucide-react';
+import { Shield, ArrowLeft, ShieldCheck, AlertTriangle, Download, Lock, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import allowlist from '../../.security-lint-allowlist.json';
+
+/**
+ * Security tests run by the edge-function test runner. Update this list when
+ * adding/removing files in `supabase/functions/_rls_tests/`.
+ */
+const SECURITY_TESTS = [
+  'rls_test.ts',
+  'webhook_admin_test.ts',
+  'webhook_edge_cases_test.ts',
+] as const;
 
 const STEP_UP_KEY = 'admin_security_step_up_at';
 const STEP_UP_TTL_MS = 15 * 60 * 1000; // 15 minutes
