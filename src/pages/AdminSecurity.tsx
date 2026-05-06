@@ -180,18 +180,82 @@ const CIStatusBanner = () => {
   const missingTests = issues.filter((i) => i.kind === 'missing-test');
   const extraTests = issues.filter((i) => i.kind === 'extra-test');
 
-  const hintFor = (kind: GateIssue['kind'], label: string): string => {
+  type Recommendation = {
+    summary: string;
+    file: string;
+    locator: string;
+    snippet?: string;
+    altFile?: string;
+    altLocator?: string;
+    altSnippet?: string;
+  };
+
+  const recommendationFor = (kind: GateIssue['kind'], label: string): Recommendation => {
     switch (kind) {
       case 'missing-allowlist':
-        return `Add an entry for \`${label}\` to .security-lint-allowlist.json with a justification, or revoke EXECUTE from authenticated if it shouldn't be exposed.`;
+        return {
+          summary: `Allowlist \`${label}\` (or revoke EXECUTE from authenticated).`,
+          file: '.security-lint-allowlist.json',
+          locator: 'top-level "functions" array (project root)',
+          snippet: `{\n  "name": "${label}",\n  "justification": "<why authenticated users may EXECUTE this>",\n  "owner": "<team or user>"\n}`,
+          altFile: `supabase/migrations/<new-timestamp>_revoke_${label}.sql`,
+          altLocator: 'create a new migration if the function should not be exposed',
+          altSnippet: `REVOKE EXECUTE ON FUNCTION public.${label} FROM authenticated;`,
+        };
       case 'extra-allowlist':
-        return `\`${label}\` is allowlisted but no longer expected. Remove it from .security-lint-allowlist.json, or add it to EXPECTED_ALLOWLIST_FUNCTIONS in AdminSecurity.tsx if it's intentional.`;
+        return {
+          summary: `\`${label}\` is allowlisted but not in EXPECTED_ALLOWLIST_FUNCTIONS.`,
+          file: '.security-lint-allowlist.json',
+          locator: `remove the entry whose "name" === "${label}"`,
+          altFile: 'src/pages/AdminSecurity.tsx',
+          altLocator: 'EXPECTED_ALLOWLIST_FUNCTIONS constant (top of file)',
+          altSnippet: `EXPECTED_ALLOWLIST_FUNCTIONS = [\n  …,\n  '${label}', // intentional — document why\n]`,
+        };
       case 'missing-test':
-        return `Restore supabase/functions/_rls_tests/${label} (check git history) or remove it from EXPECTED_SECURITY_TESTS / SECURITY_TESTS if it was deliberately retired.`;
+        return {
+          summary: `Test file ${label} is expected by CI but missing on disk.`,
+          file: `supabase/functions/_rls_tests/${label}`,
+          locator: 'restore from git history (e.g. `git log -- <path>` then `git checkout <sha>^ -- <path>`)',
+          altFile: 'src/pages/AdminSecurity.tsx',
+          altLocator: 'EXPECTED_SECURITY_TESTS / SECURITY_TESTS arrays',
+          altSnippet: `// remove '${label}' from EXPECTED_SECURITY_TESTS and SECURITY_TESTS if retired on purpose`,
+        };
       case 'extra-test':
-        return `${label} exists on disk but isn't in EXPECTED_SECURITY_TESTS. Add it to the expected list (and SECURITY_TESTS) so CI runs it, or delete the file.`;
+        return {
+          summary: `${label} exists on disk but CI does not expect it.`,
+          file: 'src/pages/AdminSecurity.tsx',
+          locator: 'EXPECTED_SECURITY_TESTS and SECURITY_TESTS arrays',
+          snippet: `EXPECTED_SECURITY_TESTS = [\n  …,\n  '${label}',\n]\nSECURITY_TESTS = [\n  …,\n  { file: '${label}', /* description */ },\n]`,
+          altFile: `supabase/functions/_rls_tests/${label}`,
+          altLocator: 'delete the file if it is no longer needed',
+          altSnippet: `rm supabase/functions/_rls_tests/${label}`,
+        };
     }
   };
+
+  const RecommendationBlock = ({ rec }: { rec: Recommendation }) => (
+    <div className="text-[11px] pl-3 text-muted-foreground/90 space-y-1 mt-0.5">
+      <div>💡 {rec.summary}</div>
+      <div>
+        <span className="text-muted-foreground">Edit </span>
+        <code className="bg-muted px-1 rounded">{rec.file}</code>
+        <span className="text-muted-foreground"> — {rec.locator}</span>
+      </div>
+      {rec.snippet && (
+        <pre className="bg-muted/60 rounded p-2 overflow-x-auto whitespace-pre text-[10.5px] leading-snug">{rec.snippet}</pre>
+      )}
+      {rec.altFile && (
+        <div>
+          <span className="text-muted-foreground">Or edit </span>
+          <code className="bg-muted px-1 rounded">{rec.altFile}</code>
+          {rec.altLocator && <span className="text-muted-foreground"> — {rec.altLocator}</span>}
+        </div>
+      )}
+      {rec.altSnippet && (
+        <pre className="bg-muted/60 rounded p-2 overflow-x-auto whitespace-pre text-[10.5px] leading-snug">{rec.altSnippet}</pre>
+      )}
+    </div>
+  );
 
   return (
     <Card className={`mb-6 border-l-4 ${passing ? 'border-l-emerald-500' : 'border-l-destructive'}`}>
