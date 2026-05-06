@@ -188,9 +188,124 @@ const CIStatusBanner = () => {
     altFile?: string;
     altLocator?: string;
     altSnippet?: string;
+    rootCause?: { headline: string; detail: string };
+  };
+
+  // --- Likely root-cause detection -----------------------------------------
+  const normaliseFnName = (s: string) => s.replace(/^public\./, '').toLowerCase();
+  const normaliseTestName = (s: string) =>
+    s.toLowerCase().replace(/\.(test|spec)\.ts$/, '').replace(/_test\.ts$/, '').replace(/\.ts$/, '');
+
+  const levenshtein = (a: string, b: string): number => {
+    if (a === b) return 0;
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+    const dp = Array.from({ length: a.length + 1 }, (_, i) => i);
+    for (let j = 1; j <= b.length; j++) {
+      let prev = dp[0];
+      dp[0] = j;
+      for (let i = 1; i <= a.length; i++) {
+        const tmp = dp[i];
+        dp[i] = a[i - 1] === b[j - 1]
+          ? prev
+          : 1 + Math.min(prev, dp[i], dp[i - 1]);
+        prev = tmp;
+      }
+    }
+    return dp[a.length];
+  };
+
+  const similarity = (a: string, b: string) => {
+    const max = Math.max(a.length, b.length) || 1;
+    return 1 - levenshtein(a, b) / max;
+  };
+
+  const detectRootCause = (
+    issue: GateIssue,
+  ): Recommendation['rootCause'] | undefined => {
+    if (issue.kind === 'missing-allowlist' || issue.kind === 'extra-allowlist') {
+      const counterpartKind: GateIssue['kind'] =
+        issue.kind === 'missing-allowlist' ? 'extra-allowlist' : 'missing-allowlist';
+      const target = normaliseFnName(issue.label);
+      let best: { label: string; score: number } | undefined;
+      for (const other of issues) {
+        if (other.kind !== counterpartKind) continue;
+        const score = similarity(target, normaliseFnName(other.label));
+        if (!best || score > best.score) best = { label: other.label, score };
+      }
+      if (best && best.score >= 0.6) {
+        return {
+          headline: 'Likely renamed function',
+          detail:
+            issue.kind === 'missing-allowlist'
+              ? `\`${best.label}\` looks like the new name for \`${issue.label}\` (${Math.round(best.score * 100)}% match). Update EXPECTED_ALLOWLIST_FUNCTIONS to reference \`${best.label}\` instead.`
+              : `\`${issue.label}\` looks like a rename of \`${best.label}\` (${Math.round(best.score * 100)}% match). Update EXPECTED_ALLOWLIST_FUNCTIONS to use the new name, then remove the stale entry.`,
+        };
+      }
+      // Schema/prefix change detection (public. → something else, or vice versa)
+      const stripped = issue.label.replace(/^[a-z_]+\./, '');
+      const counterpart = issues.find(
+        (o) =>
+          o.kind === counterpartKind &&
+          o.label.replace(/^[a-z_]+\./, '') === stripped &&
+          o.label !== issue.label,
+      );
+      if (counterpart) {
+        return {
+          headline: 'Likely changed schema/prefix',
+          detail: `Same function name \`${stripped}\` appears with a different schema prefix (\`${issue.label}\` vs \`${counterpart.label}\`). Align the prefix in EXPECTED_ALLOWLIST_FUNCTIONS and the allowlist JSON.`,
+        };
+      }
+      if (issue.kind === 'extra-allowlist' && issues.every((o) => o.kind !== 'missing-allowlist')) {
+        return {
+          headline: 'Likely stale EXPECTED list',
+          detail: `No matching missing entry — EXPECTED_ALLOWLIST_FUNCTIONS in AdminSecurity.tsx probably needs \`${issue.label}\` added (function added intentionally) or the JSON entry removed.`,
+        };
+      }
+    }
+
+    if (issue.kind === 'missing-test' || issue.kind === 'extra-test') {
+      const counterpartKind: GateIssue['kind'] =
+        issue.kind === 'missing-test' ? 'extra-test' : 'missing-test';
+      const target = normaliseTestName(issue.label);
+      let best: { label: string; score: number } | undefined;
+      for (const other of issues) {
+        if (other.kind !== counterpartKind) continue;
+        const score = similarity(target, normaliseTestName(other.label));
+        if (!best || score > best.score) best = { label: other.label, score };
+      }
+      if (best && best.score >= 0.65) {
+        // Detect naming-convention shift (foo_test.ts ↔ foo.test.ts)
+        const conventionShift =
+          (/_test\.ts$/.test(issue.label) && /\.test\.ts$/.test(best.label)) ||
+          (/\.test\.ts$/.test(issue.label) && /_test\.ts$/.test(best.label));
+        return {
+          headline: conventionShift ? 'Likely changed test naming convention' : 'Likely moved or renamed test file',
+          detail: conventionShift
+            ? `\`${issue.label}\` ↔ \`${best.label}\` differ only by the \`_test.ts\` vs \`.test.ts\` suffix. Pick one convention and update both EXPECTED_SECURITY_TESTS and the file on disk.`
+            : `\`${best.label}\` looks like \`${issue.label}\` after a rename/move (${Math.round(best.score * 100)}% match). Update EXPECTED_SECURITY_TESTS / SECURITY_TESTS to the new filename, or rename the file back.`,
+        };
+      }
+      if (issue.kind === 'extra-test' && issues.every((o) => o.kind !== 'missing-test')) {
+        return {
+          headline: 'Likely missing from expected list',
+          detail: `\`${issue.label}\` exists on disk and no test is reported missing — EXPECTED_SECURITY_TESTS / SECURITY_TESTS just need \`${issue.label}\` added so CI runs it.`,
+        };
+      }
+      if (issue.kind === 'missing-test' && issues.every((o) => o.kind !== 'extra-test')) {
+        return {
+          headline: 'Likely deleted test file',
+          detail: `\`${issue.label}\` is in EXPECTED_SECURITY_TESTS but no replacement file is on disk — most likely it was deleted. Restore from git or remove from the expected list.`,
+        };
+      }
+    }
+
+    return undefined;
   };
 
   const recommendationFor = (kind: GateIssue['kind'], label: string): Recommendation => {
+    const rootCause = detectRootCause({ kind, label });
+    const base = (() => {
     switch (kind) {
       case 'missing-allowlist':
         return {
@@ -231,10 +346,20 @@ const CIStatusBanner = () => {
           altSnippet: `rm supabase/functions/_rls_tests/${label}`,
         };
     }
+    })();
+    return { ...base, rootCause };
   };
 
   const RecommendationBlock = ({ rec }: { rec: Recommendation }) => (
     <div className="text-[11px] pl-3 text-muted-foreground/90 space-y-1 mt-0.5">
+      {rec.rootCause && (
+        <div className="rounded border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-foreground">
+          <div className="font-medium text-amber-700 dark:text-amber-400">
+            🔎 {rec.rootCause.headline}
+          </div>
+          <div className="text-muted-foreground mt-0.5">{rec.rootCause.detail}</div>
+        </div>
+      )}
       <div>💡 {rec.summary}</div>
       <div>
         <span className="text-muted-foreground">Edit </span>
