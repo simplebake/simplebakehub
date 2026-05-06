@@ -30,6 +30,11 @@
       "name": "auth_security_definer_function",
       "detail": "Function \\`public.verify_webhook_secret\\` is a SECURITY DEFINER function callable by signed-in users (\"authenticated\" role).",
       "reason": "Admin-gated internally via has_role(..., 'admin'); raises 'Access denied' for non-admins."
+    },
+    {
+      "name": "auth_security_definer_function",
+      "detail": "Function \\`public.log_security_doc_view\\` is a SECURITY DEFINER function callable by signed-in users (\"authenticated\" role).",
+      "reason": "Admin-gated internally via has_role(..., 'admin'); writes a single audit_logs row when admins open the Security admin page. Raises 'Access denied' for non-admins."
     }
   ]
 }
