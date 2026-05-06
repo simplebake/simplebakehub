@@ -74,8 +74,21 @@ const AppRoutes = () => (
       <Route path="/auth" element={<Auth />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/profile" element={<Profile />} />
-      <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-      <Route path="/admin/security" element={<AdminRoute><AdminSecurity /></AdminRoute>} />
+      {/* All /admin/* routes are gated behind AdminRoute. Add new admin
+          sub-pages inside this nested <Routes> block — they automatically
+          inherit the admin role check. */}
+      <Route
+        path="/admin/*"
+        element={
+          <AdminRoute>
+            <Routes>
+              <Route index element={<Admin />} />
+              <Route path="security" element={<AdminSecurity />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AdminRoute>
+        }
+      />
       <Route path="/premixes" element={<Premixes />} />
       <Route path="/premixes/:id/bake" element={<GuidedBake />} />
       <Route path="/tutorials" element={<Tutorials />} />
