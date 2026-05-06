@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/supabase';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -555,6 +556,8 @@ const ALLOWED_FUNCTIONS: Array<{
 
 const AdminSecurity = () => {
   const { user } = useAuth();
+  const { hasPermission, loading: permsLoading } = usePermissions();
+  const canExportSecuritySummary = hasPermission('can_export_security_summary');
   const [unlocked, setUnlocked] = useState<boolean>(() => isStepUpFresh());
   const [password, setPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
@@ -721,6 +724,10 @@ const AdminSecurity = () => {
   }
 
   const handleDownload = () => {
+    if (!canExportSecuritySummary) {
+      toast.error('You do not have permission to export security summaries.');
+      return;
+    }
     const blob = new Blob([SECURITY_MD], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -733,6 +740,10 @@ const AdminSecurity = () => {
   };
 
   const handleExportPdf = () => {
+    if (!canExportSecuritySummary) {
+      toast.error('You do not have permission to export security summaries.');
+      return;
+    }
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
     const generatedAt = new Date().toLocaleString('en-GB');
 
@@ -827,14 +838,25 @@ const AdminSecurity = () => {
               <Shield className="h-8 w-8 text-primary" />
               <h1 className="text-4xl font-bold">Security</h1>
             </div>
-            <Button onClick={handleDownload} variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Download SECURITY.md
-            </Button>
-            <Button onClick={handleExportPdf} variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Export PDF summary
-            </Button>
+            {canExportSecuritySummary ? (
+              <>
+                <Button onClick={handleDownload} variant="outline" size="sm" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Download SECURITY.md
+                </Button>
+                <Button onClick={handleExportPdf} variant="outline" size="sm" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export PDF summary
+                </Button>
+              </>
+            ) : !permsLoading ? (
+              <p
+                className="text-xs text-muted-foreground italic"
+                title="Requires the 'Export Security Summaries' permission. An admin can grant this in Permissions Manager."
+              >
+                Export disabled — missing permission
+              </p>
+            ) : null}
             <Button onClick={handleLock} variant="ghost" size="sm" className="gap-2">
               <Lock className="h-4 w-4" />
               Lock

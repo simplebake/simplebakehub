@@ -1519,6 +1519,7 @@ export type Database = {
         | "can_manage_premixes"
         | "can_manage_goals"
         | "can_manage_visibility"
+        | "can_export_security_summary"
       app_role: "admin" | "user" | "moderator" | "support"
       badge_type:
         | "first_bake"
@@ -1671,6 +1672,7 @@ export const Constants = {
         "can_manage_premixes",
         "can_manage_goals",
         "can_manage_visibility",
+        "can_export_security_summary",
       ],
       app_role: ["admin", "user", "moderator", "support"],
       badge_type: [
