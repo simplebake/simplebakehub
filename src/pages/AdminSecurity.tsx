@@ -109,6 +109,8 @@ const CIStatusBanner = () => {
   const testCount = SECURITY_TESTS.length;
   const [checkedAt, setCheckedAt] = useState<Date>(() => new Date());
   const [refreshing, setRefreshing] = useState(false);
+  const [issues, setIssues] = useState<GateIssue[]>(() => computeGateIssues());
+  const passing = issues.length === 0;
   const buildTime = (() => {
     try {
       return new Date(__BUILD_TIME__);
@@ -121,30 +123,45 @@ const CIStatusBanner = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      // The allowlist and security test list are bundled with the deployed
-      // build, so a successful page load already implies a green CI gate.
-      // We add a brief async tick so the user sees the refresh feedback.
       await new Promise((r) => setTimeout(r, 400));
+      const next = computeGateIssues();
+      setIssues(next);
       setCheckedAt(new Date());
-      toast.success('CI security status re-checked — gate still passing.');
+      if (next.length === 0) {
+        toast.success('CI security status re-checked — gate still passing.');
+      } else {
+        toast.error(`CI gate failing — ${next.length} issue${next.length === 1 ? '' : 's'} detected.`);
+      }
     } finally {
       setRefreshing(false);
     }
   };
 
+  const missingAllowlist = issues.filter((i) => i.kind === 'missing-allowlist');
+  const extraAllowlist = issues.filter((i) => i.kind === 'extra-allowlist');
+  const missingTests = issues.filter((i) => i.kind === 'missing-test');
+  const extraTests = issues.filter((i) => i.kind === 'extra-test');
+
   return (
-    <Card className="mb-6 border-l-4 border-l-emerald-500">
+    <Card className={`mb-6 border-l-4 ${passing ? 'border-l-emerald-500' : 'border-l-destructive'}`}>
       <CardContent className="py-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5 shrink-0" />
+            {passing ? (
+              <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5 shrink-0" />
+            ) : (
+              <AlertTriangle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+            )}
             <div>
               <div className="font-semibold text-sm">
-                CI security gate: passing
+                {passing
+                  ? 'CI security gate: passing'
+                  : `CI security gate: failing (${issues.length} issue${issues.length === 1 ? '' : 's'})`}
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Last successful build matched the linter against the allowlist
-                and ran every security test in <code className="bg-muted px-1 rounded">supabase/functions/_rls_tests/</code>.
+                {passing
+                  ? <>Last successful build matched the linter against the allowlist and ran every security test in <code className="bg-muted px-1 rounded">supabase/functions/_rls_tests/</code>.</>
+                  : <>The bundled allowlist or security test list does not match what CI expects. Review the diff below and update <code className="bg-muted px-1 rounded">.security-lint-allowlist.json</code> or <code className="bg-muted px-1 rounded">supabase/functions/_rls_tests/</code>.</>}
               </p>
               {buildTime && (
                 <p className="text-[11px] text-muted-foreground mt-1">
@@ -179,6 +196,12 @@ const CIStatusBanner = () => {
               <CheckCircle2 className="h-3 w-3 text-emerald-500" />
               Tests · {testCount}
             </Badge>
+            {!passing && (
+              <Badge variant="destructive" className="gap-1.5">
+                <AlertTriangle className="h-3 w-3" />
+                Issues · {issues.length}
+              </Badge>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -193,6 +216,59 @@ const CIStatusBanner = () => {
             </Button>
           </div>
         </div>
+
+        {!passing && (
+          <div className="mt-4 rounded border border-destructive/40 bg-destructive/5 p-3 text-xs space-y-2">
+            {missingAllowlist.length > 0 && (
+              <div>
+                <div className="font-medium text-destructive mb-1">
+                  Missing allowlist entries ({missingAllowlist.length})
+                </div>
+                <ul className="font-mono text-muted-foreground space-y-0.5">
+                  {missingAllowlist.map((i) => (
+                    <li key={`ma-${i.label}`}>− {i.label}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {extraAllowlist.length > 0 && (
+              <div>
+                <div className="font-medium text-amber-600 mb-1">
+                  Unexpected allowlist entries ({extraAllowlist.length})
+                </div>
+                <ul className="font-mono text-muted-foreground space-y-0.5">
+                  {extraAllowlist.map((i) => (
+                    <li key={`ea-${i.label}`}>+ {i.label}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {missingTests.length > 0 && (
+              <div>
+                <div className="font-medium text-destructive mb-1">
+                  Missing security test files ({missingTests.length})
+                </div>
+                <ul className="font-mono text-muted-foreground space-y-0.5">
+                  {missingTests.map((i) => (
+                    <li key={`mt-${i.label}`}>− {i.label}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {extraTests.length > 0 && (
+              <div>
+                <div className="font-medium text-amber-600 mb-1">
+                  Unexpected security test files ({extraTests.length})
+                </div>
+                <ul className="font-mono text-muted-foreground space-y-0.5">
+                  {extraTests.map((i) => (
+                    <li key={`et-${i.label}`}>+ {i.label}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid gap-2 md:grid-cols-2 mt-4 text-xs">
           <div className="bg-muted/40 rounded p-2">
@@ -222,8 +298,9 @@ const CIStatusBanner = () => {
 
         <p className="text-[11px] text-muted-foreground mt-3 flex items-start gap-1.5">
           <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
-          Status reflects the most recently deployed build. A red gate would have
-          blocked deployment, so if you're seeing this page the gate is currently green.
+          {passing
+            ? "Status reflects the most recently deployed build. A red gate would have blocked deployment, so if you're seeing this page the gate is currently green."
+            : 'The bundled allowlist or test list drifted from CI expectations. Resolve the diff above so the next CI run stays green.'}
         </p>
       </CardContent>
     </Card>
