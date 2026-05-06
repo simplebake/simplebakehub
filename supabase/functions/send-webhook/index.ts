@@ -2,11 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireAuth, isAdmin } from "../_shared/auth.ts";
 import { validateOutgoingUrl } from "../_shared/urlGuard.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createLogger } from "../_shared/logger.ts";
 
 async function generateSignature(payload: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -34,7 +30,8 @@ async function sendWebhookWithRetry(
   payload: Record<string, unknown>,
   secret: string,
   maxRetries: number,
-  timeoutSeconds: number
+  timeoutSeconds: number,
+  correlationId: string,
 ): Promise<{ success: boolean; status?: number; body?: unknown; error?: string; duration: number }> {
   const payloadString = JSON.stringify(payload);
   const timestamp = Date.now().toString();
@@ -64,6 +61,7 @@ async function sendWebhookWithRetry(
           'X-Webhook-Signature': signature,
           'X-Webhook-Timestamp': timestamp,
           'X-Webhook-Event': payload.event as string || 'unknown',
+          'X-Correlation-Id': correlationId,
           'User-Agent': 'BakeAssist-Webhooks/1.0',
         },
         body: payloadString,
@@ -107,14 +105,16 @@ async function sendWebhookWithRetry(
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const log = createLogger("send-webhook", req);
+  if (req.method === 'OPTIONS') return log.preflight();
 
   const auth = await requireAuth(req);
-  if ("response" in auth) return auth.response;
+  if ("response" in auth) {
+    log.warn("auth_failed");
+    return auth.response;
+  }
   const admin = await isAdmin(auth.userId);
+  const reqLog = log.child({ userId: auth.userId, admin });
 
   const supabaseClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -123,8 +123,7 @@ serve(async (req) => {
 
   try {
     const { event, data, config_id } = await req.json();
-
-    console.log("Send webhook request:", { event, config_id, dataPreview: JSON.stringify(data).substring(0, 200) });
+    reqLog.info("request_received", { event, configId: config_id });
 
     // Get webhook configurations — non-admins are scoped to their own configs
     let configQuery = supabaseClient
@@ -142,19 +141,13 @@ serve(async (req) => {
     const { data: configs, error: configError } = await configQuery;
 
     if (configError) {
-      console.error("Error fetching webhook configs:", configError);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch webhook configurations" }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      reqLog.error("config_fetch_failed", { error: configError.message });
+      return reqLog.respond({ error: "Failed to fetch webhook configurations" }, { status: 500 });
     }
 
     if (!configs || configs.length === 0) {
-      console.log("No active webhook configurations found");
-      return new Response(
-        JSON.stringify({ success: true, message: "No webhooks configured" }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      reqLog.info("no_configs");
+      return reqLog.respond({ success: true, message: "No webhooks configured" }, { status: 200 });
     }
 
     const results: Array<{
@@ -169,24 +162,24 @@ serve(async (req) => {
       // Check if this config is subscribed to the event
       const subscribedEvents = config.subscribed_events || [];
       if (subscribedEvents.length > 0 && !subscribedEvents.includes(event)) {
-        console.log(`Config ${config.id} not subscribed to event ${event}`);
+        reqLog.debug("config_skipped_unsubscribed", { configId: config.id, event });
         continue;
       }
 
       if (!config.outgoing_url) {
-        console.log(`Config ${config.id} has no outgoing URL`);
+        reqLog.debug("config_skipped_no_url", { configId: config.id });
         continue;
       }
 
       const urlCheck = validateOutgoingUrl(config.outgoing_url);
       if (!urlCheck.ok) {
-        console.warn(`Config ${config.id} blocked: ${urlCheck.error}`);
+        reqLog.warn("ssrf_blocked", { configId: config.id, reason: urlCheck.error });
         await supabaseClient.from('webhook_logs').insert({
           integration_id: 'custom-webhook',
           direction: 'outgoing',
           endpoint_url: config.outgoing_url,
           method: 'POST',
-          request_payload: { event },
+          request_payload: { event, correlationId: log.correlationId },
           response_status: 0,
           response_body: null,
           duration_ms: 0,
@@ -206,16 +199,18 @@ serve(async (req) => {
         data,
         timestamp: new Date().toISOString(),
         source: 'bakeassist',
+        correlationId: log.correlationId,
       };
 
-      console.log(`Sending webhook to ${config.outgoing_url}`);
+      reqLog.info("webhook_dispatch", { configId: config.id });
 
       const result = await sendWebhookWithRetry(
         config.outgoing_url,
         payload,
         config.secret_key,
         config.retry_count || 3,
-        config.timeout_seconds || 30
+        config.timeout_seconds || 30,
+        log.correlationId,
       );
 
       // Log the webhook call
@@ -231,6 +226,12 @@ serve(async (req) => {
         success: result.success,
         error_message: result.error,
       });
+      reqLog[result.success ? "info" : "warn"]("webhook_result", {
+        configId: config.id,
+        success: result.success,
+        status: result.status,
+        durationMs: result.duration,
+      });
 
       results.push({
         config_id: config.id,
@@ -240,19 +241,15 @@ serve(async (req) => {
       });
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        results,
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return reqLog.respond({ success: true, results }, { status: 200 });
 
   } catch (error: unknown) {
-    console.error("Send webhook error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    reqLog.error("unhandled_exception", {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return reqLog.respond(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 },
     );
   }
 });

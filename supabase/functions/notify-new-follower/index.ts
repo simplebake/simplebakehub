@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { createLogger } from "../_shared/logger.ts";
 
 interface NotifyNewFollowerRequest {
   followerId: string;
@@ -12,22 +8,18 @@ interface NotifyNewFollowerRequest {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const log = createLogger("notify-new-follower", req);
+  if (req.method === "OPTIONS") return log.preflight();
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      log.warn("auth_missing");
+      return log.respond({ error: "Unauthorized" }, { status: 401 });
     }
 
     const authClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -36,25 +28,20 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      log.warn("auth_invalid", { error: claimsError?.message });
+      return log.respond({ error: "Unauthorized" }, { status: 401 });
     }
     const authenticatedUserId = claimsData.claims.sub;
+    const reqLog = log.child({ userId: authenticatedUserId });
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { followerId, followingId }: NotifyNewFollowerRequest = await req.json();
 
-    // Ensure the caller is the follower
     if (authenticatedUserId !== followerId) {
-      return new Response(JSON.stringify({ error: "Forbidden: identity mismatch" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      reqLog.warn("identity_mismatch", { claimedFollowerId: followerId });
+      return log.respond({ error: "Forbidden: identity mismatch" }, { status: 403 });
     }
 
-    // Verify the follow relationship actually exists server-side
     const { data: followRow, error: followErr } = await supabase
       .from("followers")
       .select("following_id")
@@ -63,13 +50,10 @@ serve(async (req) => {
       .maybeSingle();
 
     if (followErr || !followRow) {
-      return new Response(JSON.stringify({ error: "Follow relationship not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      reqLog.warn("follow_not_found", { followingId });
+      return log.respond({ error: "Follow relationship not found" }, { status: 404 });
     }
 
-    // Get follower's profile name
     const { data: followerProfile } = await supabase
       .from("profiles")
       .select("name")
@@ -77,21 +61,18 @@ serve(async (req) => {
       .single();
 
     if (!followerProfile) {
-      return new Response(
-        JSON.stringify({ error: "Follower not found" }),
-        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      reqLog.warn("follower_profile_not_found");
+      return log.respond({ error: "Follower not found" }, { status: 404 });
     }
 
-    // Store notification in database
     await supabase.from("notifications").insert({
       user_id: followingId,
       type: "new_follower",
       actor_id: followerId,
       message: `${followerProfile.name} started following you`,
     });
+    reqLog.info("notification_stored", { recipientId: followingId });
 
-    // Check if the followed user has push notifications enabled
     const { data: preferences } = await supabase
       .from("notification_preferences")
       .select("push_enabled")
@@ -99,74 +80,61 @@ serve(async (req) => {
       .single();
 
     if (!preferences?.push_enabled) {
-      return new Response(
-        JSON.stringify({ message: "Notification stored, push not enabled" }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      reqLog.debug("push_disabled");
+      return log.respond({ message: "Notification stored, push not enabled" }, { status: 200 });
     }
 
-    // Fetch push subscriptions for the followed user
     const { data: subscriptions } = await supabase
       .from("push_subscriptions")
       .select("*")
       .eq("user_id", followingId);
 
     if (!subscriptions || subscriptions.length === 0) {
-      return new Response(
-        JSON.stringify({ message: "No push subscriptions found" }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      reqLog.debug("no_push_subscriptions");
+      return log.respond({ message: "No push subscriptions found" }, { status: 200 });
     }
 
-    // Prepare notification payload
     const payload = JSON.stringify({
       title: "New Follower! 🎉",
       body: `${followerProfile.name} started following you`,
       icon: "/favicon.ico",
       tag: "new-follower",
-      data: { url: `/baker/${followerId}` },
+      data: { url: `/baker/${followerId}`, correlationId: log.correlationId },
     });
 
-    // Send to all subscriptions
     const results = await Promise.allSettled(
       subscriptions.map(async (sub) => {
         try {
           const response = await fetch(sub.endpoint, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "TTL": "86400",
-            },
+            headers: { "Content-Type": "application/json", TTL: "86400" },
             body: payload,
           });
 
           if (!response.ok && (response.status === 404 || response.status === 410)) {
-            await supabase
-              .from("push_subscriptions")
-              .delete()
-              .eq("id", sub.id);
+            await supabase.from("push_subscriptions").delete().eq("id", sub.id);
           }
 
           return { success: response.ok };
         } catch (error) {
-          console.error(`Failed to send to subscription ${sub.id}:`, error);
+          reqLog.warn("push_send_failed", {
+            subscriptionId: sub.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
           return { success: false };
         }
-      })
+      }),
     );
 
-    const successful = results.filter(r => r.status === 'fulfilled' && (r.value as any).success).length;
+    const successful = results.filter(
+      (r) => r.status === "fulfilled" && (r.value as { success: boolean }).success,
+    ).length;
+    reqLog.info("push_dispatched", { sent: successful, total: subscriptions.length });
 
-    return new Response(
-      JSON.stringify({ message: "Notification sent", sent: successful }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    return log.respond({ message: "Notification sent", sent: successful }, { status: 200 });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error in notify-new-follower:", error);
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    log.error("unhandled_exception", { error: errorMessage });
+    return log.respond({ error: errorMessage }, { status: 500 });
   }
 });
