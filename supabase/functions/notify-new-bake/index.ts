@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validateOutgoingUrl } from "../_shared/urlGuard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -137,6 +138,17 @@ serve(async (req) => {
     const results = await Promise.allSettled(
       subscriptions.map(async (sub) => {
         try {
+          const urlCheck = validateOutgoingUrl(sub.endpoint);
+          if (!urlCheck.ok) {
+            await supabase
+              .from("push_subscriptions")
+              .delete()
+              .eq("id", sub.id);
+            console.warn(
+              `Removed subscription ${sub.id} with disallowed endpoint: ${urlCheck.error}`,
+            );
+            return { success: false };
+          }
           const response = await fetch(sub.endpoint, {
             method: "POST",
             headers: {
