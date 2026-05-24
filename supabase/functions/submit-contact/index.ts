@@ -367,7 +367,7 @@ serve(async (req) => {
       event_type: 'contact_form_submitted',
       ip_address: clientIP,
       endpoint: 'submit-contact',
-      user_id: userId || null,
+      user_id: safeUserId,
       details: { messageId: messageData.id, category }
     });
 
