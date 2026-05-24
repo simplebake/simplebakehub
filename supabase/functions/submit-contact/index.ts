@@ -284,6 +284,23 @@ serve(async (req) => {
 
     const { name, email, subject, category, message, userId } = validationResult.data;
 
+    // Identity binding: never trust client-supplied userId. Verify auth and override.
+    let safeUserId: string | null = null;
+    const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7);
+      const authClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      );
+      const { data: userData, error: userErr } = await authClient.auth.getUser(token);
+      if (!userErr && userData?.user) {
+        safeUserId = userData.user.id;
+      }
+    }
+    // Ignore any client-supplied userId
+    void userId;
+
     // Check for dangerous content
     if (containsDangerousContent(subject) || containsDangerousContent(message)) {
       console.log(`Dangerous content detected from IP: ${clientIP}`);
@@ -313,7 +330,7 @@ serve(async (req) => {
         category,
         message: sanitizedMessage,
         email,
-        user_id: userId || null,
+        user_id: safeUserId,
         status: 'pending'
       })
       .select()
