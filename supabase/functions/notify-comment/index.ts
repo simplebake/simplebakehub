@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createLogger } from "../_shared/logger.ts";
 import { checkRateLimit, getClientIp } from "../_shared/rateLimit.ts";
+import { validateOutgoingUrl } from "../_shared/urlGuard.ts";
 
 interface NotifyCommentRequest {
   commenterId: string;
@@ -137,6 +138,12 @@ serve(async (req) => {
     });
 
     try {
+      const urlCheck = validateOutgoingUrl(subscription.endpoint);
+      if (!urlCheck.ok) {
+        await supabase.from("push_subscriptions").delete().eq("id", subscription.id);
+        reqLog.warn("push_subscription_blocked", { reason: urlCheck.error });
+        return log.respond({ message: "Notification skipped" }, { status: 200 });
+      }
       const response = await fetch(subscription.endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json", TTL: "86400" },
