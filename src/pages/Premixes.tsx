@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Download, Upload, Link } from "lucide-react";
+import { Pencil } from "lucide-react";
+import { EditPremixDialog } from "@/components/EditPremixDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +66,8 @@ const Premixes = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingPremix, setEditingPremix] = useState<Premix | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   const exportAsCSV = () => {
     const headers = ['Name', 'Description', 'Difficulty', 'Water Amount (ml)', 'Oil Amount', 'Optional Extras'];
@@ -431,12 +435,32 @@ const Premixes = () => {
                   >
                     Start Baking
                   </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      className="w-full mt-2 gap-2"
+                      onClick={() => {
+                        setEditingPremix(premix);
+                        setEditOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit Recipe
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </main>
+
+      <EditPremixDialog
+        premix={editingPremix}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSaved={fetchPremixes}
+      />
 
       {/* Import Preview Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
