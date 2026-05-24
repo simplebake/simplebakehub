@@ -1,0 +1,73 @@
+name: RLS Inference Tests
+
+# Runs the webhook_configs RLS inference test suite against the live Supabase
+# project on every PR and push to main. These tests verify that a non-admin
+# attacker cannot infer another user's outgoing_url or secret_key via:
+#   - ordering / range / count / grouping probes
+#   - substring (like/ilike), regex, and limit/offset pagination
+#   - error-message / HTTP-status / response-shape side channels
+#
+# Required repository secrets:
+#   SUPABASE_URL                — project URL (e.g. https://xyz.supabase.co)
+#   SUPABASE_ANON_KEY           — anon/publishable key (used by attacker/victim clients)
+#   SUPABASE_SERVICE_ROLE_KEY   — service role key (used to seed/cleanup victim rows)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref to keep PR feedback fast.
+concurrency:
+  group: rls-inference-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  webhook-configs-rls-inference:
+    name: webhook_configs RLS inference
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Verify Supabase secrets are configured
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          missing=0
+          for var in SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY; do
+            if [ -z "${!var}" ]; then
+              echo "::error::Required secret $var is not configured for this repository."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::Add the missing secrets in Repo Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Run webhook_configs RLS inference tests
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          deno test \
+            --allow-net \
+            --allow-env \
+            --allow-read \
+            --no-check \
+            supabase/functions/_rls_tests/webhook_outgoing_url_inference_test.ts \
+            supabase/functions/_rls_tests/webhook_outgoing_url_isolation_test.ts \
+            supabase/functions/_rls_tests/webhook_outgoing_url_error_channel_test.ts \
+            supabase/functions/_rls_tests/webhook_secret_key_inference_test.ts \
+            supabase/functions/_rls_tests/webhook_substring_regex_pagination_test.ts
