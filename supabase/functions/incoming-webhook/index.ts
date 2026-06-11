@@ -215,7 +215,7 @@ serve(async (req) => {
       endpoint_url: req.url,
       method: req.method,
       request_headers: safeHeaders,
-      request_payload: responseBody,
+      request_payload: payload,
       response_status: responseStatus,
       response_body: responseBody,
       duration_ms: duration,
