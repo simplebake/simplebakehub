@@ -1435,6 +1435,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_view_bake_share: {
+        Args: { _bake_share_id: string }
+        Returns: boolean
+      }
       cleanup_expired_blocks: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
