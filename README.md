@@ -89,6 +89,7 @@ Prefer working locally? You need Node.js and npm — [install with nvm](https://
 ```sh
 git clone <this-repository-url>
 cd <repository-name>
+cp .env.example .env  # then fill in your Supabase/Shopify values
 npm i
 npm run dev
 ```
