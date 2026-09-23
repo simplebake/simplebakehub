@@ -41,6 +41,7 @@ const BakePhotoAnalysis = lazy(() => import("./pages/BakePhotoAnalysis"));
 const RecipeGenerator = lazy(() => import("./pages/RecipeGenerator"));
 const StarterTroubleshooting = lazy(() => import("./pages/StarterTroubleshooting"));
 const GuideWhichBreadsGlutenFree = lazy(() => import("./pages/GuideWhichBreadsGlutenFree"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const AppRoutes = () => (
     <Routes>
       <Route path="/" element={<HomeRoute />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/profile" element={<Profile />} />
       {/* All /admin/* routes are gated behind AdminRoute. Add new admin
