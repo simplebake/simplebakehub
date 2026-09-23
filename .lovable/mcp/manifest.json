@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "sdk_version": "3.0.2",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://twszrhkovxpvosnfkdjk.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "simple-bake-hub",
+      "version": "0.1.0",
+      "title": "Simple Bake Hub"
+    },
+    "tools": [
+      {
+        "name": "list_premixes",
+        "title": "List premixes",
+        "description": "List the gluten-free baking premixes available in Simple Bake Hub.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Maximum number of premixes to return."
+            }
+          },
+          "required": [
+            "limit"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_tutorials",
+        "title": "List tutorials",
+        "description": "Search and list gluten-free baking tutorials by title or category.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Maximum number of tutorials to return."
+            },
+            "search": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Match tutorial titles containing this text, or null for no filter."
+            },
+            "category": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only return tutorials in this category, or null for all categories."
+            }
+          },
+          "required": [
+            "limit",
+            "search",
+            "category"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_feeding_logs",
+        "title": "List starter feedings",
+        "description": "List the signed-in baker's most recent sourdough starter feedings.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Maximum number of feedings to return."
+            },
+            "starterName": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only return feedings for this starter name, or null for all starters."
+            }
+          },
+          "required": [
+            "limit",
+            "starterName"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "log_feeding",
+        "title": "Log a starter feeding",
+        "description": "Record a sourdough starter feeding for the signed-in baker.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "starterName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "description": "Name of the starter being fed."
+            },
+            "flourType": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "description": "Flour used for the feeding."
+            },
+            "flourAmountG": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10000,
+              "description": "Flour amount in grams."
+            },
+            "waterAmountG": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10000,
+              "description": "Water amount in grams."
+            },
+            "temperatureCelsius": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": -20,
+                  "maximum": 80
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ambient temperature in Celsius, or null if unknown."
+            },
+            "notes": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional notes, or null."
+            }
+          },
+          "required": [
+            "starterName",
+            "flourType",
+            "flourAmountG",
+            "waterAmountG",
+            "temperatureCelsius",
+            "notes"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_baking_sessions",
+        "title": "List baking sessions",
+        "description": "List the signed-in baker's recent bakes, with outcome ratings and conditions.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Maximum number of bakes to return."
+            }
+          },
+          "required": [
+            "limit"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
