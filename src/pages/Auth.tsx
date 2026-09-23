@@ -51,7 +51,7 @@ const Auth = () => {
         password,
         name
       });
-      const redirectUrl = `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}${destination}`;
       const {
         error
       } = await supabase.auth.signUp({
@@ -78,7 +78,7 @@ const Auth = () => {
         });
       }
       toast.success("Account created successfully! Please check your email.");
-      navigate("/dashboard");
+      navigate(destination);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -108,7 +108,7 @@ const Auth = () => {
       });
       if (error) throw error;
       toast.success("Signed in successfully!");
-      navigate("/dashboard");
+      navigate(destination);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
