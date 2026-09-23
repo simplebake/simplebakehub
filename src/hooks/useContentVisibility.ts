@@ -36,6 +36,15 @@ export function useContentVisibility(): UseContentVisibilityReturn {
       const { data: { user } } = await supabase.auth.getUser();
       setUserId(user?.id || null);
 
+      // content_visibility_settings is admin/permission-gated by RLS; anonymous
+      // visitors can't even evaluate the policy (has_permission has no EXECUTE
+      // grant for anon), so skip the query entirely rather than erroring.
+      // isContentVisible() already treats "no settings" as visible-by-default.
+      if (!user) {
+        setSettings([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('content_visibility_settings')
         .select('*');
