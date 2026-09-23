@@ -7,7 +7,7 @@ import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@3.0.2";
 
 // src/lib/mcp/tools/list-premixes.ts
 import { defineTool } from "npm:@lovable.dev/mcp-js@3.0.2";
-import { z } from "npm:zod@^4.6.5";
+import { z } from "npm:zod@^3.25";
 
 // src/lib/mcp/supabase.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.84.0";
@@ -91,7 +91,7 @@ var list_premixes_default = defineTool({
 
 // src/lib/mcp/tools/list-feeding-logs.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@3.0.2";
-import { z as z2 } from "npm:zod@^4.6.5";
+import { z as z2 } from "npm:zod@^3.25";
 var list_feeding_logs_default = defineTool2({
   name: "list_feeding_logs",
   title: "List starter feedings",
@@ -133,7 +133,7 @@ var list_feeding_logs_default = defineTool2({
 
 // src/lib/mcp/tools/log-feeding.ts
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@3.0.2";
-import { z as z3 } from "npm:zod@^4.6.5";
+import { z as z3 } from "npm:zod@^3.25";
 var log_feeding_default = defineTool3({
   name: "log_feeding",
   title: "Log a starter feeding",
@@ -177,7 +177,7 @@ var log_feeding_default = defineTool3({
 
 // src/lib/mcp/tools/list-baking-sessions.ts
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@3.0.2";
-import { z as z4 } from "npm:zod@^4.6.5";
+import { z as z4 } from "npm:zod@^3.25";
 var list_baking_sessions_default = defineTool4({
   name: "list_baking_sessions",
   title: "List baking sessions",
@@ -216,7 +216,7 @@ var list_baking_sessions_default = defineTool4({
 
 // src/lib/mcp/tools/list-tutorials.ts
 import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@3.0.2";
-import { z as z5 } from "npm:zod@^4.6.5";
+import { z as z5 } from "npm:zod@^3.25";
 var list_tutorials_default = defineTool5({
   name: "list_tutorials",
   title: "List tutorials",
